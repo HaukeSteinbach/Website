@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revision Request - Steinbach</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">Steinbach</div>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Toggle navigation">
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
+            <ul class="nav-menu" id="primary-navigation">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="contact.html" class="nav-link">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="section-header handoff-header">
+        <h1>Request a Revision</h1>
+        <p>Describe the changes you would like for your delivered files.</p>
+    </header>
+
+    <main class="container handoff-layout">
+        <section class="handoff-card">
+            <p class="handoff-lead">You can submit one revision request for this delivery. If needed, attach one reference file or note.</p>
+            <form id="revision-form" class="handoff-form">
+                <div class="form-group">
+                    <label for="revision-message">Requested changes</label>
+                    <textarea id="revision-message" name="message" rows="7" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="revision-file">Optional attachment</label>
+                    <input type="file" id="revision-file" name="attachment">
+                </div>
+                <div class="handoff-actions">
+                    <button type="submit" class="btn">Send Revision Request</button>
+                </div>
+                <div class="handoff-status" id="revision-status" aria-live="polite"></div>
+            </form>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-legal">
+            <a href="impressum.html" class="footer-legal-link">Impressum</a>
+        </div>
+        <p>&copy; 2025 Steinbach. All rights reserved.</p>
+    </footer>
+
+    <script src="assets/js/navbar.js"></script>
+    <script src="assets/js/revision-flow.js"></script>
+</body>
+</html>

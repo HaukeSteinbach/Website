@@ -1,0 +1,29 @@
+import cors from 'cors';
+import express from 'express';
+import helmet from 'helmet';
+import morgan from 'morgan';
+
+import { config } from './lib/config.js';
+import { errorHandler, notFoundHandler } from './middleware/errors.js';
+import adminRoutes from './routes/admin.js';
+import publicRoutes from './routes/public.js';
+
+const app = express();
+
+app.use(helmet());
+app.use(cors({ origin: config.appOrigin, credentials: true }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
+
+app.get('/health', (_request, response) => {
+  response.json({ ok: true, service: 'steinbach-file-handoff-backend' });
+});
+
+app.use('/api/v1/public', publicRoutes);
+app.use('/api/v1/admin', adminRoutes);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+export default app;

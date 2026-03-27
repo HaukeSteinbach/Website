@@ -1,0 +1,15 @@
+services:
+  website:
+    image: ghcr.io/haukesteinbach/haukesteinbach:latest
+    container_name: steinbachwebsite
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: steinbachwatchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup steinbachwebsite

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Project Files - Steinbach</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">Steinbach</div>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Toggle navigation">
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
+            <ul class="nav-menu" id="primary-navigation">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="productions.html" class="nav-link">Productions</a></li>
+                <li><a href="mixing.html" class="nav-link">Mixing</a></li>
+                <li><a href="mastering.html" class="nav-link">Mastering</a></li>
+                <li><a href="contact.html" class="nav-link">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="section-header handoff-header">
+        <h1>Upload Project Files</h1>
+        <p>Send your files securely for mixing, mastering, or production.</p>
+    </header>
+
+    <main class="container handoff-layout">
+        <section class="handoff-card handoff-intro">
+            <div class="handoff-stepper" aria-label="Workflow steps">
+                <span class="handoff-step active">1. Project details</span>
+                <span class="handoff-step">2. Upload files</span>
+                <span class="handoff-step">3. Confirm</span>
+            </div>
+            <p class="handoff-lead">Large uploads should be handled with resumable transfer. This page is the frontend shell for the file handoff flow defined in the API spec.</p>
+        </section>
+
+        <section class="handoff-card">
+            <form id="upload-job-form" class="handoff-form">
+                <div class="handoff-fieldset">
+                    <h2>Service</h2>
+                    <div class="service-card-grid">
+                        <label class="service-card"><input type="radio" name="service" value="mixing" required><span>Mixing</span></label>
+                        <label class="service-card"><input type="radio" name="service" value="mastering"><span>Mastering</span></label>
+                        <label class="service-card"><input type="radio" name="service" value="production"><span>Production</span></label>
+                        <label class="service-card"><input type="radio" name="service" value="other"><span>Other</span></label>
+                    </div>
+                </div>
+
+                <div class="handoff-fieldset handoff-grid-two">
+                    <div class="form-group">
+                        <label for="first-name">First name</label>
+                        <input type="text" id="first-name" name="firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="last-name">Last name</label>
+                        <input type="text" id="last-name" name="lastName" required>
+                    </div>
+                </div>
+
+                <div class="handoff-fieldset">
+                    <div class="form-group">
+                        <label for="upload-email">Email</label>
+                        <input type="email" id="upload-email" name="email" required>
+                    </div>
+                </div>
+
+                <div class="handoff-fieldset handoff-grid-two">
+                    <div class="form-group handoff-grid-span-two">
+                        <label for="street-1">Street 1</label>
+                        <input type="text" id="street-1" name="street1" required>
+                    </div>
+                    <div class="form-group handoff-grid-span-two">
+                        <label for="street-2">Street 2</label>
+                        <input type="text" id="street-2" name="street2">
+                    </div>
+                    <div class="form-group">
+                        <label for="postal-code">Postal code</label>
+                        <input type="text" id="postal-code" name="postalCode" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="city">City</label>
+                        <input type="text" id="city" name="city" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="region">Region</label>
+                        <input type="text" id="region" name="region">
+                    </div>
+                    <div class="form-group">
+                        <label for="country">Country</label>
+                        <input type="text" id="country" name="country" maxlength="2" placeholder="DE" required>
+                    </div>
+                </div>
+
+                <div class="handoff-fieldset">
+                    <div class="form-group">
+                        <label for="project-notes">Project notes</label>
+                        <textarea id="project-notes" name="projectNotes" rows="5" placeholder="Format, references, loudness target, deadlines, notes..."></textarea>
+                    </div>
+                </div>
+
+                <div class="handoff-fieldset">
+                    <h2>Upload files</h2>
+                    <div class="upload-dropzone" id="upload-dropzone">
+                        <p>Drop audio files or archives here</p>
+                        <p class="upload-dropzone-meta">Allowed formats: WAV, AIFF, FLAC, ZIP, RAR, MP3. Resumable upload intended.</p>
+                        <button type="button" class="btn btn-secondary" id="select-files-button">Select Files</button>
+                        <input type="file" id="project-files" name="files" multiple hidden>
+                    </div>
+                    <ul class="upload-file-list" id="upload-file-list"></ul>
+                </div>
+
+                <div class="handoff-fieldset">
+                    <label class="consent-row">
+                        <input type="checkbox" id="privacy-consent" name="privacyConsent" required>
+                        <span>I have read the privacy policy and agree to the processing of my data for project handling.</span>
+                    </label>
+                </div>
+
+                <div class="handoff-actions">
+                    <button type="submit" class="btn">Create Upload Job</button>
+                    <a href="contact.html" class="btn btn-secondary">Send a Message Instead</a>
+                </div>
+                <div class="handoff-status" id="upload-status" aria-live="polite"></div>
+            </form>
+        </section>
+
+        <section class="handoff-card handoff-summary" id="upload-success-panel" hidden>
+            <h2>Upload received</h2>
+            <p>Your upload shell is ready. A confirmation email would be sent after file finalization in the backend implementation.</p>
+            <dl class="handoff-summary-list" id="upload-summary-list"></dl>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-legal">
+            <a href="impressum.html" class="footer-legal-link">Impressum</a>
+        </div>
+        <p>&copy; 2025 Steinbach. All rights reserved.</p>
+    </footer>
+
+    <script src="assets/js/navbar.js"></script>
+    <script src="assets/js/upload-flow.js"></script>
+</body>
+</html>

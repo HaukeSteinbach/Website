@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery - Steinbach</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">Steinbach</div>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Toggle navigation">
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
+            <ul class="nav-menu" id="primary-navigation">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="contact.html" class="nav-link">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="section-header handoff-header">
+        <h1>Your Files Are Ready</h1>
+        <p>Secure delivery for your project.</p>
+    </header>
+
+    <main class="container handoff-layout">
+        <section class="handoff-card handoff-summary">
+            <h2>Delivery summary</h2>
+            <dl class="handoff-summary-list" id="delivery-summary-list">
+                <div><dt>Reference</dt><dd>SB-2026-000123</dd></div>
+                <div><dt>Service</dt><dd>Mastering</dd></div>
+                <div><dt>Expiry</dt><dd>26 April 2026</dd></div>
+                <div><dt>Version</dt><dd>1</dd></div>
+            </dl>
+        </section>
+
+        <section class="handoff-card">
+            <h2>Files</h2>
+            <ul class="delivery-file-list" id="delivery-file-list">
+                <li><span>Track01_Master_24bit.wav</span><span>118.8 MB</span></li>
+                <li><span>Track02_Master_24bit.wav</span><span>124.6 MB</span></li>
+            </ul>
+            <div class="handoff-actions">
+                <button type="button" class="btn" id="delivery-download-button">Download Files</button>
+            </div>
+            <div class="handoff-status" id="delivery-status" aria-live="polite"></div>
+        </section>
+
+        <section class="handoff-card revision-callout">
+            <h2>Need one revision?</h2>
+            <p>After reviewing the files, you can submit one revision request if needed.</p>
+            <a href="revision.html?token=demo-token" class="btn btn-secondary">Request a Revision</a>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-legal">
+            <a href="impressum.html" class="footer-legal-link">Impressum</a>
+        </div>
+        <p>&copy; 2025 Steinbach. All rights reserved.</p>
+    </footer>
+
+    <script src="assets/js/navbar.js"></script>
+    <script src="assets/js/delivery-flow.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+*
+!.dockerignore
+!Dockerfile
+!assets/
+!assets/**
+!*.html
+!website/
+!website/**

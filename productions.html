@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productions - Steinbach</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">Steinbach</div>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Toggle navigation">
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
+            <ul class="nav-menu" id="primary-navigation">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="productions.html" class="nav-link active">Productions</a></li>
+                <li><a href="mixing.html" class="nav-link">Mixing</a></li>
+                <li><a href="mastering.html" class="nav-link">Mastering</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="section-header">
+        <h1>Productions</h1>
+        <p>Original compositions and produced tracks</p>
+    </header>
+
+    <main class="container">
+        <section class="portfolio-grid" id="portfolio">
+            <!-- Portfolio cards will be inserted here via JavaScript -->
+        </section>
+    </main>
+
+    <section class="contact-section">
+        <div class="container">
+            <div class="contact-form-wrapper">
+                <button class="contact-form-toggle" id="contact-toggle">
+                    <h2>Get in Touch</h2>
+                    <span class="toggle-icon">+</span>
+                </button>
+                <div class="contact-form-content" id="contact-content">
+                    <p>Have a project in mind? Let's work together.</p>
+                    <form class="contact-form" id="contact-form" action="https://formspree.io/f/xgopedgb" method="post">
+                        <input type="hidden" name="form_source" value="Productions page">
+                        <input type="text" name="website" class="contact-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
+                        <div class="form-group">
+                            <label for="name">Name</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone</label>
+                            <input type="tel" id="phone" name="phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">Subject</label>
+                            <select id="subject" name="subject" required>
+                                <option value="">Select a subject</option>
+                                <option value="productions">Productions Inquiry</option>
+                                <option value="mixing">Mixing Services</option>
+                                <option value="mastering">Mastering Services</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Message</label>
+                            <textarea id="message" name="message" rows="5" required></textarea>
+                        </div>
+                        <button type="submit" class="btn">Send Message</button>
+                        <div class="form-status" id="form-status"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-legal">
+            <a href="impressum.html" class="footer-legal-link">Impressum</a>
+        </div>
+        <p>&copy; 2025 Steinbach. All rights reserved.</p>
+    </footer>
+
+    <script src="assets/js/navbar.js"></script>
+    <script src="assets/js/hero-fade.js"></script>
+    <script src="assets/js/portfolio.js"></script>
+    <script src="assets/js/contact.js"></script>
+    <script>
+        loadPortfolioItems('productions');
+    </script>
+</body>
+</html>

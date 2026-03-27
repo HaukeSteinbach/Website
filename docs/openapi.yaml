@@ -1,0 +1,1045 @@
+openapi: 3.1.0
+info:
+  title: Steinbach File Handoff API
+  version: 1.0.0
+  summary: SwissTransfer-like client handoff workflow for mixing, mastering, and production projects.
+  description: |
+    API for client upload intake, admin processing, secure delivery, revision handling,
+    and retention/deletion tracking.
+servers:
+  - url: https://app.yourdomain.com
+    description: Production
+  - url: http://localhost:3000
+    description: Local development
+tags:
+  - name: Public Jobs
+  - name: Public Delivery
+  - name: Public Revisions
+  - name: Admin Auth
+  - name: Admin Jobs
+  - name: Admin Deliveries
+  - name: Admin Events
+security: []
+paths:
+  /api/v1/public/jobs:
+    post:
+      tags: [Public Jobs]
+      summary: Create a new upload job
+      description: Creates the client record, project job, consent record, and upload bootstrap metadata.
+      operationId: createPublicJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicJobCreateRequest'
+      responses:
+        '201':
+          description: Job created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicJobCreateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/v1/public/jobs/{jobId}/uploads/complete:
+    post:
+      tags: [Public Jobs]
+      summary: Finalize uploaded source files
+      description: Registers completed source uploads and moves the job into uploaded state.
+      operationId: completePublicUpload
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteUploadRequest'
+      responses:
+        '200':
+          description: Upload finalized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteUploadResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/v1/public/deliveries/{token}:
+    get:
+      tags: [Public Delivery]
+      summary: Get delivery landing metadata
+      description: Validates a delivery token and returns delivery metadata before download starts.
+      operationId: getPublicDelivery
+      parameters:
+        - $ref: '#/components/parameters/PublicToken'
+      responses:
+        '200':
+          description: Delivery metadata returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicDeliveryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Expired'
+
+  /api/v1/public/deliveries/{token}/download:
+    post:
+      tags: [Public Delivery]
+      summary: Start delivery download
+      description: Logs the client download event, triggers admin notification, and returns short-lived signed file URLs.
+      operationId: startPublicDeliveryDownload
+      parameters:
+        - $ref: '#/components/parameters/PublicToken'
+      responses:
+        '200':
+          description: Signed download URLs returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeliveryDownloadResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Expired'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/v1/public/revisions/{token}:
+    post:
+      tags: [Public Revisions]
+      summary: Submit one-time revision request
+      description: Creates a revision request with message and optional file attachment.
+      operationId: submitPublicRevision
+      parameters:
+        - $ref: '#/components/parameters/PublicToken'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  maxLength: 5000
+                attachment:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Revision request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevisionSubmitResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Expired'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+
+  /api/v1/admin/auth/login:
+    post:
+      tags: [Admin Auth]
+      summary: Log in admin user
+      operationId: adminLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminLoginRequest'
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminLoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/admin/auth/me:
+    get:
+      tags: [Admin Auth]
+      summary: Get current admin session
+      operationId: adminMe
+      security:
+        - AdminSession: []
+        - BearerAdmin: []
+      responses:
+        '200':
+          description: Current admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/admin/auth/logout:
+    post:
+      tags: [Admin Auth]
+      summary: Log out current admin
+      operationId: adminLogout
+      security:
+        - AdminSession: []
+        - BearerAdmin: []
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+
+  /api/v1/admin/jobs:
+    get:
+      tags: [Admin Jobs]
+      summary: List jobs
+      operationId: listAdminJobs
+      security:
+        - AdminSession: []
+        - BearerAdmin: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/JobStatus'
+        - in: query
+          name: service
+          schema:
+            $ref: '#/components/schemas/ServiceType'
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Job list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminJobListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/admin/jobs/{jobId}:
+    get:
+      tags: [Admin Jobs]
+      summary: Get job detail
+      operationId: getAdminJob
+      security:
+        - AdminSession: []
+        - BearerAdmin: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Job detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminJobDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/admin/jobs/{jobId}/source-download:
+    post:
+      tags: [Admin Jobs]
+      summary: Start source download
+      description: Logs admin download and triggers one-time in-progress mail if not sent yet.
+      operationId: startAdminSourceDownload
+      security:
+        - AdminSession: []
+        - BearerAdmin: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Signed source file URLs returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDownloadResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/admin/jobs/{jobId}/deliveries:
+    post:
+      tags: [Admin Deliveries]
+      summary: Create new delivery package
+      description: Uploads finished files, creates a timed delivery token, and triggers the client delivery email.
+      operationId: createAdminDelivery
+      security:
+        - AdminSession: []
+        - BearerAdmin: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - files
+              properties:
+                message:
+                  type: string
+                  maxLength: 5000
+                expiresInDays:
+                  type: integer
+                  minimum: 1
+                  maximum: 30
+                  default: 30
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Delivery created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCreateDeliveryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+
+  /api/v1/admin/deliveries/{deliveryId}/resend:
+    post:
+      tags: [Admin Deliveries]
+      summary: Resend delivery email
+      operationId: resendAdminDeliveryEmail
+      security:
+        - AdminSession: []
+        - BearerAdmin: []
+      parameters:
+        - $ref: '#/components/parameters/DeliveryId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messageOverride:
+                  type: string
+                  maxLength: 5000
+      responses:
+        '200':
+          description: Delivery mail resent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/admin/deliveries/{deliveryId}/regenerate-link:
+    post:
+      tags: [Admin Deliveries]
+      summary: Regenerate delivery access token
+      operationId: regenerateAdminDeliveryLink
+      security:
+        - AdminSession: []
+        - BearerAdmin: []
+      parameters:
+        - $ref: '#/components/parameters/DeliveryId'
+      responses:
+        '200':
+          description: New delivery link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegenerateDeliveryLinkResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/admin/jobs/{jobId}/expire:
+    post:
+      tags: [Admin Jobs]
+      summary: Expire and delete job-related delivery files
+      operationId: expireAdminJob
+      security:
+        - AdminSession: []
+        - BearerAdmin: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Job expired and deletion triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpireJobResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/admin/jobs/{jobId}/events:
+    get:
+      tags: [Admin Events]
+      summary: Get event timeline for a job
+      operationId: listAdminJobEvents
+      security:
+        - AdminSession: []
+        - BearerAdmin: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Event list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobEventsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    AdminSession:
+      type: apiKey
+      in: cookie
+      name: session
+    BearerAdmin:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    JobId:
+      in: path
+      name: jobId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DeliveryId:
+      in: path
+      name: deliveryId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PublicToken:
+      in: path
+      name: token
+      required: true
+      schema:
+        type: string
+        minLength: 24
+        maxLength: 512
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Conflict:
+      description: State conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Expired:
+      description: Token or delivery expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    RateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    PayloadTooLarge:
+      description: Payload exceeds allowed size
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    UnsupportedMediaType:
+      description: Unsupported file type
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+  schemas:
+    ServiceType:
+      type: string
+      enum: [mixing, mastering, production, other]
+    JobStatus:
+      type: string
+      enum: [draft, uploaded, in_progress, delivered, revision_requested, closed, expired_deleted]
+    EventType:
+      type: string
+      enum: [uploaded, admin_downloaded, in_progress_sent, delivered, client_downloaded, revision_requested, expired_deleted]
+    PostalAddress:
+      type: object
+      required: [street1, postalCode, city, country]
+      properties:
+        street1:
+          type: string
+          maxLength: 255
+        street2:
+          type: string
+          maxLength: 255
+          nullable: true
+        postalCode:
+          type: string
+          maxLength: 32
+        city:
+          type: string
+          maxLength: 128
+        region:
+          type: string
+          maxLength: 128
+          nullable: true
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: ISO 3166-1 alpha-2 country code
+    PublicJobCreateRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - address
+        - service
+        - privacyConsent
+        - policyVersion
+        - captchaToken
+      properties:
+        firstName:
+          type: string
+          maxLength: 100
+        lastName:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        address:
+          $ref: '#/components/schemas/PostalAddress'
+        service:
+          $ref: '#/components/schemas/ServiceType'
+        projectNotes:
+          type: string
+          maxLength: 5000
+        privacyConsent:
+          type: boolean
+          const: true
+        policyVersion:
+          type: string
+          maxLength: 32
+        captchaToken:
+          type: string
+          maxLength: 2048
+    PublicJobCreateResponse:
+      type: object
+      required: [jobId, reference, status, upload]
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        reference:
+          type: string
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        upload:
+          type: object
+          required: [provider, endpoint, maxFileSizeBytes, maxTotalSizeBytes, allowedExtensions]
+          properties:
+            provider:
+              type: string
+              enum: [tus]
+            endpoint:
+              type: string
+              format: uri
+            maxFileSizeBytes:
+              type: integer
+              format: int64
+            maxTotalSizeBytes:
+              type: integer
+              format: int64
+            allowedExtensions:
+              type: array
+              items:
+                type: string
+    UploadedFile:
+      type: object
+      required: [storageKey, originalFilename, mimeType, sizeBytes]
+      properties:
+        storageKey:
+          type: string
+        originalFilename:
+          type: string
+        mimeType:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        checksumSha256:
+          type: string
+          nullable: true
+    CompleteUploadRequest:
+      type: object
+      required: [uploadedFiles]
+      properties:
+        uploadedFiles:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/UploadedFile'
+    CompleteUploadResponse:
+      type: object
+      required: [ok, jobId, reference, status, event]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        jobId:
+          type: string
+          format: uuid
+        reference:
+          type: string
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        event:
+          $ref: '#/components/schemas/EventType'
+    PublicDeliveryFile:
+      type: object
+      required: [id, name, sizeBytes]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+    PublicDeliveryResponse:
+      type: object
+      required: [jobReference, service, deliveryVersion, expiresAt, files, revisionAllowed, revisionAlreadyUsed]
+      properties:
+        jobReference:
+          type: string
+        service:
+          $ref: '#/components/schemas/ServiceType'
+        deliveryVersion:
+          type: integer
+        expiresAt:
+          type: string
+          format: date-time
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicDeliveryFile'
+        revisionAllowed:
+          type: boolean
+        revisionAlreadyUsed:
+          type: boolean
+    SignedDownloadUrl:
+      type: object
+      required: [fileId, fileName, url]
+      properties:
+        fileId:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+        url:
+          type: string
+          format: uri
+    DeliveryDownloadResponse:
+      type: object
+      required: [ok, event, download]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        event:
+          $ref: '#/components/schemas/EventType'
+        download:
+          type: object
+          required: [mode, expiresInSeconds, urls]
+          properties:
+            mode:
+              type: string
+              enum: [signed-url, bundle-url]
+            expiresInSeconds:
+              type: integer
+            urls:
+              type: array
+              items:
+                $ref: '#/components/schemas/SignedDownloadUrl'
+    RevisionSubmitResponse:
+      type: object
+      required: [ok, jobReference, status, event]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        jobReference:
+          type: string
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        event:
+          $ref: '#/components/schemas/EventType'
+    AdminLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        totpCode:
+          type: string
+          minLength: 6
+          maxLength: 12
+    AdminProfile:
+      type: object
+      required: [id, email, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+    AdminLoginResponse:
+      type: object
+      required: [ok, admin]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        admin:
+          $ref: '#/components/schemas/AdminProfile'
+    AdminJobListItem:
+      type: object
+      required: [id, reference, clientName, email, service, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        reference:
+          type: string
+        clientName:
+          type: string
+        email:
+          type: string
+          format: email
+        service:
+          $ref: '#/components/schemas/ServiceType'
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        createdAt:
+          type: string
+          format: date-time
+        uploadCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+    AdminJobListResponse:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminJobListItem'
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+    FileRecord:
+      type: object
+      required: [id, name, sizeBytes, uploadedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        uploadedAt:
+          type: string
+          format: date-time
+    DeliverySummary:
+      type: object
+      required: [id, version, expiresAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        expiresAt:
+          type: string
+          format: date-time
+    EventRecord:
+      type: object
+      required: [type, actorType, metadata, createdAt]
+      properties:
+        type:
+          $ref: '#/components/schemas/EventType'
+        actorType:
+          type: string
+          enum: [client, admin, system]
+        actorId:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+    RevisionSummary:
+      type: object
+      required: [id, message, submittedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        message:
+          type: string
+        attachmentFileId:
+          type: string
+          format: uuid
+          nullable: true
+        submittedAt:
+          type: string
+          format: date-time
+    AdminJobDetail:
+      type: object
+      required: [id, reference, status, service, client, sourceFiles, deliveries, revisions, events]
+      properties:
+        id:
+          type: string
+          format: uuid
+        reference:
+          type: string
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        service:
+          $ref: '#/components/schemas/ServiceType'
+        client:
+          type: object
+          required: [firstName, lastName, email, address]
+          properties:
+            firstName:
+              type: string
+            lastName:
+              type: string
+            email:
+              type: string
+              format: email
+            address:
+              $ref: '#/components/schemas/PostalAddress'
+        projectNotes:
+          type: string
+          nullable: true
+        sourceFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileRecord'
+        deliveries:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeliverySummary'
+        revisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RevisionSummary'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventRecord'
+    AdminDownloadResponse:
+      type: object
+      required: [ok, eventsTriggered, download]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        eventsTriggered:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventType'
+        download:
+          type: object
+          required: [mode, expiresInSeconds, urls]
+          properties:
+            mode:
+              type: string
+              enum: [signed-url, bundle-url]
+            expiresInSeconds:
+              type: integer
+            urls:
+              type: array
+              items:
+                $ref: '#/components/schemas/SignedDownloadUrl'
+    AdminCreateDeliveryResponse:
+      type: object
+      required: [ok, delivery, clientAccess]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        delivery:
+          type: object
+          required: [id, version, expiresAt, event]
+          properties:
+            id:
+              type: string
+              format: uuid
+            version:
+              type: integer
+            expiresAt:
+              type: string
+              format: date-time
+            event:
+              $ref: '#/components/schemas/EventType'
+        clientAccess:
+          type: object
+          required: [deliveryUrl]
+          properties:
+            deliveryUrl:
+              type: string
+              format: uri
+    RegenerateDeliveryLinkResponse:
+      type: object
+      required: [ok, deliveryUrl, expiresAt]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        deliveryUrl:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time
+    ExpireJobResponse:
+      type: object
+      required: [ok, status, event]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        event:
+          $ref: '#/components/schemas/EventType'
+    JobEventsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventRecord'
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          const: true
+    ApiError:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
