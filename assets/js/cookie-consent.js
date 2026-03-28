@@ -8,8 +8,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const savedConsent = readConsent();
     const consent = savedConsent || { ...defaultConsent };
+    const initialBannerSelection = {
+        essential: true,
+        externalMedia: savedConsent ? savedConsent.externalMedia : true,
+        updatedAt: savedConsent ? savedConsent.updatedAt : null
+    };
 
-    createConsentUi(consent, Boolean(savedConsent));
+    createConsentUi(initialBannerSelection, Boolean(savedConsent));
     syncExternalMedia(consent.externalMedia);
 
     function createConsentUi(currentConsent, hasStoredConsent) {

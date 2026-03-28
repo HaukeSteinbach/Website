@@ -1,21 +1,19 @@
 /**
- * Hero Fade on Scroll
- * Makes the hero content fade out as user scrolls down
+ * Hero exit on scroll
+ * Starts fading the hero copy before it reaches the bottom edge, without clipping it.
  */
 
 document.addEventListener('DOMContentLoaded', function() {
     const hero = document.querySelector('.hero');
     const heroContent = document.querySelector('.hero-content');
-    const subtitle = document.querySelector('.hero-content .subtitle');
     const mobileQuery = window.matchMedia('(max-width: 768px)');
     
-    if (!hero || !heroContent || !subtitle) return;
+    if (!hero || !heroContent) return;
 
     function resetHeroStyles() {
         heroContent.style.opacity = '1';
         heroContent.style.pointerEvents = 'auto';
-        subtitle.style.clipPath = 'none';
-        subtitle.style.webkitClipPath = 'none';
+        heroContent.style.transform = '';
     }
 
     function updateHeroFade() {
@@ -24,30 +22,25 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Calculate fade based on scroll position
-        const scrolled = window.scrollY;
-        const fadeStart = 0;
-        const fadeEnd = 200; // Fade out over 200px (faster)
         const heroRect = hero.getBoundingClientRect();
-        const subtitleRect = subtitle.getBoundingClientRect();
-        const clipBottom = Math.max(0, subtitleRect.bottom - heroRect.bottom);
-        const maxClip = subtitleRect.height;
-        const clippedAmount = Math.min(clipBottom, maxClip);
-        
-        if (scrolled <= fadeStart) {
-            heroContent.style.opacity = 1;
-        } else if (scrolled >= fadeEnd) {
+        const contentRect = heroContent.getBoundingClientRect();
+        const distanceToEdge = heroRect.bottom - contentRect.bottom;
+        const fadeWindow = 180;
+        const rawProgress = (fadeWindow - distanceToEdge) / fadeWindow;
+        const fadeProgress = Math.max(0, Math.min(1, rawProgress));
+        const easedProgress = fadeProgress * fadeProgress;
+        const opacity = 1 - (easedProgress * 0.92);
+        const drift = easedProgress * 18;
+
+        if (heroRect.bottom <= contentRect.top) {
             heroContent.style.opacity = 0;
-            heroContent.style.pointerEvents = 'none'; // Disable interaction when fully faded
+            heroContent.style.pointerEvents = 'none';
         } else {
-            // Linear fade between fadeStart and fadeEnd
-            const opacity = 1 - ((scrolled - fadeStart) / (fadeEnd - fadeStart));
-            heroContent.style.opacity = opacity;
-            heroContent.style.pointerEvents = 'auto';
+            heroContent.style.opacity = String(opacity);
+            heroContent.style.pointerEvents = opacity < 0.08 ? 'none' : 'auto';
         }
 
-        subtitle.style.clipPath = `inset(0 0 ${clippedAmount}px 0)`;
-        subtitle.style.webkitClipPath = `inset(0 0 ${clippedAmount}px 0)`;
+        heroContent.style.transform = `translate(-50%, calc(-50% + ${drift}px))`;
     }
 
     updateHeroFade();
