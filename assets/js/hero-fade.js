@@ -24,12 +24,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const heroRect = hero.getBoundingClientRect();
         const contentRect = heroContent.getBoundingClientRect();
-        const distanceToEdge = heroRect.bottom - contentRect.bottom;
-        const fadeWindow = 260;
-        const rawProgress = (fadeWindow - distanceToEdge) / fadeWindow;
+        const scrollTop = Math.max(window.scrollY, 0);
+        const fadeStart = 36;
+        const fadeWindow = 220;
+        const rawProgress = (scrollTop - fadeStart) / fadeWindow;
         const fadeProgress = Math.max(0, Math.min(1, rawProgress));
         const opacity = 1 - (fadeProgress * 0.92);
         const drift = fadeProgress * 18;
+
+        if (scrollTop <= fadeStart) {
+            resetHeroStyles();
+            return;
+        }
 
         if (heroRect.bottom <= contentRect.top) {
             heroContent.style.opacity = 0;

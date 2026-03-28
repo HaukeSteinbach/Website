@@ -1,6 +1,9 @@
 # Steinbach - Audio Portfolio
 
-A lightweight, professional DIY audio portfolio website built with plain HTML, CSS, and JavaScript. Perfect for showcasing productions, mixing work, and mastering projects with interactive audio comparisons.
+A plain HTML, CSS, and JavaScript portfolio site with a small Node/Express backend for upload, delivery, and revision workflows.
+
+In the repository, the frontend and backend live side by side.
+In production, both are bundled into one Docker image so the server only has to run a single container.
 
 ## Features
 
@@ -22,49 +25,92 @@ A lightweight, professional DIY audio portfolio website built with plain HTML, C
 - **Lightweight & Fast**: No frameworks, just HTML/CSS/JS
 - **Accessible**: Semantic HTML and proper contrast ratios
 
+## Architecture
+
+The project currently has two parts:
+
+- Static frontend pages at the repository root such as `index.html`, `mixing.html`, `mastering.html`, and the files in `assets/`
+- An Express backend in `backend/` that provides `/api/v1/...` routes for uploads, revisions, deliveries, and admin endpoints
+
+There is no frontend build step.
+The HTML, CSS, JavaScript, and assets are committed directly.
+
+For production, the Docker image copies both parts into one Node runtime:
+
+- Express serves the API routes
+- Express also serves the static frontend files
+- the server starts from `backend/package.json` via `npm start`
+
 ## Project Structure
 
 ```
-website/
+.
 ├── index.html                 # Homepage
 ├── productions.html           # Productions portfolio
-├── mixing.html               # Mixing portfolio
-├── mastering.html            # Mastering with audio comparison
+├── mixing.html                # Mixing portfolio
+├── mastering.html             # Mastering with audio comparison
+├── upload.html                # Upload workflow page
+├── delivery.html              # Delivery workflow page
+├── revision.html              # Revision workflow page
 ├── assets/
-│   ├── css/
-│   │   └── styles.css        # All styling
-│   ├── js/
-│   │   ├── portfolio.js      # Portfolio management & rendering
-│   │   └── audio-comparison.js  # Audio A/B and blend functionality
-│   ├── audio/               # Your audio files (placeholder names)
-│   │   ├── track1-mix.mp3
-│   │   ├── track1-master.mp3
-│   │   ├── track2-mix.mp3
-│   │   ├── track2-master.mp3
-│   │   ├── track3-mix.mp3
-│   │   └── track3-master.mp3
-│   └── images/              # Portfolio cover images
+│   ├── css/styles.css         # Main styling
+│   ├── js/                    # Frontend behavior
+│   ├── audio/                 # Demo audio assets
+│   └── images/                # Site imagery
+├── backend/
+│   ├── package.json           # Node runtime entry and dependencies
+│   ├── src/                   # Express app and API routes
+│   └── migrations/            # Backend workflow scaffolding
+├── Dockerfile                 # Single-image production runtime
+├── docker-compose.yml         # Simple single-container compose
+├── docker-compose.runtime.yml # Pinned-tag runtime compose
 └── README.md
 ```
 
 ## Getting Started
 
-### 1. Local Setup
-No build tools or dependencies required. Simply open `index.html` in your browser:
+### 1. Static Frontend Preview
+
+If you only want to preview the visible site and static media, no build tools are required.
+Use a simple local web server:
 
 ```bash
-# Option 1: Direct file open (works for simple viewing)
-open index.html
-
-# Option 2: Use a local server (recommended for audio files)
 python3 -m http.server 8000
-# or
-php -S localhost:8000
 
 # Then visit: http://localhost:8000
 ```
 
-### 2. Adding Your Content
+This is only a frontend preview.
+API-driven pages and upload workflows are not fully represented by that static server alone.
+
+### 2. Full Production Runtime
+
+The actual deployed application is the Docker image described below in the deployment section.
+
+That runtime serves:
+
+- the static website
+- the API routes
+- file uploads from a mounted upload directory
+
+If you want the same integration model as production, use the Docker image or Docker Compose runtime setup.
+
+### 3. Backend Development
+
+The `backend/` directory contains the Express API service.
+
+For backend-only development:
+
+```bash
+cd backend
+npm install
+npm start
+```
+
+That starts the Node service itself.
+In production, those backend files are bundled together with the frontend into one container.
+
+### 4. Adding Your Content
 
 #### Portfolio Data (Productions & Mixing)
 Edit `assets/js/portfolio.js` and update the `portfolioData` object:
@@ -187,14 +233,14 @@ Adjust grid spacing in `assets/css/styles.css`:
    - Compress before uploading
 
 3. **Hosting**
-   - Any static hosting works: GitHub Pages, Netlify, Vercel
-   - CDN recommended for audio files
-   - Enable gzip compression on server
+    - For the complete application, use the Docker image runtime described below
+    - CDN delivery can still make sense for large media assets
+    - Enable compression on the serving layer in front of the app if your infrastructure provides it
 
 4. **Server Configuration**
-   - Enable CORS for cross-origin audio if needed
-   - Set proper MIME types (audio/mpeg for .mp3)
-   - Use compression to reduce bandwidth
+    - Set proper MIME types for audio assets
+    - Mount a persistent upload directory for workflow files
+    - Use runtime environment variables instead of editing code per environment
 
 ## Deployment
 
@@ -334,7 +380,7 @@ The contact forms are configured for a static hosting flow and submit via JavaSc
 
 ### How it works
 - The frontend form submits via `fetch()` to `https://formspree.io/f/xgopedgb`
-- No PHP runtime is required, so the site works behind plain Nginx in Docker
+- No PHP runtime is required, so the form works in both the static preview and the bundled Node container
 
 ### Important for local testing
 - `python3 -m http.server` can serve the frontend and the form will submit to Formspree when the browser has network access
@@ -361,6 +407,11 @@ loadMasteringItems();               // Load mastering with audio
 
 ## Troubleshooting
 
+### API Routes Not Responding Locally
+- `python3 -m http.server` only serves the frontend files
+- The real API lives in the Node backend or the production Docker image
+- If you need the integrated runtime, use the Docker image or start the backend separately
+
 ### Audio Files Not Playing
 - Check file paths in `portfolio.js`
 - Ensure files exist in `assets/audio/`
@@ -383,7 +434,7 @@ loadMasteringItems();               // Load mastering with audio
 
 ## License
 
-This template is free to use and modify for your portfolio.
+This repository is intended as the working project for the Steinbach website.
 
 ## Tips for Best Results
 
