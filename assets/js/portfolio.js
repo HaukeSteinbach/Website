@@ -338,5 +338,27 @@ function updateActiveNav() {
     });
 }
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', updateActiveNav);
+function initializePortfolioPage() {
+    const portfolioContainer = document.getElementById('portfolio');
+    const mixingContainer = document.getElementById('mixing');
+    const masteringContainer = document.getElementById('mastering');
+
+    if (portfolioContainer) {
+        loadPortfolioItems('productions');
+    }
+
+    if (mixingContainer) {
+        loadMixingItems();
+    }
+
+    if (masteringContainer) {
+        loadMasteringItems();
+    }
+
+    document.dispatchEvent(new CustomEvent('steinbach:portfolio-ready'));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateActiveNav();
+    initializePortfolioPage();
+});

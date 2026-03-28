@@ -10,8 +10,39 @@ import adminRoutes from './routes/admin.js';
 import publicRoutes from './routes/public.js';
 
 const app = express();
+const defaultCspDirectives = helmet.contentSecurityPolicy.getDefaultDirectives();
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...defaultCspDirectives,
+      'script-src': [
+        "'self'",
+        'https://www.youtube.com',
+        'https://www.youtube-nocookie.com',
+        'https://s.ytimg.com'
+      ],
+      'frame-src': [
+        "'self'",
+        'https://www.youtube.com',
+        'https://www.youtube-nocookie.com'
+      ],
+      'connect-src': [
+        "'self'",
+        'https://formspree.io',
+        'https://www.youtube.com',
+        'https://s.ytimg.com'
+      ],
+      'img-src': [
+        "'self'",
+        'data:',
+        'https://i.ytimg.com',
+        'https://*.ytimg.com'
+      ],
+      'media-src': ["'self'", 'blob:']
+    }
+  }
+}));
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || config.corsAllowedOrigins.includes(origin)) {
