@@ -2,6 +2,8 @@
 
 Minimal Express scaffold for the file handoff workflow documented in `../docs/openapi.yaml`.
 
+In production, this backend is bundled together with the static frontend into the single Docker image `ghcr.io/haukesteinbach/haukesteinbach`.
+
 ## Purpose
 
 This backend is a starting structure for:

@@ -1,34 +1,14 @@
 services:
-  website:
+  app:
     image: ghcr.io/haukesteinbach/haukesteinbach:latest
-    container_name: steinbachwebsite
+    container_name: steinbachapp
     restart: unless-stopped
-    depends_on:
-      - backend
     ports:
-      - "8080:80"
-
-  backend:
-    image: ghcr.io/haukesteinbach/haukesteinbach-backend:latest
-    container_name: steinbachbackend
-    restart: unless-stopped
-    environment:
-      PORT: 3000
-      NODE_ENV: production
-      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8080}
-      UPLOAD_DIR: /var/lib/steinbach/uploads
-    expose:
-      - "3000"
+      - "${HOST_PORT:-3000}:3000"
+    env_file:
+      - ./backend/.env.runtime
     volumes:
       - uploads-data:/var/lib/steinbach/uploads
-
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: steinbachwatchtower
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 300 --cleanup steinbachwebsite steinbachbackend
 
 volumes:
   uploads-data:

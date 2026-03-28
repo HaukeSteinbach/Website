@@ -10,8 +10,7 @@ permissions:
   packages: write
 
 env:
-  WEBSITE_IMAGE_NAME: ghcr.io/haukesteinbach/haukesteinbach
-  BACKEND_IMAGE_NAME: ghcr.io/haukesteinbach/haukesteinbach-backend
+  APP_IMAGE_NAME: ghcr.io/haukesteinbach/haukesteinbach
 
 jobs:
   build-and-push:
@@ -34,22 +33,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push website image
+      - name: Build and push app image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.WEBSITE_IMAGE_NAME }}:latest
-            ${{ env.WEBSITE_IMAGE_NAME }}:${{ github.sha }}
-
-      - name: Build and push backend image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ${{ env.BACKEND_IMAGE_NAME }}:latest
-            ${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.APP_IMAGE_NAME }}:latest
+            ${{ env.APP_IMAGE_NAME }}:${{ github.sha }}

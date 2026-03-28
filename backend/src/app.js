@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import path from 'path';
 
 import { config } from './lib/config.js';
 import { errorHandler, notFoundHandler } from './middleware/errors.js';
@@ -22,6 +23,11 @@ app.get('/health', (_request, response) => {
 
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use(express.static(config.publicDir, { index: 'index.html' }));
+
+app.get('/', (_request, response) => {
+  response.sendFile(path.join(config.publicDir, 'index.html'));
+});
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -1,17 +1,14 @@
-FROM nginx:1.27-alpine
+FROM node:22-alpine
 
-WORKDIR /tmp/site
+WORKDIR /app
 
-COPY . .
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY backend/package.json ./package.json
+RUN npm install --omit=dev
 
-RUN rm -rf /usr/share/nginx/html/* \
-    && if [ -d /tmp/site/website ]; then \
-        cp -a /tmp/site/website/. /usr/share/nginx/html/; \
-    else \
-        cp -a /tmp/site/assets /usr/share/nginx/html/ \
-        && find /tmp/site -maxdepth 1 -name '*.html' -exec cp -a {} /usr/share/nginx/html/ \; ; \
-    fi \
-    && rm -rf /tmp/site
+COPY backend/src ./src
+COPY assets ./public/assets
+COPY *.html ./public/
 
-EXPOSE 80
+EXPOSE 3000
+
+CMD ["npm", "start"]

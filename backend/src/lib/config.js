@@ -3,10 +3,12 @@ import path from 'path';
 
 dotenv.config();
 
+const port = Number(process.env.PORT || 3000);
+
 export const config = {
-  port: Number(process.env.PORT || 3000),
+  port,
   nodeEnv: process.env.NODE_ENV || 'development',
-  appOrigin: process.env.APP_ORIGIN || 'http://localhost:8000',
+  appOrigin: process.env.APP_ORIGIN || `http://localhost:${port}`,
   databaseUrl: process.env.DATABASE_URL || '',
   sessionSecret: process.env.SESSION_SECRET || '',
   postmarkServerToken: process.env.POSTMARK_SERVER_TOKEN || '',
@@ -19,5 +21,6 @@ export const config = {
   s3Bucket: process.env.S3_BUCKET || '',
   s3AccessKey: process.env.S3_ACCESS_KEY || '',
   s3SecretKey: process.env.S3_SECRET_KEY || '',
-  uploadDir: process.env.UPLOAD_DIR || path.join(process.cwd(), 'storage', 'uploads')
+  uploadDir: process.env.UPLOAD_DIR || path.join(process.cwd(), 'storage', 'uploads'),
+  publicDir: process.env.PUBLIC_DIR || path.join(process.cwd(), 'public')
 };

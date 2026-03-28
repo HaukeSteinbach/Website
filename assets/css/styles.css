@@ -917,7 +917,7 @@ body {
     z-index: 10;
     text-align: center;
     opacity: 1;
-    transition: opacity 0.22s ease, transform 0.22s ease;
+    transition: opacity 0.22s linear, transform 0.22s linear;
     will-change: opacity, transform;
 }
 

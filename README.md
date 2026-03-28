@@ -203,30 +203,60 @@ Adjust grid spacing in `assets/css/styles.css`:
 This repository includes a GitHub Actions workflow at `.github/workflows/docker-image.yml`.
 
 On every push to `main`, it:
-- builds the Docker image
+- builds one runnable application image
 - logs in to GitHub Container Registry with `GITHUB_TOKEN`
 - pushes `ghcr.io/haukesteinbach/haukesteinbach:latest`
 - pushes `ghcr.io/haukesteinbach/haukesteinbach:<commit-sha>`
 
-### Server Deployment With Docker Compose
+For production deployment, use the immutable `<commit-sha>` tags instead of `latest`.
 
-The server compose file is `docker-compose.yml` and runs:
-- `steinbachwebsite` on external port `8080`
-- `steinbachwatchtower` for automatic updates every 5 minutes
+### Runtime Model
+
+The published image already contains:
+- the static website
+- the Express backend API
+- the upload handling logic
+
+That means the server only has to pull one image and start one container. No Watchtower, no reverse proxy assumptions, no second backend container.
+
+### Server Deployment With Docker Run
+
+The simplest production start command is:
+
+```bash
+docker run -d \
+    --name steinbachapp \
+    -p 3000:3000 \
+    --env-file backend/.env.runtime \
+    -v steinbach_uploads:/var/lib/steinbach/uploads \
+    ghcr.io/haukesteinbach/haukesteinbach:<commit-sha>
+```
+
+If you want to pin the image tag in files instead of in the command line, use `docker-compose.runtime.yml` plus a root `.env` file.
+
+The compose file expects a root `.env` file with a fixed `IMAGE_TAG`. That tag is used for both the website and backend image so the deployment always runs a consistent release.
+
+It runs:
+- `steinbachapp` from `ghcr.io/haukesteinbach/haukesteinbach:${IMAGE_TAG}`
+- on host port `${HOST_PORT:-3000}`
 
 Start the stack on the server:
 
 ```bash
-docker compose pull
-docker compose up -d
+docker compose -f docker-compose.runtime.yml pull
+docker compose -f docker-compose.runtime.yml up -d
 ```
 
 Update manually if needed:
 
 ```bash
-docker compose pull
-docker compose up -d
+docker compose -f docker-compose.runtime.yml pull
+docker compose -f docker-compose.runtime.yml up -d
 ```
+
+Do not use `--build` on the server. That would switch the deployment flow back to local image builds, which is not needed here.
+
+Do not use `latest` for production rollouts. Update `IMAGE_TAG` to the published commit SHA you want to deploy, then run `pull` and `up -d`.
 
 If the GHCR package is private, log in first:
 
@@ -236,26 +266,6 @@ echo "YOUR_GHCR_PAT" | docker login ghcr.io -u HaukeSteinbach --password-stdin
 
 If the GHCR package is public, no login is required for pulling.
 
-### Automatic Updates With Watchtower
-
-Watchtower is included in `docker-compose.yml` and checks for a newer image every 300 seconds.
-
-Pros:
-- no manual SSH deploy step after each push
-- old images are cleaned up automatically with `--cleanup`
-
-Cons:
-- new images roll out automatically once published
-- if a bad image is pushed, it will also be deployed automatically
-
-### Reverse Proxy
-
-If you later attach a domain or HTTPS proxy, forward traffic to:
-
-```text
-http://127.0.0.1:8080
-```
-
 ### Runtime Secrets
 
 Keep real credentials out of git.
@@ -263,14 +273,45 @@ Keep real credentials out of git.
 - Commit only placeholder files such as `backend/.env.example`
 - Create a real `backend/.env.runtime` only on the server
 - Pass secrets to containers at runtime through `env_file`, environment variables, or Docker secrets
-- Do not expose the backend directly to the public internet; put it only on the internal Docker network behind your reverse proxy
 - Configure `POSTMARK_SERVER_TOKEN`, `NOTIFICATION_EMAIL`, and `MAIL_FROM_EMAIL` if uploads should trigger a mail with a secure source download link
+
+### Runtime Variables
+
+These variables are read when the container starts.
+
+Required for a real production setup:
+- `APP_ORIGIN` example `https://haukesteinbach.de`
+- `SESSION_SECRET` example `openssl rand -hex 32`
+
+Required if you want upload notification emails:
+- `POSTMARK_SERVER_TOKEN`
+- `NOTIFICATION_EMAIL`
+- `MAIL_FROM_EMAIL`
+
+Required only if you use object storage instead of local disk later:
+- `S3_ENDPOINT`
+- `S3_REGION`
+- `S3_BUCKET`
+- `S3_ACCESS_KEY`
+- `S3_SECRET_KEY`
+
+Optional with sane defaults:
+- `PORT` default `3000`
+- `NODE_ENV` default `production` in deployment
+- `HOST_PORT` default `3000` in `.env` for Docker Compose
+- `SOURCE_DOWNLOAD_LINK_TTL_HOURS` default `168`
+- `TURNSTILE_SECRET`
+- `UPLOAD_DIR` default `/var/lib/steinbach/uploads` in deployment
+- `DATABASE_URL` reserved for future persistence work
 
 Example server workflow:
 
 ```bash
+cp .env.example .env
 cp backend/.env.example backend/.env.runtime
+# set IMAGE_TAG in .env to the published commit SHA you want to deploy
 # edit backend/.env.runtime on the server only
+docker compose -f docker-compose.runtime.yml pull
 docker compose -f docker-compose.runtime.yml up -d
 ```
 

@@ -4,5 +4,7 @@
 !assets/
 !assets/**
 !*.html
-!website/
-!website/**
+!backend/
+!backend/package.json
+!backend/src/
+!backend/src/**

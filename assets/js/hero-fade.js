@@ -25,12 +25,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const heroRect = hero.getBoundingClientRect();
         const contentRect = heroContent.getBoundingClientRect();
         const distanceToEdge = heroRect.bottom - contentRect.bottom;
-        const fadeWindow = 180;
+        const fadeWindow = 260;
         const rawProgress = (fadeWindow - distanceToEdge) / fadeWindow;
         const fadeProgress = Math.max(0, Math.min(1, rawProgress));
-        const easedProgress = fadeProgress * fadeProgress;
-        const opacity = 1 - (easedProgress * 0.92);
-        const drift = easedProgress * 18;
+        const opacity = 1 - (fadeProgress * 0.92);
+        const drift = fadeProgress * 18;
 
         if (heroRect.bottom <= contentRect.top) {
             heroContent.style.opacity = 0;
