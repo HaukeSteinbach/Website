@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
         status.className = 'handoff-status is-visible';
 
         try {
-            const response = await fetch('https://app.yourdomain.com/api/v1/public/deliveries/demo-token/download', {
+            const response = await fetch(buildApiUrl('/api/v1/public/deliveries/demo-token/download'), {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json'
@@ -33,3 +33,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function buildApiUrl(path) {
+    const base = getApiBaseUrl();
+
+    return `${base}${path}`;
+}
+
+function getApiBaseUrl() {
+    const configuredBase = document.body.dataset.apiBase;
+
+    if (configuredBase) {
+        return configuredBase.replace(/\/$/, '');
+    }
+
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:3000';
+    }
+
+    return window.location.origin;
+}
