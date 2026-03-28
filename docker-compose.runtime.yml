@@ -1,0 +1,34 @@
+services:
+  website:
+    image: ghcr.io/haukesteinbach/haukesteinbach:latest
+    container_name: steinbachwebsite
+    restart: unless-stopped
+    networks:
+      - reverse-proxy
+      - app-internal
+
+  backend:
+    build:
+      context: ./backend
+    container_name: steinbachbackend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.runtime
+    networks:
+      - app-internal
+    expose:
+      - "3000"
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: steinbachwatchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup steinbachwebsite steinbachbackend
+
+networks:
+  reverse-proxy:
+    external: true
+  app-internal:
+    driver: bridge

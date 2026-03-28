@@ -256,6 +256,23 @@ If you later attach a domain or HTTPS proxy, forward traffic to:
 http://127.0.0.1:8080
 ```
 
+### Runtime Secrets
+
+Keep real credentials out of git.
+
+- Commit only placeholder files such as `backend/.env.example`
+- Create a real `backend/.env.runtime` only on the server
+- Pass secrets to containers at runtime through `env_file`, environment variables, or Docker secrets
+- Do not expose the backend directly to the public internet; put it only on the internal Docker network behind your reverse proxy
+
+Example server workflow:
+
+```bash
+cp backend/.env.example backend/.env.runtime
+# edit backend/.env.runtime on the server only
+docker compose -f docker-compose.runtime.yml up -d
+```
+
 ## Workflow Specs
 
 Technical planning documents for the file handoff workflow live in:

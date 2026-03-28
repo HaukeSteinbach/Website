@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async function(event) {
         event.preventDefault();
 
+        if (!fileInput.files || fileInput.files.length === 0) {
+            status.textContent = 'Select at least one file before creating an upload job.';
+            status.className = 'handoff-status is-visible error';
+            return;
+        }
+
         const formData = new FormData(form);
         const payload = {
             firstName: formData.get('firstName'),
@@ -46,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
         status.className = 'handoff-status is-visible';
 
         try {
-            const response = await fetch('https://app.yourdomain.com/api/v1/public/jobs', {
+            const response = await fetch(buildApiUrl('/api/v1/public/jobs'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -60,8 +66,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const result = await response.json();
-            status.textContent = 'Upload job created. Integrate tus upload next.';
-            status.className = 'handoff-status is-visible success';
+
+            if (!hasConfiguredUploadEndpoint(result)) {
+                status.textContent = 'Upload job created, but file transfer is not enabled on the server yet. The backend still returns a placeholder upload endpoint.';
+                status.className = 'handoff-status is-visible error';
+            } else {
+                status.textContent = 'Upload job created. File upload endpoint is ready for integration.';
+                status.className = 'handoff-status is-visible success';
+            }
+
             successPanel.hidden = false;
             summaryList.innerHTML = [
                 `<div><dt>Reference</dt><dd>${result.reference}</dd></div>`,
@@ -101,4 +114,30 @@ function formatBytes(size) {
     }
 
     return `${value.toFixed(1)} ${units[unitIndex]}`;
+}
+
+function buildApiUrl(path) {
+    const base = getApiBaseUrl();
+
+    return `${base}${path}`;
+}
+
+function getApiBaseUrl() {
+    const configuredBase = document.body.dataset.apiBase;
+
+    if (configuredBase) {
+        return configuredBase.replace(/\/$/, '');
+    }
+
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:3000';
+    }
+
+    return window.location.origin;
+}
+
+function hasConfiguredUploadEndpoint(result) {
+    const endpoint = result?.upload?.endpoint;
+
+    return Boolean(endpoint) && !String(endpoint).includes('yourdomain.com');
 }
