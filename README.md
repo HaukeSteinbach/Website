@@ -329,6 +329,9 @@ Required for a real production setup:
 - `APP_ORIGIN` example `https://haukesteinbach.de`
 - `SESSION_SECRET` example `openssl rand -hex 32`
 
+Useful when frontend preview and backend run on different origins locally:
+- `CORS_ALLOWED_ORIGINS` example `https://haukesteinbach.de,http://localhost:8000,http://127.0.0.1:8000`
+
 Required if you want upload notification emails:
 - `POSTMARK_SERVER_TOKEN`
 - `NOTIFICATION_EMAIL`

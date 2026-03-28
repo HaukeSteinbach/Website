@@ -4,6 +4,18 @@ import path from 'path';
 dotenv.config();
 
 const port = Number(process.env.PORT || 3000);
+const defaultCorsAllowedOrigins = [
+  process.env.APP_ORIGIN,
+  'http://localhost:8000',
+  'http://127.0.0.1:8000',
+  `http://localhost:${port}`,
+  `http://127.0.0.1:${port}`
+].filter(Boolean);
+
+const corsAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || defaultCorsAllowedOrigins.join(','))
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 export const config = {
   port,

@@ -12,15 +12,17 @@ class SimpleAudioComparison {
      * Initialize audio comparison for all mastering and mixing cards
      */
     init() {
-        const toggles = document.querySelectorAll('.toggle-checkbox');
-        const playButtons = document.querySelectorAll('.btn-play-pause');
+        const toggles = document.querySelectorAll('.toggle-checkbox:not([data-comparison-bound="true"])');
+        const playButtons = document.querySelectorAll('.btn-play-pause:not([data-comparison-bound="true"])');
 
         toggles.forEach(toggle => {
             toggle.addEventListener('change', (e) => this.handleToggle(e));
+            toggle.dataset.comparisonBound = 'true';
         });
 
         playButtons.forEach(btn => {
             btn.addEventListener('click', (e) => this.handlePlayPause(e));
+            btn.dataset.comparisonBound = 'true';
         });
 
         this.bindEndedHandlers();
@@ -53,6 +55,10 @@ class SimpleAudioComparison {
         const audios = document.querySelectorAll('.mix-audio, .master-audio, .raw-audio, .mixed-audio');
 
         audios.forEach(audio => {
+            if (audio.dataset.comparisonEndedBound === 'true') {
+                return;
+            }
+
             audio.addEventListener('ended', () => {
                 const card = audio.closest('article');
                 if (!card) return;
@@ -70,6 +76,8 @@ class SimpleAudioComparison {
                 this.stopSync(cardId);
                 this.setButtonState(button, false);
             });
+
+            audio.dataset.comparisonEndedBound = 'true';
         });
     }
 
@@ -207,4 +215,8 @@ class SimpleAudioComparison {
 document.addEventListener('DOMContentLoaded', () => {
     const comparison = new SimpleAudioComparison();
     comparison.init();
+
+    document.addEventListener('steinbach:portfolio-ready', () => {
+        comparison.init();
+    });
 });
