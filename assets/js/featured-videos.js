@@ -1,17 +1,22 @@
 document.addEventListener('DOMContentLoaded', function() {
     const featuredItems = Array.from(document.querySelectorAll('.featured-home .media-item'));
-    const iframes = featuredItems
-        .map(function(item) {
-            return item.querySelector('iframe');
-        })
-        .filter(Boolean);
+    let players = [];
+    let initialized = false;
+    let apiRequested = false;
 
-    if (!featuredItems.length || !iframes.length) {
+    if (!featuredItems.length) {
         return;
     }
 
-    let players = [];
     const pauseResetTimers = new WeakMap();
+
+    function getReadyIframes() {
+        return featuredItems
+            .map(function(item) {
+                return item.querySelector('iframe[src]');
+            })
+            .filter(Boolean);
+    }
 
     function clearPauseReset(item) {
         const timerId = pauseResetTimers.get(item);
@@ -45,6 +50,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function bindPlayers() {
+        const iframes = getReadyIframes();
+
+        if (!iframes.length || initialized || !window.YT || typeof window.YT.Player !== 'function') {
+            return;
+        }
+
+        initialized = true;
         players = iframes.map(function(iframe) {
             const item = iframe.closest('.media-item');
             const player = new window.YT.Player(iframe, {
@@ -86,6 +98,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function ensureYouTubeApi() {
+        if (apiRequested || window.YT) {
+            bindPlayers();
+            return;
+        }
+
+        if (!getReadyIframes().length) {
+            return;
+        }
+
+        apiRequested = true;
+
+        const apiScript = document.createElement('script');
+        apiScript.src = 'https://www.youtube.com/iframe_api';
+        apiScript.async = true;
+        document.head.appendChild(apiScript);
+    }
+
     const previousReady = window.onYouTubeIframeAPIReady;
     window.onYouTubeIframeAPIReady = function() {
         if (typeof previousReady === 'function') {
@@ -97,11 +127,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (window.YT && typeof window.YT.Player === 'function') {
         bindPlayers();
-        return;
+    } else {
+        ensureYouTubeApi();
     }
 
-    const apiScript = document.createElement('script');
-    apiScript.src = 'https://www.youtube.com/iframe_api';
-    apiScript.async = true;
-    document.head.appendChild(apiScript);
+    document.addEventListener('steinbach:external-media-ready', function() {
+        ensureYouTubeApi();
+    });
 });
