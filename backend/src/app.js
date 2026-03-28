@@ -11,6 +11,12 @@ import publicRoutes from './routes/public.js';
 
 const app = express();
 const defaultCspDirectives = helmet.contentSecurityPolicy.getDefaultDirectives();
+const localPreviewOrigins = new Set([
+  'http://localhost:8000',
+  'http://127.0.0.1:8000',
+  `http://localhost:${config.port}`,
+  `http://127.0.0.1:${config.port}`
+]);
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -43,17 +49,31 @@ app.use(helmet({
     }
   }
 }));
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || config.corsAllowedOrigins.includes(origin)) {
-      callback(null, true);
-      return;
-    }
+app.use((request, response, next) => {
+  const forwardedProtocol = request.get('x-forwarded-proto');
+  const forwardedHost = request.get('x-forwarded-host');
+  const requestProtocol = forwardedProtocol ? forwardedProtocol.split(',')[0].trim() : request.protocol;
+  const requestHost = forwardedHost ? forwardedHost.split(',')[0].trim() : request.get('host');
+  const sameOrigin = requestHost ? `${requestProtocol}://${requestHost}` : null;
+  const allowedOrigins = new Set([
+    config.appOrigin,
+    sameOrigin,
+    ...config.corsAllowedOrigins,
+    ...(config.nodeEnv === 'production' ? [] : Array.from(localPreviewOrigins))
+  ].filter(Boolean));
 
-    callback(new Error(`CORS origin not allowed: ${origin}`));
-  },
-  credentials: true
-}));
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS origin not allowed: ${origin}`));
+    },
+    credentials: true
+  })(request, response, next);
+});
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));

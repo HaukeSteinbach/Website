@@ -332,6 +332,9 @@ Required for a real production setup:
 Useful when frontend preview and backend run on different origins locally:
 - `CORS_ALLOWED_ORIGINS` example `https://haukesteinbach.de,http://localhost:8000,http://127.0.0.1:8000`
 
+The backend always allows its own request origin automatically.
+`CORS_ALLOWED_ORIGINS` is only for additional origins such as local preview servers.
+
 Required if you want upload notification emails:
 - `POSTMARK_SERVER_TOKEN`
 - `NOTIFICATION_EMAIL`
