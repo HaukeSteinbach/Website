@@ -3,6 +3,7 @@ FROM nginx:1.27-alpine
 WORKDIR /tmp/site
 
 COPY . .
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 RUN rm -rf /usr/share/nginx/html/* \
     && if [ -d /tmp/site/website ]; then \

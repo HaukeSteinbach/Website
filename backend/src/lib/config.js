@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
@@ -14,5 +15,6 @@ export const config = {
   s3Region: process.env.S3_REGION || '',
   s3Bucket: process.env.S3_BUCKET || '',
   s3AccessKey: process.env.S3_ACCESS_KEY || '',
-  s3SecretKey: process.env.S3_SECRET_KEY || ''
+  s3SecretKey: process.env.S3_SECRET_KEY || '',
+  uploadDir: process.env.UPLOAD_DIR || path.join(process.cwd(), 'storage', 'uploads')
 };

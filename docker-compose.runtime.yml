@@ -18,6 +18,8 @@ services:
       - app-internal
     expose:
       - "3000"
+    volumes:
+      - uploads-data:/var/lib/steinbach/uploads
 
   watchtower:
     image: containrrr/watchtower:latest
@@ -32,3 +34,6 @@ networks:
     external: true
   app-internal:
     driver: bridge
+
+volumes:
+  uploads-data:

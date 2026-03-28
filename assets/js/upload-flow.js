@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const status = document.getElementById('upload-status');
     const successPanel = document.getElementById('upload-success-panel');
     const summaryList = document.getElementById('upload-summary-list');
+    const submitButton = form ? form.querySelector('button[type="submit"]') : null;
+    const originalButtonText = submitButton ? submitButton.textContent : '';
 
     if (!form || !fileInput || !selectFilesButton || !fileList || !status || !successPanel || !summaryList) {
         return;
@@ -51,6 +53,11 @@ document.addEventListener('DOMContentLoaded', function() {
         status.textContent = 'Creating upload job...';
         status.className = 'handoff-status is-visible';
 
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Uploading...';
+        }
+
         try {
             const response = await fetch(buildApiUrl('/api/v1/public/jobs'), {
                 method: 'POST',
@@ -62,28 +69,41 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) {
-                throw new Error('Unable to create upload job.');
+                throw new Error(await getApiErrorMessage(response, 'Unable to create upload job.'));
             }
 
             const result = await response.json();
 
             if (!hasConfiguredUploadEndpoint(result)) {
-                status.textContent = 'Upload job created, but file transfer is not enabled on the server yet. The backend still returns a placeholder upload endpoint.';
-                status.className = 'handoff-status is-visible error';
-            } else {
-                status.textContent = 'Upload job created. File upload endpoint is ready for integration.';
-                status.className = 'handoff-status is-visible success';
+                throw new Error('Upload job created, but the file upload endpoint is not configured correctly.');
             }
+
+            status.textContent = 'Uploading files...';
+
+            const uploadResponse = await uploadSelectedFiles(resolveUploadUrl(result.upload.endpoint), fileInput.files);
+
+            status.textContent = 'Finalizing upload...';
+
+            const completionResponse = await finalizeUpload(result.jobId, uploadResponse.uploadedFiles);
+
+            status.textContent = `Files uploaded successfully. Reference ${completionResponse.reference}.`;
+            status.className = 'handoff-status is-visible success';
 
             successPanel.hidden = false;
             summaryList.innerHTML = [
-                `<div><dt>Reference</dt><dd>${result.reference}</dd></div>`,
+                `<div><dt>Reference</dt><dd>${completionResponse.reference}</dd></div>`,
                 `<div><dt>Job ID</dt><dd>${result.jobId}</dd></div>`,
+                `<div><dt>Files</dt><dd>${uploadResponse.uploadedFiles.length}</dd></div>`,
                 `<div><dt>Upload endpoint</dt><dd>${result.upload.endpoint}</dd></div>`
             ].join('');
         } catch (error) {
-            status.textContent = error.message;
+            status.textContent = getUploadErrorMessage(error);
             status.className = 'handoff-status is-visible error';
+        } finally {
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
+            }
         }
     });
 });
@@ -140,4 +160,70 @@ function hasConfiguredUploadEndpoint(result) {
     const endpoint = result?.upload?.endpoint;
 
     return Boolean(endpoint) && !String(endpoint).includes('yourdomain.com');
+}
+
+function resolveUploadUrl(endpoint) {
+    if (/^https?:\/\//i.test(endpoint)) {
+        return endpoint;
+    }
+
+    return buildApiUrl(endpoint.startsWith('/') ? endpoint : `/${endpoint}`);
+}
+
+async function uploadSelectedFiles(endpoint, files) {
+    const payload = new FormData();
+
+    Array.from(files).forEach(function(file) {
+        payload.append('files', file);
+    });
+
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        body: payload,
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(await getApiErrorMessage(response, 'Unable to upload files.'));
+    }
+
+    return response.json();
+}
+
+async function finalizeUpload(jobId, uploadedFiles) {
+    const response = await fetch(buildApiUrl(`/api/v1/public/jobs/${jobId}/uploads/complete`), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ uploadedFiles: uploadedFiles })
+    });
+
+    if (!response.ok) {
+        throw new Error(await getApiErrorMessage(response, 'Unable to finalize the upload.'));
+    }
+
+    return response.json();
+}
+
+async function getApiErrorMessage(response, fallbackMessage) {
+    const contentType = response.headers.get('content-type') || '';
+
+    if (!contentType.includes('application/json')) {
+        return fallbackMessage;
+    }
+
+    const result = await response.json();
+    return result.message || fallbackMessage;
+}
+
+function getUploadErrorMessage(error) {
+    if (error && error.message === 'Failed to fetch') {
+        return 'The upload service is not reachable right now. The website is up, but the API backend is not responding yet.';
+    }
+
+    return error && error.message ? error.message : 'Upload failed. Please try again.';
 }
