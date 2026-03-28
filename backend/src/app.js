@@ -55,10 +55,11 @@ app.use((request, response, next) => {
   const requestProtocol = forwardedProtocol ? forwardedProtocol.split(',')[0].trim() : request.protocol;
   const requestHost = forwardedHost ? forwardedHost.split(',')[0].trim() : request.get('host');
   const sameOrigin = requestHost ? `${requestProtocol}://${requestHost}` : null;
+  const configuredCorsOrigins = Array.isArray(config.corsAllowedOrigins) ? config.corsAllowedOrigins : [];
   const allowedOrigins = new Set([
     config.appOrigin,
     sameOrigin,
-    ...config.corsAllowedOrigins,
+    ...configuredCorsOrigins,
     ...(config.nodeEnv === 'production' ? [] : Array.from(localPreviewOrigins))
   ].filter(Boolean));
 
