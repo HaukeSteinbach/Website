@@ -3,7 +3,7 @@ import path from 'path';
 
 dotenv.config();
 
-const port = Number(process.env.PORT || 3000);
+const port = Number(process.env.PORT || 80);
 
 export const config = {
   port,
