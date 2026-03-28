@@ -624,7 +624,7 @@ components:
           properties:
             provider:
               type: string
-              enum: [tus]
+              enum: [multipart, tus]
             endpoint:
               type: string
               format: uri

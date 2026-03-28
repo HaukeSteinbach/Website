@@ -10,8 +10,8 @@ import { createPublicReference } from '../lib/reference.js';
 
 const router = express.Router();
 const allowedExtensions = ['wav', 'aiff', 'flac', 'zip', 'rar', 'mp3'];
-const maxFileSizeBytes = 21474836480;
-const maxTotalSizeBytes = 107374182400;
+const maxFileSizeBytes = 10737418240;
+const maxTotalSizeBytes = 10737418240;
 const jobs = new Map();
 
 const uploadStorage = multer.diskStorage({
