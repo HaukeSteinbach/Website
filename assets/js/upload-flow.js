@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const completionResponse = await finalizeUpload(result.jobId, uploadResponse.uploadedFiles);
 
-            status.textContent = `Files uploaded successfully. Reference ${completionResponse.reference}.`;
+            status.textContent = buildUploadSuccessMessage(completionResponse);
             status.className = 'handoff-status is-visible success';
 
             successPanel.hidden = false;
@@ -94,7 +94,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 `<div><dt>Reference</dt><dd>${completionResponse.reference}</dd></div>`,
                 `<div><dt>Job ID</dt><dd>${result.jobId}</dd></div>`,
                 `<div><dt>Files</dt><dd>${uploadResponse.uploadedFiles.length}</dd></div>`,
-                `<div><dt>Upload endpoint</dt><dd>${result.upload.endpoint}</dd></div>`
+                `<div><dt>Upload endpoint</dt><dd>${result.upload.endpoint}</dd></div>`,
+                `<div><dt>Notification</dt><dd>${formatNotificationStatus(completionResponse.notification)}</dd></div>`
             ].join('');
         } catch (error) {
             status.textContent = getUploadErrorMessage(error);
@@ -226,4 +227,32 @@ function getUploadErrorMessage(error) {
     }
 
     return error && error.message ? error.message : 'Upload failed. Please try again.';
+}
+
+function buildUploadSuccessMessage(completionResponse) {
+    if (completionResponse?.notification?.sent) {
+        return `Files uploaded successfully. A download link was sent to ${completionResponse.notification.recipient}.`;
+    }
+
+    if (completionResponse?.notification?.reason === 'mail_not_configured') {
+        return `Files uploaded successfully. Email notification is not configured yet.`;
+    }
+
+    return `Files uploaded successfully. Reference ${completionResponse.reference}.`;
+}
+
+function formatNotificationStatus(notification) {
+    if (!notification) {
+        return 'Not available';
+    }
+
+    if (notification.sent) {
+        return `Sent to ${notification.recipient}`;
+    }
+
+    if (notification.reason === 'mail_not_configured') {
+        return 'Mail not configured';
+    }
+
+    return 'Delivery failed';
 }

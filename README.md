@@ -264,6 +264,7 @@ Keep real credentials out of git.
 - Create a real `backend/.env.runtime` only on the server
 - Pass secrets to containers at runtime through `env_file`, environment variables, or Docker secrets
 - Do not expose the backend directly to the public internet; put it only on the internal Docker network behind your reverse proxy
+- Configure `POSTMARK_SERVER_TOKEN`, `NOTIFICATION_EMAIL`, and `MAIL_FROM_EMAIL` if uploads should trigger a mail with a secure source download link
 
 Example server workflow:
 
