@@ -8,7 +8,7 @@ const port = Number(process.env.PORT || 3000);
 export const config = {
   port,
   nodeEnv: process.env.NODE_ENV || 'development',
-  appOrigin: process.env.APP_ORIGIN || `http://localhost:${port}`,
+  appOrigin: process.env.APP_ORIGIN || `https://haukesteinbach.de`,
   databaseUrl: process.env.DATABASE_URL || '',
   sessionSecret: process.env.SESSION_SECRET || '',
   postmarkServerToken: process.env.POSTMARK_SERVER_TOKEN || '',
