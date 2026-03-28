@@ -4,11 +4,24 @@ import path from 'path';
 dotenv.config();
 
 const port = Number(process.env.PORT || 3000);
+const defaultCorsAllowedOrigins = [
+  process.env.APP_ORIGIN,
+  'http://localhost:8000',
+  'http://127.0.0.1:8000',
+  `http://localhost:${port}`,
+  `http://127.0.0.1:${port}`
+].filter(Boolean);
+
+const corsAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || defaultCorsAllowedOrigins.join(','))
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 export const config = {
   port,
   nodeEnv: process.env.NODE_ENV || 'development',
   appOrigin: process.env.APP_ORIGIN || `http://localhost:${port}`,
+  corsAllowedOrigins,
   databaseUrl: process.env.DATABASE_URL || '',
   sessionSecret: process.env.SESSION_SECRET || '',
   postmarkServerToken: process.env.POSTMARK_SERVER_TOKEN || '',
