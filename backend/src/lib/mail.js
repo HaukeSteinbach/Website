@@ -1,4 +1,8 @@
+import { ServerClient } from 'postmark';
+
 import { config } from './config.js';
+
+let postmarkClient = null;
 
 export async function sendUploadNotificationEmail({ job, downloadUrl }) {
   if (!config.postmarkServerToken || !config.notificationEmail || !config.mailFromEmail) {
@@ -38,39 +42,58 @@ export async function sendUploadNotificationEmail({ job, downloadUrl }) {
     <p><strong>Project notes:</strong><br>${escapeHtml(job.projectNotes || 'None provided.').replace(/\n/g, '<br>')}</p>
   `;
 
-  const response = await fetch('https://api.postmarkapp.com/email', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'X-Postmark-Server-Token': config.postmarkServerToken
-    },
-    body: JSON.stringify({
+  try {
+    const client = getPostmarkClient();
+    const response = await client.sendEmail({
       From: config.mailFromEmail,
       To: config.notificationEmail,
       Subject: subject,
       TextBody: textBody,
       HtmlBody: htmlBody,
-      MessageStream: 'outbound'
-    })
-  });
+      MessageStream: config.postmarkMessageStream,
+      ReplyTo: config.mailReplyTo || job.email
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
+    return {
+      sent: true,
+      skipped: false,
+      reason: null,
+      providerMessageId: response.MessageID || null
+    };
+  } catch (error) {
+    const details = extractPostmarkError(error);
 
     return {
       sent: false,
       skipped: false,
       reason: 'mail_delivery_failed',
-      details: errorText
+      details
     };
   }
+}
 
-  return {
-    sent: true,
-    skipped: false,
-    reason: null
-  };
+function getPostmarkClient() {
+  if (!postmarkClient) {
+    postmarkClient = new ServerClient(config.postmarkServerToken);
+  }
+
+  return postmarkClient;
+}
+
+function extractPostmarkError(error) {
+  if (!error) {
+    return 'Unknown Postmark error';
+  }
+
+  if (typeof error.message === 'string' && error.message) {
+    return error.message;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch (_jsonError) {
+    return 'Unserializable Postmark error';
+  }
 }
 
 function escapeHtml(value) {

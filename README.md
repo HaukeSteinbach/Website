@@ -337,8 +337,10 @@ The backend always allows its own request origin automatically.
 
 Required if you want upload notification emails:
 - `POSTMARK_SERVER_TOKEN`
+- `POSTMARK_MESSAGE_STREAM` default `outbound`
 - `NOTIFICATION_EMAIL`
 - `MAIL_FROM_EMAIL`
+- `MAIL_REPLY_TO` optional, otherwise the upload client email is used as Reply-To
 
 Required only if you use object storage instead of local disk later:
 - `S3_ENDPOINT`

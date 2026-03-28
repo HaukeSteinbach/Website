@@ -95,7 +95,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 `<div><dt>Job ID</dt><dd>${result.jobId}</dd></div>`,
                 `<div><dt>Files</dt><dd>${uploadResponse.uploadedFiles.length}</dd></div>`,
                 `<div><dt>Upload endpoint</dt><dd>${result.upload.endpoint}</dd></div>`,
-                `<div><dt>Notification</dt><dd>${formatNotificationStatus(completionResponse.notification)}</dd></div>`
+                `<div><dt>Notification</dt><dd>${formatNotificationStatus(completionResponse.notification)}</dd></div>`,
+                `<div><dt>Source download</dt><dd>${formatSourceDownloadLink(completionResponse.sourceDownload)}</dd></div>`
             ].join('');
         } catch (error) {
             status.textContent = getUploadErrorMessage(error);
@@ -235,7 +236,7 @@ function buildUploadSuccessMessage(completionResponse) {
     }
 
     if (completionResponse?.notification?.reason === 'mail_not_configured') {
-        return `Files uploaded successfully. Email notification is not configured yet.`;
+        return 'Files uploaded successfully. Email notification is not configured yet. Use the source download link below.';
     }
 
     return `Files uploaded successfully. Reference ${completionResponse.reference}.`;
@@ -255,4 +256,14 @@ function formatNotificationStatus(notification) {
     }
 
     return 'Delivery failed';
+}
+
+function formatSourceDownloadLink(sourceDownload) {
+    const pageUrl = sourceDownload && sourceDownload.pageUrl;
+
+    if (!pageUrl) {
+        return 'Not available';
+    }
+
+    return `<a href="${pageUrl}" target="_blank" rel="noopener noreferrer">Open download page</a>`;
 }
