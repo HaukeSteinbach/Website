@@ -7,7 +7,8 @@ class SimpleAudioComparison {
     constructor() {
         this.audioContext = null;
         this.cardStates = new Map();
-        this.eagerPreload = !this.isResourceConstrainedDevice();
+        this.useMediaElementFallback = this.isResourceConstrainedDevice();
+        this.eagerPreload = !this.useMediaElementFallback;
     }
 
     isResourceConstrainedDevice() {
@@ -59,6 +60,8 @@ class SimpleAudioComparison {
                 card,
                 toggle,
                 button,
+                primaryElement: primaryAudio,
+                secondaryElement: secondaryAudio,
                 primarySrc: this.getAudioSource(primaryAudio),
                 secondarySrc: this.getAudioSource(secondaryAudio),
                 primaryBuffer: null,
@@ -72,10 +75,17 @@ class SimpleAudioComparison {
                 duration: 0,
                 isPlaying: false,
                 endTimerId: null,
+                syncIntervalId: null,
                 loadPromise: null,
                 ready: false,
                 hasError: false
             };
+
+            if (this.useMediaElementFallback) {
+                primaryAudio.preload = 'none';
+                secondaryAudio.preload = 'none';
+                this.applyMediaElementMix(state);
+            }
 
             this.cardStates.set(state.cardId, state);
             this.updateControlState(state);
@@ -143,6 +153,18 @@ class SimpleAudioComparison {
             state.loadPromise = (async () => {
                 this.updateControlState(state);
 
+                if (this.useMediaElementFallback) {
+                    const [primaryElement, secondaryElement] = await Promise.all([
+                        this.loadMediaElement(state.primaryElement),
+                        this.loadMediaElement(state.secondaryElement)
+                    ]);
+
+                    state.duration = Math.min(primaryElement.duration || Infinity, secondaryElement.duration || Infinity);
+                    state.ready = Number.isFinite(state.duration) && state.duration > 0;
+                    state.hasError = !state.ready;
+                    return;
+                }
+
                 const [primaryBuffer, secondaryBuffer] = await Promise.all([
                     this.fetchBuffer(state.primarySrc),
                     this.fetchBuffer(state.secondarySrc)
@@ -165,6 +187,46 @@ class SimpleAudioComparison {
         }
 
         return state.loadPromise;
+    }
+
+    loadMediaElement(audioElement) {
+        if (!audioElement) {
+            return Promise.reject(new Error('Audio element not found.'));
+        }
+
+        if (audioElement.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+            return Promise.resolve(audioElement);
+        }
+
+        return new Promise((resolve, reject) => {
+            const cleanup = () => {
+                audioElement.removeEventListener('canplay', onReady);
+                audioElement.removeEventListener('canplaythrough', onReady);
+                audioElement.removeEventListener('loadeddata', onReady);
+                audioElement.removeEventListener('error', onError);
+            };
+
+            const onReady = () => {
+                if (audioElement.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
+                    return;
+                }
+
+                cleanup();
+                resolve(audioElement);
+            };
+
+            const onError = () => {
+                cleanup();
+                reject(new Error('Audio element failed to load.'));
+            };
+
+            audioElement.addEventListener('canplay', onReady);
+            audioElement.addEventListener('canplaythrough', onReady);
+            audioElement.addEventListener('loadeddata', onReady);
+            audioElement.addEventListener('error', onError, { once: true });
+            audioElement.preload = 'auto';
+            audioElement.load();
+        });
     }
 
     updateControlState(state) {
@@ -223,6 +285,50 @@ class SimpleAudioComparison {
         state.secondaryGain.gain.setValueAtTime(state.secondaryGain.gain.value, now);
         state.primaryGain.gain.linearRampToValueAtTime(primaryTarget, now + fadeDuration);
         state.secondaryGain.gain.linearRampToValueAtTime(secondaryTarget, now + fadeDuration);
+    }
+
+    applyMediaElementMix(state) {
+        if (!state.primaryElement || !state.secondaryElement) {
+            return;
+        }
+
+        const activeKey = this.getActiveKey(state);
+        state.primaryElement.muted = activeKey !== 'primary';
+        state.secondaryElement.muted = activeKey !== 'secondary';
+        state.primaryElement.volume = 1;
+        state.secondaryElement.volume = 1;
+    }
+
+    stopMediaSync(state) {
+        if (!state.syncIntervalId) {
+            return;
+        }
+
+        window.clearInterval(state.syncIntervalId);
+        state.syncIntervalId = null;
+    }
+
+    startMediaSync(state) {
+        if (!state.primaryElement || !state.secondaryElement) {
+            return;
+        }
+
+        this.stopMediaSync(state);
+        state.syncIntervalId = window.setInterval(() => {
+            if (state.primaryElement.paused || state.secondaryElement.paused) {
+                return;
+            }
+
+            const activeElement = this.getActiveKey(state) === 'primary' ? state.primaryElement : state.secondaryElement;
+            const inactiveElement = activeElement === state.primaryElement ? state.secondaryElement : state.primaryElement;
+            const drift = Math.abs(activeElement.currentTime - inactiveElement.currentTime);
+
+            if (drift <= 0.12) {
+                return;
+            }
+
+            inactiveElement.currentTime = activeElement.currentTime;
+        }, 200);
     }
 
     clearEndTimer(state) {
@@ -284,6 +390,39 @@ class SimpleAudioComparison {
     finishPlayback(state, resetOffset = false) {
         this.clearEndTimer(state);
 
+        if (this.useMediaElementFallback) {
+            this.stopMediaSync(state);
+
+            if (!resetOffset) {
+                const activeElement = this.getActiveKey(state) === 'primary' ? state.primaryElement : state.secondaryElement;
+                state.offset = activeElement ? activeElement.currentTime : state.offset;
+            } else {
+                state.offset = 0;
+                state.toggle.checked = false;
+
+                if (state.primaryElement) {
+                    state.primaryElement.currentTime = 0;
+                }
+
+                if (state.secondaryElement) {
+                    state.secondaryElement.currentTime = 0;
+                }
+            }
+
+            if (state.primaryElement) {
+                state.primaryElement.pause();
+            }
+
+            if (state.secondaryElement) {
+                state.secondaryElement.pause();
+            }
+
+            state.isPlaying = false;
+            this.applyMediaElementMix(state);
+            this.setButtonState(state, false);
+            return;
+        }
+
         if (!resetOffset) {
             state.offset = this.getCurrentOffset(state);
         } else {
@@ -299,6 +438,16 @@ class SimpleAudioComparison {
     unloadCardAudio(state) {
         if (state.isPlaying) {
             return;
+        }
+
+        if (this.useMediaElementFallback) {
+            this.stopMediaSync(state);
+            state.primaryElement.pause();
+            state.secondaryElement.pause();
+            state.primaryElement.preload = 'none';
+            state.secondaryElement.preload = 'none';
+            state.primaryElement.currentTime = 0;
+            state.secondaryElement.currentTime = 0;
         }
 
         state.primaryBuffer = null;
@@ -317,6 +466,32 @@ class SimpleAudioComparison {
 
     async startPlayback(state) {
         if (!state.ready || state.hasError) {
+            return;
+        }
+
+        if (this.useMediaElementFallback) {
+            this.pauseOtherCards(state.cardId);
+            this.finishPlayback(state, false);
+
+            const startOffset = Math.min(state.offset, Math.max(state.duration - 0.01, 0));
+            state.primaryElement.currentTime = startOffset;
+            state.secondaryElement.currentTime = startOffset;
+            this.applyMediaElementMix(state);
+
+            const playbackResults = await Promise.allSettled([
+                state.primaryElement.play(),
+                state.secondaryElement.play()
+            ]);
+
+            if (playbackResults.some((result) => result.status === 'rejected')) {
+                this.finishPlayback(state, false);
+                return;
+            }
+
+            state.offset = startOffset;
+            this.setButtonState(state, true);
+            this.startMediaSync(state);
+            this.scheduleEnd(state);
             return;
         }
 
@@ -382,6 +557,18 @@ class SimpleAudioComparison {
         }
 
         if (state.isPlaying) {
+            if (this.useMediaElementFallback) {
+                const activeElement = this.getActiveKey(state) === 'primary' ? state.primaryElement : state.secondaryElement;
+                const inactiveElement = activeElement === state.primaryElement ? state.secondaryElement : state.primaryElement;
+
+                if (activeElement && inactiveElement) {
+                    inactiveElement.currentTime = activeElement.currentTime;
+                }
+
+                this.applyMediaElementMix(state);
+                return;
+            }
+
             this.applyOutputMix(state, false);
         }
     }
