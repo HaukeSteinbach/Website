@@ -7,6 +7,15 @@ class SimpleAudioComparison {
     constructor() {
         this.audioContext = null;
         this.cardStates = new Map();
+        this.eagerPreload = !this.isResourceConstrainedDevice();
+    }
+
+    isResourceConstrainedDevice() {
+        const coarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+        const narrowViewport = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+        const touchDevice = navigator.maxTouchPoints > 0;
+
+        return Boolean(coarsePointer || (touchDevice && narrowViewport));
     }
 
     init() {
@@ -63,14 +72,18 @@ class SimpleAudioComparison {
                 duration: 0,
                 isPlaying: false,
                 endTimerId: null,
+                loadPromise: null,
                 ready: false,
                 hasError: false
             };
 
             this.cardStates.set(state.cardId, state);
-            this.setLoadingState(state, false, false);
+            this.updateControlState(state);
             card.dataset.comparisonInitialized = 'true';
-            void this.loadCardAudio(state);
+
+            if (this.eagerPreload) {
+                void this.loadCardAudio(state);
+            }
         });
     }
 
@@ -122,44 +135,61 @@ class SimpleAudioComparison {
     }
 
     async loadCardAudio(state) {
+        if (state.ready || state.loadPromise) {
+            return state.loadPromise;
+        }
+
         try {
-            this.setLoadingState(state, false, false);
+            state.loadPromise = (async () => {
+                this.updateControlState(state);
 
-            const [primaryBuffer, secondaryBuffer] = await Promise.all([
-                this.fetchBuffer(state.primarySrc),
-                this.fetchBuffer(state.secondarySrc)
-            ]);
+                const [primaryBuffer, secondaryBuffer] = await Promise.all([
+                    this.fetchBuffer(state.primarySrc),
+                    this.fetchBuffer(state.secondarySrc)
+                ]);
 
-            state.primaryBuffer = primaryBuffer;
-            state.secondaryBuffer = secondaryBuffer;
-            state.duration = Math.min(primaryBuffer.duration, secondaryBuffer.duration);
-            state.ready = true;
-            state.hasError = false;
+                state.primaryBuffer = primaryBuffer;
+                state.secondaryBuffer = secondaryBuffer;
+                state.duration = Math.min(primaryBuffer.duration, secondaryBuffer.duration);
+                state.ready = true;
+                state.hasError = false;
+            })();
 
-            this.setLoadingState(state, true, false);
+            await state.loadPromise;
         } catch (_error) {
             state.ready = false;
             state.hasError = true;
-            this.setLoadingState(state, false, true);
+        } finally {
+            state.loadPromise = null;
+            this.updateControlState(state);
         }
+
+        return state.loadPromise;
     }
 
-    setLoadingState(state, isReady, hasError) {
-        state.ready = isReady;
-        state.hasError = hasError;
+    updateControlState(state) {
+        const isLoading = Boolean(state.loadPromise);
+        const isReady = state.ready;
+        const hasError = state.hasError;
+
         state.toggle.disabled = !isReady || hasError;
-        state.button.disabled = !isReady || hasError;
-        state.button.classList.toggle('is-loading', !isReady && !hasError);
+        state.button.disabled = hasError || isLoading || (this.eagerPreload && !isReady);
+        state.button.classList.toggle('is-loading', isLoading || (this.eagerPreload && !isReady && !hasError));
         state.button.classList.toggle('is-error', hasError);
-        state.button.classList.remove('playing');
+        state.button.classList.toggle('playing', state.isPlaying);
 
         if (hasError) {
             state.button.textContent = 'Audio unavailable';
             return;
         }
 
-        if (!isReady) {
+        if (isLoading || (this.eagerPreload && !isReady)) {
             state.button.textContent = 'Loading audio';
+            return;
+        }
+
+        if (!isReady) {
+            state.button.textContent = 'Load audio';
             return;
         }
 
@@ -168,9 +198,7 @@ class SimpleAudioComparison {
 
     setButtonState(state, isPlaying) {
         state.isPlaying = isPlaying;
-        state.button.textContent = isPlaying ? 'Pause' : 'Play';
-        state.button.classList.toggle('playing', isPlaying);
-        state.button.classList.remove('is-loading', 'is-error');
+        this.updateControlState(state);
     }
 
     getActiveKey(state) {
@@ -268,6 +296,25 @@ class SimpleAudioComparison {
         this.setButtonState(state, false);
     }
 
+    unloadCardAudio(state) {
+        if (state.isPlaying) {
+            return;
+        }
+
+        state.primaryBuffer = null;
+        state.secondaryBuffer = null;
+        state.primarySource = null;
+        state.secondarySource = null;
+        state.primaryGain = null;
+        state.secondaryGain = null;
+        state.ready = false;
+        state.hasError = false;
+        state.duration = 0;
+        state.offset = 0;
+        state.toggle.checked = false;
+        this.updateControlState(state);
+    }
+
     async startPlayback(state) {
         if (!state.ready || state.hasError) {
             return;
@@ -319,6 +366,10 @@ class SimpleAudioComparison {
             }
 
             this.finishPlayback(state, true);
+
+            if (!this.eagerPreload) {
+                this.unloadCardAudio(state);
+            }
         });
     }
 
@@ -339,8 +390,17 @@ class SimpleAudioComparison {
         const cardId = event.currentTarget.getAttribute('data-card-id');
         const state = this.cardStates.get(cardId);
 
-        if (!state || !state.ready || state.hasError) {
+        if (!state || state.hasError) {
             return;
+        }
+
+        if (!state.ready) {
+            await this.ensureAudioContextRunning();
+            await this.loadCardAudio(state);
+
+            if (!state.ready || state.hasError) {
+                return;
+            }
         }
 
         if (state.isPlaying) {
