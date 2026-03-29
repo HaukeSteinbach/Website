@@ -44,11 +44,11 @@ function createMixingCard(item) {
         <div class="card-meta">${item.artist} • ${item.date}</div>
         <p>${item.description}</p>
         <div class="audio-player-simple">
-            <audio class="raw-audio">
+            <audio class="raw-audio" preload="auto">
                 <source src="${item.rawAudio || ''}" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
-            <audio class="mixed-audio">
+            <audio class="mixed-audio" preload="auto">
                 <source src="${item.mixedAudio || ''}" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
@@ -303,11 +303,11 @@ function createMasteringCard(item) {
         <p>${item.description}</p>
         
         <div class="audio-player-simple">
-            <audio class="mix-audio">
+            <audio class="mix-audio" preload="auto">
                 <source src="${item.mixAudio}" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
-            <audio class="master-audio">
+            <audio class="master-audio" preload="auto">
                 <source src="${item.masterAudio}" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>

@@ -1326,6 +1326,10 @@ body {
 .btn-play-pause {
     width: 100%;
     padding: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
     background-color: var(--highlight-color);
     color: white;
     border: none;
@@ -1351,6 +1355,41 @@ body {
 .btn-play-pause.playing:hover {
     background-color: transparent;
     color: var(--success-color);
+}
+
+.btn-play-pause:disabled {
+    cursor: wait;
+    opacity: 0.82;
+}
+
+.btn-play-pause.is-loading {
+    background-color: rgba(233, 69, 96, 0.78);
+}
+
+.btn-play-pause.is-loading::before {
+    content: "";
+    width: 0.95rem;
+    height: 0.95rem;
+    border: 2px solid rgba(255, 255, 255, 0.28);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: comparison-spinner 0.8s linear infinite;
+}
+
+.btn-play-pause.is-error {
+    background-color: rgba(170, 48, 62, 0.92);
+}
+
+.toggle-checkbox:disabled + .toggle-label {
+    opacity: 0.45;
+    cursor: wait;
+    pointer-events: none;
+}
+
+@keyframes comparison-spinner {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 audio {

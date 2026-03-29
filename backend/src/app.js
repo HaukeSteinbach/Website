@@ -19,6 +19,9 @@ const localPreviewOrigins = new Set([
 ]);
 
 app.use(helmet({
+  referrerPolicy: {
+    policy: 'strict-origin-when-cross-origin'
+  },
   contentSecurityPolicy: {
     directives: {
       ...defaultCspDirectives,

@@ -23,34 +23,34 @@ document.addEventListener('DOMContentLoaded', function() {
         banner.setAttribute('aria-label', 'Cookie settings');
         banner.hidden = hasStoredConsent;
         banner.innerHTML = `
-            <h2 class="cookie-banner-title">Deine Privatsphäre, klar und direkt</h2>
+            <h2 class="cookie-banner-title">Your privacy, clearly handled</h2>
             <p class="cookie-banner-copy">
-                Diese Website nutzt nur notwendige technische Speicherung und optionale externe Medien.
-                YouTube-Inhalte werden erst nach deiner Zustimmung geladen.
-                Details stehen in der <a href="datenschutz.html">Datenschutzerklärung</a>.
+                This website only uses necessary technical storage and optional external media.
+                YouTube content is only loaded after your consent.
+                Details are available in the <a href="datenschutz.html">Privacy Policy</a>.
             </p>
             <div class="cookie-banner-actions">
-                <button type="button" class="btn" data-consent-action="accept-selected">Auswahl speichern</button>
-                <button type="button" class="btn btn-secondary" data-consent-action="accept-necessary">Nur notwendige</button>
-                <button type="button" class="btn btn-secondary" data-consent-action="toggle-settings">Einstellungen</button>
+                <button type="button" class="btn" data-consent-action="accept-selected">Save selection</button>
+                <button type="button" class="btn btn-secondary" data-consent-action="accept-necessary">Necessary only</button>
+                <button type="button" class="btn btn-secondary" data-consent-action="toggle-settings">Settings</button>
             </div>
             <div class="cookie-settings" data-cookie-settings hidden>
                 <div class="cookie-setting-row">
                     <div>
-                        <strong>Notwendige Funktionen</strong>
-                        <p>Speichert nur deine Einwilligungsentscheidung und sichert grundlegende Seitennavigation.</p>
+                        <strong>Necessary functions</strong>
+                        <p>Stores only your consent decision and ensures basic site navigation.</p>
                     </div>
-                    <label class="cookie-switch" aria-label="Notwendige Funktionen immer aktiv">
+                    <label class="cookie-switch" aria-label="Necessary functions always active">
                         <input type="checkbox" checked disabled>
                         <span class="cookie-switch-slider"></span>
                     </label>
                 </div>
                 <div class="cookie-setting-row">
                     <div>
-                        <strong>Externe Medien</strong>
-                        <p>Lädt eingebettete YouTube-Videos und andere externe Inhalte erst nach deiner Zustimmung.</p>
+                        <strong>External media</strong>
+                        <p>Loads embedded YouTube videos and other external content only after your consent.</p>
                     </div>
-                    <label class="cookie-switch" aria-label="Externe Medien erlauben">
+                    <label class="cookie-switch" aria-label="Allow external media">
                         <input type="checkbox" data-consent-toggle="externalMedia" ${currentConsent.externalMedia ? 'checked' : ''}>
                         <span class="cookie-switch-slider"></span>
                     </label>
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
         reopenButton.type = 'button';
         reopenButton.className = 'cookie-reopen';
         reopenButton.hidden = !hasStoredConsent;
-        reopenButton.textContent = 'Cookie-Einstellungen';
+        reopenButton.textContent = 'Cookie settings';
 
         document.body.appendChild(banner);
         document.body.appendChild(reopenButton);
@@ -143,6 +143,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+function getExternalMediaSrc(embed) {
+    const rawUrl = embed.dataset.consentSrc || embed.getAttribute('src') || '';
+
+    if (!rawUrl) {
+        return '';
+    }
+
+    try {
+        const url = new URL(rawUrl, window.location.href);
+        const isYouTubeEmbed = /(^|\.)youtube(?:-nocookie)?\.com$/i.test(url.hostname) && url.pathname.startsWith('/embed/');
+
+        if (isYouTubeEmbed && /^https?:$/.test(window.location.protocol)) {
+            url.searchParams.set('origin', window.location.origin);
+        }
+
+        return url.toString();
+    } catch (_error) {
+        return rawUrl;
+    }
+}
+
 function syncExternalMedia(isEnabled) {
     const gatedEmbeds = Array.from(document.querySelectorAll('[data-consent-category="external-media"]'));
 
@@ -155,9 +176,11 @@ function syncExternalMedia(isEnabled) {
 
         let placeholder = wrapper.querySelector('.consent-embed-placeholder');
 
+        embed.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+
         if (isEnabled) {
             if (!embed.getAttribute('src')) {
-                embed.setAttribute('src', embed.dataset.consentSrc || '');
+                embed.setAttribute('src', getExternalMediaSrc(embed));
             }
 
             if (placeholder) {
@@ -174,11 +197,11 @@ function syncExternalMedia(isEnabled) {
             placeholder.className = 'consent-embed-placeholder';
             placeholder.innerHTML = `
                 <div class="consent-embed-copy">
-                    <strong>Externe Medien sind blockiert</strong>
-                    <p>Dieses Video wird erst geladen, wenn du externe Medien in den Cookie-Einstellungen erlaubst.</p>
+                    <strong>External media is blocked</strong>
+                    <p>This video will only load after you allow external media in the cookie settings.</p>
                 </div>
                 <div class="consent-embed-actions">
-                    <button type="button" class="btn btn-secondary" data-consent-enable-media>Externe Medien erlauben</button>
+                    <button type="button" class="btn btn-secondary" data-consent-enable-media>Allow external media</button>
                 </div>
             `;
 
