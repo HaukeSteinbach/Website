@@ -7,7 +7,9 @@ let postmarkClient = null;
 const defaultNotificationRecipient = 'mail@haukesteinbach.de';
 
 export async function sendUploadNotificationEmail({ job, downloadUrl }) {
-  if (!config.formspreeUploadEndpoint) {
+  const notificationEndpoint = getFormspreeNotificationEndpoint();
+
+  if (!notificationEndpoint) {
     return {
       sent: false,
       skipped: true,
@@ -38,7 +40,7 @@ export async function sendUploadNotificationEmail({ job, downloadUrl }) {
   });
 
   try {
-    const response = await fetch(config.formspreeUploadEndpoint, {
+    const response = await fetch(notificationEndpoint, {
       method: 'POST',
       headers: {
         Accept: 'application/json'
@@ -121,9 +123,9 @@ export async function sendDirectDeliveryEmail({ delivery }) {
 }
 
 export async function sendDirectDeliveryDownloadNotificationEmail({ delivery, file }) {
-  const notificationRecipient = getNotificationRecipient();
+  const notificationEndpoint = getFormspreeNotificationEndpoint();
 
-  if (!config.postmarkServerToken || !notificationRecipient || !config.mailFromEmail) {
+  if (!notificationEndpoint) {
     return {
       sent: false,
       skipped: true,
@@ -132,34 +134,53 @@ export async function sendDirectDeliveryDownloadNotificationEmail({ delivery, fi
   }
 
   const subject = `Download confirmed: ${delivery.reference}`;
-  const textBody = [
-    'A client has downloaded delivered files.',
-    '',
-    `Reference: ${delivery.reference}`,
-    `Recipient: ${delivery.recipientEmail}`,
-    delivery.deliveryTitle ? `Title: ${delivery.deliveryTitle}` : null,
-    file ? `First downloaded file: ${file.originalFilename}` : null,
-    `Download page: ${delivery.pageUrl}`
-  ].filter(Boolean).join('\n');
-  const htmlBody = `
-    <h1>Client download confirmed</h1>
-    <p>A client has downloaded files from a delivery.</p>
-    <ul>
-      <li><strong>Reference:</strong> ${escapeHtml(delivery.reference)}</li>
-      <li><strong>Recipient:</strong> ${escapeHtml(delivery.recipientEmail)}</li>
-      ${delivery.deliveryTitle ? `<li><strong>Title:</strong> ${escapeHtml(delivery.deliveryTitle)}</li>` : ''}
-      ${file ? `<li><strong>First downloaded file:</strong> ${escapeHtml(file.originalFilename)}</li>` : ''}
-    </ul>
-    <p><a href="${delivery.pageUrl}">Open delivery page</a></p>
-  `;
-
-  return sendMail({
-    to: notificationRecipient,
+  const payload = new URLSearchParams({
+    form_source: 'Delivery download confirmation',
     subject,
-    textBody,
-    htmlBody,
-    replyTo: delivery.recipientEmail
+    reference: delivery.reference,
+    recipient_email: delivery.recipientEmail,
+    recipient_name: delivery.recipientName || '',
+    delivery_title: delivery.deliveryTitle || '',
+    first_downloaded_file: file?.originalFilename || '',
+    files_count: String(delivery.files.length),
+    download_page: delivery.pageUrl,
+    downloaded_at: new Date().toISOString(),
+    message: buildDirectDeliveryDownloadNotificationMessage({ delivery, file }),
+    _replyto: delivery.recipientEmail
   });
+
+  try {
+    const response = await fetch(notificationEndpoint, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json'
+      },
+      body: payload
+    });
+    const result = await parseProviderResponse(response);
+
+    if (!response.ok) {
+      throw new Error(extractFormspreeError(result));
+    }
+
+    return {
+      sent: true,
+      skipped: false,
+      reason: null,
+      provider: 'formspree',
+      recipient: getNotificationRecipient(),
+      providerMessageId: result?.submissionId || result?.id || null
+    };
+  } catch (error) {
+    return {
+      sent: false,
+      skipped: false,
+      reason: 'mail_delivery_failed',
+      provider: 'formspree',
+      recipient: getNotificationRecipient(),
+      details: extractFormspreeError(error)
+    };
+  }
 }
 
 async function sendMail({ to, subject, textBody, htmlBody, replyTo }) {
@@ -197,6 +218,10 @@ async function sendMail({ to, subject, textBody, htmlBody, replyTo }) {
 
 function getNotificationRecipient() {
   return config.notificationEmail || defaultNotificationRecipient;
+}
+
+function getFormspreeNotificationEndpoint() {
+  return config.formspreeUploadEndpoint || '';
 }
 
 function getPostmarkClient() {
@@ -271,6 +296,20 @@ function buildUploadNotificationMessage({ job, downloadUrl }) {
     [job.address?.region || '', job.address?.country || ''].filter(Boolean).join(', '),
     '',
     `Project notes: ${job.projectNotes || 'None provided.'}`
+  ].filter(Boolean).join('\n');
+}
+
+function buildDirectDeliveryDownloadNotificationMessage({ delivery, file }) {
+  return [
+    'A client has downloaded delivered files.',
+    '',
+    `Reference: ${delivery.reference}`,
+    `Recipient: ${delivery.recipientEmail}`,
+    delivery.recipientName ? `Recipient name: ${delivery.recipientName}` : null,
+    delivery.deliveryTitle ? `Title: ${delivery.deliveryTitle}` : null,
+    file ? `First downloaded file: ${file.originalFilename}` : null,
+    `Files in delivery: ${delivery.files.length}`,
+    `Download page: ${delivery.pageUrl}`
   ].filter(Boolean).join('\n');
 }
 

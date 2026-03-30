@@ -339,6 +339,8 @@ The backend always allows its own request origin automatically.
 Required if you want upload completion notifications through Formspree:
 - `FORMSPREE_UPLOAD_ENDPOINT` default `https://formspree.io/f/xgopedgb`
 
+The same Formspree endpoint is also used for the first-download confirmation mail for direct deliveries.
+
 Required if you want direct delivery emails through Postmark:
 - `POSTMARK_SERVER_TOKEN`
 - `POSTMARK_MESSAGE_STREAM` default `outbound`
