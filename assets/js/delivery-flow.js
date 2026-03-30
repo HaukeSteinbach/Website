@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     downloadButton.addEventListener('click', async function() {
-        status.textContent = 'Preparing secure download links...';
+        status.textContent = 'Preparing your download...';
         status.className = 'handoff-status is-visible';
 
         try {

@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
             payload.append('files', file);
         });
 
-        setStatus(status, '', 'Uploading files and sending the delivery email...');
+        setStatus(status, '', 'Preparing delivery...');
         submitButton.disabled = true;
         submitButton.textContent = 'Sending...';
 
@@ -64,8 +64,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 `<div><dt>Recipient</dt><dd>${result.delivery.recipientEmail}</dd></div>`,
                 `<div><dt>Files</dt><dd>${result.delivery.files.length}</dd></div>`,
                 `<div><dt>Available until</dt><dd>${formatDate(result.delivery.expiresAt)}</dd></div>`,
-                `<div><dt>Delivery page</dt><dd><a href="${result.delivery.pageUrl}" target="_blank" rel="noopener noreferrer">Open link</a></dd></div>`,
-                `<div><dt>Email status</dt><dd>${formatNotificationStatus(result.notification)}</dd></div>`
+                `<div><dt>Delivery link</dt><dd><a href="${result.delivery.pageUrl}" target="_blank" rel="noopener noreferrer">Open link</a></dd></div>`,
+                `<div><dt>Status</dt><dd>${formatNotificationStatus(result.notification)}</dd></div>`
             ].join('');
 
             form.reset();
@@ -132,11 +132,11 @@ async function getApiErrorMessage(response, fallbackMessage) {
 
 function buildSuccessMessage(result) {
     if (result.notification && result.notification.sent) {
-        return `Delivery created. The download link was emailed to ${result.notification.recipient}.`;
+        return 'Delivery created and sent by email.';
     }
 
     if (result.notification && result.notification.reason === 'mail_not_configured') {
-        return 'Delivery created, but email sending is not configured. Use the delivery link below manually.';
+        return 'Delivery created. Please use the link below to send it manually.';
     }
 
     return `Delivery created. Reference ${result.reference}.`;
@@ -148,14 +148,14 @@ function formatNotificationStatus(notification) {
     }
 
     if (notification.sent) {
-        return `Sent to ${notification.recipient}`;
+        return 'Email sent';
     }
 
     if (notification.reason === 'mail_not_configured') {
-        return 'Mail not configured';
+        return 'Send manually';
     }
 
-    return 'Delivery failed';
+    return 'Could not send automatically';
 }
 
 function formatBytes(size) {

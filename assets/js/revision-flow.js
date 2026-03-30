@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const endpoint = form.getAttribute('action');
 
         if (!endpoint) {
-            status.textContent = 'Revision form endpoint is not configured yet.';
+            status.textContent = 'The revision form is currently unavailable.';
             status.className = 'handoff-status is-visible error';
             return;
         }

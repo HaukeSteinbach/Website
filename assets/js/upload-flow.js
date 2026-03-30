@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
             captchaToken: 'demo-turnstile-token'
         };
 
-        status.textContent = 'Creating upload job...';
+        status.textContent = 'Preparing your upload...';
         status.className = 'handoff-status is-visible';
 
         if (submitButton) {
@@ -75,14 +75,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
 
             if (!hasConfiguredUploadEndpoint(result)) {
-                throw new Error('Upload job created, but the file upload endpoint is not configured correctly.');
+                throw new Error('Your upload could not be prepared correctly. Please try again.');
             }
 
             status.textContent = 'Uploading files...';
 
             const uploadResponse = await uploadSelectedFiles(resolveUploadUrl(result.upload.endpoint), fileInput.files);
 
-            status.textContent = 'Finalizing upload...';
+            status.textContent = 'Finishing up...';
 
             const completionResponse = await finalizeUpload(result.jobId, uploadResponse.uploadedFiles);
 
@@ -92,11 +92,9 @@ document.addEventListener('DOMContentLoaded', function() {
             successPanel.hidden = false;
             summaryList.innerHTML = [
                 `<div><dt>Reference</dt><dd>${completionResponse.reference}</dd></div>`,
-                `<div><dt>Job ID</dt><dd>${result.jobId}</dd></div>`,
                 `<div><dt>Files</dt><dd>${uploadResponse.uploadedFiles.length}</dd></div>`,
-                `<div><dt>Upload endpoint</dt><dd>${result.upload.endpoint}</dd></div>`,
-                `<div><dt>Notification</dt><dd>${formatNotificationStatus(completionResponse.notification)}</dd></div>`,
-                `<div><dt>Source download</dt><dd>${formatSourceDownloadLink(completionResponse.sourceDownload)}</dd></div>`
+                `<div><dt>Service</dt><dd>${capitalizeLabel(payload.service)}</dd></div>`,
+                `<div><dt>Status</dt><dd>Received</dd></div>`
             ].join('');
         } catch (error) {
             status.textContent = getUploadErrorMessage(error);
@@ -224,54 +222,22 @@ async function getApiErrorMessage(response, fallbackMessage) {
 
 function getUploadErrorMessage(error) {
     if (error && error.message === 'Failed to fetch') {
-        return 'The upload service is not reachable right now. The website is up, but the API backend is not responding yet.';
+        return 'The upload is not available right now. Please try again in a moment.';
     }
 
     return error && error.message ? error.message : 'Upload failed. Please try again.';
 }
 
 function buildUploadSuccessMessage(completionResponse) {
-    if (completionResponse?.notification?.sent && completionResponse.notification.provider === 'formspree') {
-        return 'Files uploaded successfully. Your project details and secure download link were forwarded via Formspree.';
-    }
-
-    if (completionResponse?.notification?.sent) {
-        return 'Files uploaded successfully. Upload notification sent.';
-    }
-
-    if (completionResponse?.notification?.reason === 'mail_not_configured') {
-        return 'Files uploaded successfully. Upload notification is not configured yet. Use the source download link below.';
-    }
-
     return `Files uploaded successfully. Reference ${completionResponse.reference}.`;
 }
 
-function formatNotificationStatus(notification) {
-    if (!notification) {
-        return 'Not available';
+function capitalizeLabel(value) {
+    const label = String(value || '');
+
+    if (!label) {
+        return 'Not specified';
     }
 
-    if (notification.sent && notification.provider === 'formspree') {
-        return 'Sent via Formspree';
-    }
-
-    if (notification.sent) {
-        return notification.recipient ? `Sent to ${notification.recipient}` : 'Sent';
-    }
-
-    if (notification.reason === 'mail_not_configured') {
-        return 'Mail not configured';
-    }
-
-    return 'Notification failed';
-}
-
-function formatSourceDownloadLink(sourceDownload) {
-    const pageUrl = sourceDownload && sourceDownload.pageUrl;
-
-    if (!pageUrl) {
-        return 'Not available';
-    }
-
-    return `<a href="${pageUrl}" target="_blank" rel="noopener noreferrer">Open download page</a>`;
+    return label.charAt(0).toUpperCase() + label.slice(1);
 }
