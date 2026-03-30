@@ -30,7 +30,22 @@
     <main class="container handoff-layout">
         <section class="handoff-card">
             <p class="handoff-lead">You can submit one revision request for this delivery. If needed, attach one reference file or note.</p>
-            <form id="revision-form" class="handoff-form">
+            <p class="handoff-status" id="revision-reference" hidden></p>
+            <form id="revision-form" class="handoff-form" action="https://formspree.io/f/xgopedgb" method="post">
+                <input type="hidden" name="form_source" value="Revision request">
+                <input type="hidden" name="deliveryReference" id="delivery-reference-input">
+                <input type="hidden" name="deliveryTitle" id="delivery-title-input">
+                <input type="hidden" name="deliveryLink" id="delivery-link-input">
+                <div class="handoff-fieldset handoff-grid-two">
+                    <div class="form-group">
+                        <label for="revision-name">Name</label>
+                        <input type="text" id="revision-name" name="clientName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="revision-email">Email</label>
+                        <input type="email" id="revision-email" name="clientEmail" required>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label for="revision-message">Requested changes</label>
                     <textarea id="revision-message" name="message" rows="7" required></textarea>
