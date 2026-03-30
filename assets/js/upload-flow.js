@@ -231,12 +231,16 @@ function getUploadErrorMessage(error) {
 }
 
 function buildUploadSuccessMessage(completionResponse) {
+    if (completionResponse?.notification?.sent && completionResponse.notification.provider === 'formspree') {
+        return 'Files uploaded successfully. Your project details and secure download link were forwarded via Formspree.';
+    }
+
     if (completionResponse?.notification?.sent) {
-        return `Files uploaded successfully. A download link was sent to ${completionResponse.notification.recipient}.`;
+        return 'Files uploaded successfully. Upload notification sent.';
     }
 
     if (completionResponse?.notification?.reason === 'mail_not_configured') {
-        return 'Files uploaded successfully. Email notification is not configured yet. Use the source download link below.';
+        return 'Files uploaded successfully. Upload notification is not configured yet. Use the source download link below.';
     }
 
     return `Files uploaded successfully. Reference ${completionResponse.reference}.`;
@@ -247,15 +251,19 @@ function formatNotificationStatus(notification) {
         return 'Not available';
     }
 
+    if (notification.sent && notification.provider === 'formspree') {
+        return 'Sent via Formspree';
+    }
+
     if (notification.sent) {
-        return `Sent to ${notification.recipient}`;
+        return notification.recipient ? `Sent to ${notification.recipient}` : 'Sent';
     }
 
     if (notification.reason === 'mail_not_configured') {
         return 'Mail not configured';
     }
 
-    return 'Delivery failed';
+    return 'Notification failed';
 }
 
 function formatSourceDownloadLink(sourceDownload) {

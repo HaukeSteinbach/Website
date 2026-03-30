@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Files - Steinbach</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">Steinbach</a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Toggle navigation">
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
+            <ul class="nav-menu" id="primary-navigation">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="contact.html" class="nav-link">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="section-header handoff-header">
+        <h1>Send Files</h1>
+        <p>Upload files, enter the client email address, and send a secure download link.</p>
+    </header>
+
+    <main class="container handoff-layout">
+        <section class="handoff-card">
+            <form id="direct-delivery-form" class="handoff-form">
+                <div class="handoff-fieldset handoff-grid-two">
+                    <div class="form-group">
+                        <label for="recipient-email">Client email</label>
+                        <input type="email" id="recipient-email" name="recipientEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="recipient-name">Client name</label>
+                        <input type="text" id="recipient-name" name="recipientName">
+                    </div>
+                </div>
+
+                <div class="handoff-fieldset">
+                    <div class="form-group">
+                        <label for="delivery-title">Title or invoice reference</label>
+                        <input type="text" id="delivery-title" name="deliveryTitle" placeholder="EP masters + invoice 2026-004">
+                    </div>
+                </div>
+
+                <div class="handoff-fieldset">
+                    <div class="form-group">
+                        <label for="delivery-message">Message</label>
+                        <textarea id="delivery-message" name="message" rows="5" placeholder="Short note for the client..."></textarea>
+                    </div>
+                </div>
+
+                <div class="handoff-fieldset">
+                    <h2>Files</h2>
+                    <div class="upload-dropzone" id="direct-delivery-dropzone">
+                        <p>Drop files here or choose them manually</p>
+                        <p class="upload-dropzone-meta">Allowed formats: WAV, AIFF, FLAC, ZIP, RAR, MP3, PDF. The client receives a secure download page by email.</p>
+                        <button type="button" class="btn btn-secondary" id="direct-delivery-select-files">Select Files</button>
+                        <input type="file" id="direct-delivery-files" name="files" multiple hidden>
+                    </div>
+                    <ul class="upload-file-list" id="direct-delivery-file-list"></ul>
+                </div>
+
+                <div class="handoff-actions">
+                    <button type="submit" class="btn" id="direct-delivery-submit">Upload and send link</button>
+                </div>
+                <div class="handoff-status" id="direct-delivery-status" aria-live="polite"></div>
+            </form>
+        </section>
+
+        <section class="handoff-card handoff-summary" id="direct-delivery-success" hidden>
+            <h2>Delivery created</h2>
+            <p>The customer will receive the download page by email. A confirmation email will be sent to mail@haukesteinbach.de after the first download.</p>
+            <dl class="handoff-summary-list" id="direct-delivery-summary"></dl>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-legal">
+            <a href="impressum.html" class="footer-legal-link">Legal Notice</a>
+            <a href="datenschutz.html" class="footer-legal-link">Privacy Policy</a>
+        </div>
+        <p>&copy; 2025 Steinbach. All rights reserved.</p>
+    </footer>
+
+    <script src="assets/js/cookie-consent.js"></script>
+    <script src="assets/js/navbar.js"></script>
+    <script src="assets/js/send-delivery.js"></script>
+</body>
+</html>

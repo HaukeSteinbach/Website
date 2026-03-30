@@ -25,4 +25,4 @@ This backend is a starting structure for:
 
 - Large resumable uploads are expected to be handled by a tus-compatible upload layer.
 - The current routes return scaffold responses and TODO markers where provider integrations will go.
-- Upload notifications can be sent through Postmark when `POSTMARK_SERVER_TOKEN`, `NOTIFICATION_EMAIL`, and `MAIL_FROM_EMAIL` are configured.
+- Upload completions can forward project details and the secure download link through Formspree when `FORMSPREE_UPLOAD_ENDPOINT` is configured.

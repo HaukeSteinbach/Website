@@ -319,7 +319,8 @@ Keep real credentials out of git.
 - Commit only placeholder files such as `backend/.env.example`
 - Create a real `backend/.env.runtime` only on the server
 - Pass secrets to containers at runtime through `env_file`, environment variables, or Docker secrets
-- Configure `POSTMARK_SERVER_TOKEN`, `NOTIFICATION_EMAIL`, and `MAIL_FROM_EMAIL` if uploads should trigger a mail with a secure source download link
+- Configure `FORMSPREE_UPLOAD_ENDPOINT` if uploads should forward project details and the secure source download link through Formspree
+- Configure `POSTMARK_SERVER_TOKEN`, `NOTIFICATION_EMAIL`, and `MAIL_FROM_EMAIL` only if direct delivery emails should be sent from the backend
 
 ### Runtime Variables
 
@@ -335,7 +336,10 @@ Useful when frontend preview and backend run on different origins locally:
 The backend always allows its own request origin automatically.
 `CORS_ALLOWED_ORIGINS` is only for additional origins such as local preview servers.
 
-Required if you want upload notification emails:
+Required if you want upload completion notifications through Formspree:
+- `FORMSPREE_UPLOAD_ENDPOINT` default `https://formspree.io/f/xgopedgb`
+
+Required if you want direct delivery emails through Postmark:
 - `POSTMARK_SERVER_TOKEN`
 - `POSTMARK_MESSAGE_STREAM` default `outbound`
 - `NOTIFICATION_EMAIL`

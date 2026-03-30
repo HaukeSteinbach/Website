@@ -16,6 +16,7 @@ export const config = {
   corsAllowedOrigins,
   databaseUrl: process.env.DATABASE_URL || '',
   sessionSecret: process.env.SESSION_SECRET || '',
+  formspreeUploadEndpoint: process.env.FORMSPREE_UPLOAD_ENDPOINT || 'https://formspree.io/f/xgopedgb',
   postmarkServerToken: process.env.POSTMARK_SERVER_TOKEN || '',
   postmarkMessageStream: process.env.POSTMARK_MESSAGE_STREAM || 'outbound',
   notificationEmail: process.env.NOTIFICATION_EMAIL || '',
