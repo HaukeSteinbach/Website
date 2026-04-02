@@ -12,6 +12,7 @@ In production, both are bundled into one Docker image so the server only has to 
 - **Productions**: Portfolio showcase for original compositions and produced tracks
 - **Mixing**: Display your mixing projects and client work
 - **Mastering**: Interactive mastering demos with A/B comparison and blend slider
+- **Release Link Builder**: Generate short branded release pages from a Music Hub link plus uploaded artwork
 
 ### ✨ Interactive Audio Comparison (Mastering Page)
 - **A/B Switching**: Instantly toggle between mix and master versions
@@ -49,6 +50,7 @@ For production, the Docker image copies both parts into one Node runtime:
 ├── productions.html           # Productions portfolio
 ├── mixing.html                # Mixing portfolio
 ├── mastering.html             # Mastering with audio comparison
+├── release-links.html         # Short branded release page generator
 ├── upload.html                # Upload workflow page
 ├── delivery.html              # Delivery workflow page
 ├── revision.html              # Revision workflow page
@@ -109,6 +111,19 @@ npm start
 
 That starts the Node service itself.
 In production, those backend files are bundled together with the frontend into one container.
+
+### 5. Release Link Builder
+
+Open `release-links.html` to generate branded release landing pages from a Music Hub page.
+
+The flow is:
+
+1. Paste the Music Hub URL
+2. Upload the artwork you want to show on your domain
+3. Optionally override title, artist, or the URL ending
+4. Create a short page such as `/listen-to-mommark`
+
+The backend extracts the outbound platform links from the source page, stores the uploaded artwork, and serves the finished landing page directly from your own domain.
 
 ### 4. Adding Your Content
 
@@ -241,6 +256,7 @@ Adjust grid spacing in `assets/css/styles.css`:
     - Set proper MIME types for audio assets
     - Mount a persistent upload directory for workflow files
     - Use runtime environment variables instead of editing code per environment
+    - If you use the nginx split frontend/backend setup, keep `/listen-to-*` and `/release-artwork/*` proxied to the backend
 
 ## Deployment
 
@@ -320,7 +336,7 @@ Keep real credentials out of git.
 - Create a real `backend/.env.runtime` only on the server
 - Pass secrets to containers at runtime through `env_file`, environment variables, or Docker secrets
 - Configure `FORMSPREE_UPLOAD_ENDPOINT` if uploads should forward project details and the secure source download link through Formspree
-- Configure `POSTMARK_SERVER_TOKEN`, `NOTIFICATION_EMAIL`, and `MAIL_FROM_EMAIL` only if direct delivery emails should be sent from the backend
+- Configure SMTP and `MAIL_FROM_EMAIL` if direct delivery emails should be sent from the backend
 
 ### Runtime Variables
 
@@ -341,12 +357,15 @@ Required if you want upload completion notifications through Formspree:
 
 The same Formspree endpoint is also used for the first-download confirmation mail for direct deliveries.
 
-Required if you want direct delivery emails through Postmark:
-- `POSTMARK_SERVER_TOKEN`
-- `POSTMARK_MESSAGE_STREAM` default `outbound`
-- `NOTIFICATION_EMAIL`
-- `MAIL_FROM_EMAIL`
-- `MAIL_REPLY_TO` optional, otherwise the upload client email is used as Reply-To
+Required if you want direct delivery emails through SMTP:
+- `MAIL_FROM_EMAIL` example `mail@haukesteinbach.de`
+- `MAIL_REPLY_TO` optional, otherwise `NOTIFICATION_EMAIL` is used as Reply-To
+- `SMTP_HOST`
+- `SMTP_PORT` default `587`
+- `SMTP_SECURE` set `true` for implicit TLS, usually `false` on port `587`
+- `SMTP_USER`
+- `SMTP_PASSWORD`
+- `NOTIFICATION_EMAIL` for internal first-download confirmations
 
 Required only if you use object storage instead of local disk later:
 - `S3_ENDPOINT`

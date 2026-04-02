@@ -283,6 +283,7 @@ router.post('/direct-deliveries', (request, response) => {
         sent: mailResult.sent,
         skipped: Boolean(mailResult.skipped),
         reason: mailResult.reason,
+        provider: mailResult.provider || null,
         recipient: mailResult.recipient || delivery.recipientEmail
       }
     }, 201);

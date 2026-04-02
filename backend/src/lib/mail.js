@@ -1,8 +1,8 @@
-import { ServerClient } from 'postmark';
+import nodemailer from 'nodemailer';
 
 import { config } from './config.js';
 
-let postmarkClient = null;
+let smtpTransporter = null;
 
 const defaultNotificationRecipient = 'mail@haukesteinbach.de';
 
@@ -74,7 +74,7 @@ export async function sendUploadNotificationEmail({ job, downloadUrl }) {
 }
 
 export async function sendDirectDeliveryEmail({ delivery }) {
-  if (!config.postmarkServerToken || !delivery.recipientEmail || !config.mailFromEmail) {
+  if (!config.smtpHost || !config.smtpPort || !config.mailFromEmail || !delivery.recipientEmail) {
     return {
       sent: false,
       skipped: true,
@@ -83,42 +83,30 @@ export async function sendDirectDeliveryEmail({ delivery }) {
   }
 
   const subject = delivery.deliveryTitle
-    ? `Your files are ready: ${delivery.deliveryTitle}`
-    : `Your files are ready: ${delivery.reference}`;
-  const recipientName = delivery.recipientName || 'there';
-  const senderReplyTo = config.mailReplyTo || getNotificationRecipient();
+    ? 'You have received files'
+    : 'You have received files';
   const textBody = [
-    `Hello ${recipientName},`,
+    'You have received files',
     '',
-    'Your files are ready for download.',
-    `Reference: ${delivery.reference}`,
-    delivery.deliveryTitle ? `Title: ${delivery.deliveryTitle}` : null,
-    '',
-    delivery.message ? `Message: ${delivery.message}` : null,
-    '',
-    `Download page: ${delivery.pageUrl}`,
-    `Available until: ${delivery.expiresAt}`
+    `Expiring date: ${formatDate(delivery.expiresAt)}`,
+    ...delivery.files.map((file) => `Download available: ${file.originalFilename}`),
+    `Download link: ${delivery.pageUrl}`
   ].filter(Boolean).join('\n');
   const htmlBody = `
-    <h1>Your files are ready</h1>
-    <p>Hello ${escapeHtml(recipientName)},</p>
-    <p>You can download your files using the secure link below.</p>
+    <h1>You have received files</h1>
+    <p><strong>Expiring date:</strong> ${escapeHtml(formatDate(delivery.expiresAt))}</p>
     <ul>
-      <li><strong>Reference:</strong> ${escapeHtml(delivery.reference)}</li>
-      ${delivery.deliveryTitle ? `<li><strong>Title:</strong> ${escapeHtml(delivery.deliveryTitle)}</li>` : ''}
-      <li><strong>Available until:</strong> ${escapeHtml(formatDate(delivery.expiresAt))}</li>
-      <li><strong>Files:</strong> ${delivery.files.length}</li>
+      ${delivery.files.map((file) => `<li><strong>Download available:</strong> ${escapeHtml(file.originalFilename)}</li>`).join('')}
     </ul>
-    ${delivery.message ? `<p><strong>Message:</strong><br>${escapeHtml(delivery.message).replace(/\n/g, '<br>')}</p>` : ''}
-    <p><a href="${delivery.pageUrl}">Open secure download page</a></p>
+    <p><a href="${delivery.pageUrl}">Download link</a></p>
   `;
 
-  return sendMail({
+  return sendSmtpMail({
     to: delivery.recipientEmail,
     subject,
     textBody,
     htmlBody,
-    replyTo: senderReplyTo
+    replyTo: config.mailReplyTo || getNotificationRecipient()
   });
 }
 
@@ -183,33 +171,34 @@ export async function sendDirectDeliveryDownloadNotificationEmail({ delivery, fi
   }
 }
 
-async function sendMail({ to, subject, textBody, htmlBody, replyTo }) {
+async function sendSmtpMail({ to, subject, textBody, htmlBody, replyTo }) {
   try {
-    const client = getPostmarkClient();
-    const response = await client.sendEmail({
-      From: config.mailFromEmail,
-      To: to,
-      Subject: subject,
-      TextBody: textBody,
-      HtmlBody: htmlBody,
-      MessageStream: config.postmarkMessageStream,
-      ReplyTo: replyTo || undefined
+    const transporter = getSmtpTransporter();
+    const response = await transporter.sendMail({
+      from: config.mailFromEmail,
+      to,
+      subject,
+      text: textBody,
+      html: htmlBody,
+      replyTo: replyTo || undefined
     });
 
     return {
       sent: true,
       skipped: false,
       reason: null,
+      provider: 'smtp',
       recipient: to,
-      providerMessageId: response.MessageID || null
+      providerMessageId: response.messageId || null
     };
   } catch (error) {
-    const details = extractPostmarkError(error);
+    const details = extractMailError(error);
 
     return {
       sent: false,
       skipped: false,
       reason: 'mail_delivery_failed',
+      provider: 'smtp',
       recipient: to,
       details
     };
@@ -224,17 +213,27 @@ function getFormspreeNotificationEndpoint() {
   return config.formspreeUploadEndpoint || '';
 }
 
-function getPostmarkClient() {
-  if (!postmarkClient) {
-    postmarkClient = new ServerClient(config.postmarkServerToken);
+function getSmtpTransporter() {
+  if (!smtpTransporter) {
+    smtpTransporter = nodemailer.createTransport({
+      host: config.smtpHost,
+      port: config.smtpPort,
+      secure: config.smtpSecure,
+      auth: config.smtpUser || config.smtpPassword
+        ? {
+            user: config.smtpUser,
+            pass: config.smtpPassword
+          }
+        : undefined
+    });
   }
 
-  return postmarkClient;
+  return smtpTransporter;
 }
 
-function extractPostmarkError(error) {
+function extractMailError(error) {
   if (!error) {
-    return 'Unknown Postmark error';
+    return 'Unknown mail error';
   }
 
   if (typeof error.message === 'string' && error.message) {
@@ -244,7 +243,7 @@ function extractPostmarkError(error) {
   try {
     return JSON.stringify(error);
   } catch (_jsonError) {
-    return 'Unserializable Postmark error';
+    return 'Unserializable mail error';
   }
 }
 
