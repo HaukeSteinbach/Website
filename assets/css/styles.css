@@ -1949,6 +1949,56 @@ audio {
     gap: 0.9rem;
 }
 
+.release-builder-header {
+    border-bottom-color: rgba(255, 106, 61, 0.16);
+}
+
+.release-builder-intro {
+    align-items: start;
+}
+
+.release-builder-preview {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.release-builder-preview-label {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.release-builder-preview strong {
+    color: var(--text-color);
+    font-size: 1.1rem;
+}
+
+.release-builder-help {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.release-builder-summary .handoff-summary-list a {
+    color: var(--highlight-color);
+    text-decoration: none;
+}
+
+.release-builder-summary .handoff-summary-list a:hover {
+    text-decoration: underline;
+}
+
+.release-builder-actions {
+    margin-top: 1.25rem;
+}
+
 /* ========================================
    LANDING PAGE
    ======================================== */

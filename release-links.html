@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Release Link Builder - Steinbach</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">Steinbach</a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Toggle navigation">
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
+            <ul class="nav-menu" id="primary-navigation">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="mixing.html" class="nav-link">Mixing</a></li>
+                <li><a href="mastering.html" class="nav-link">Mastering</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="section-header handoff-header release-builder-header">
+        <h1>Release Link Builder</h1>
+        <p>Paste a Music Hub page, upload the artwork, and generate a short branded link like /listen-to-mommark.</p>
+    </header>
+
+    <main class="container handoff-layout">
+        <section class="handoff-card handoff-intro release-builder-intro">
+            <div class="handoff-stepper" aria-label="Workflow steps">
+                <span class="handoff-step active">1. Music Hub link</span>
+                <span class="handoff-step active">2. Artwork upload</span>
+                <span class="handoff-step active">3. Branded release page</span>
+            </div>
+            <p class="handoff-lead">The generated page keeps the URL short with a listen-to call to action followed by the release title. If the same title already exists, the system only adds a very short numeric suffix.</p>
+            <div class="release-builder-preview">
+                <span class="release-builder-preview-label">Default URL pattern</span>
+                <strong>/listen-to-your-track</strong>
+            </div>
+        </section>
+
+        <section class="handoff-card">
+            <form id="release-builder-form" class="handoff-form" enctype="multipart/form-data">
+                <div class="handoff-fieldset">
+                    <div class="form-group">
+                        <label for="source-url">Music Hub link</label>
+                        <input type="url" id="source-url" name="sourceUrl" placeholder="https://listen.music-hub.com/..." required>
+                    </div>
+                </div>
+
+                <div class="handoff-fieldset handoff-grid-two">
+                    <div class="form-group">
+                        <label for="title-override">Title override</label>
+                        <input type="text" id="title-override" name="titleOverride" placeholder="Optional: use a shorter or cleaner release title">
+                    </div>
+                    <div class="form-group">
+                        <label for="artist-override">Artist override</label>
+                        <input type="text" id="artist-override" name="artistOverride" placeholder="Optional: replace the extracted artist name">
+                    </div>
+                </div>
+
+                <div class="handoff-fieldset">
+                    <div class="form-group">
+                        <label for="slug-override">Short URL ending</label>
+                        <input type="text" id="slug-override" name="slugOverride" placeholder="Optional: mommark">
+                        <p class="release-builder-help">If you enter a custom ending, the page will still use the pattern /listen-to-your-ending.</p>
+                    </div>
+                </div>
+
+                <div class="handoff-fieldset">
+                    <h2>Artwork</h2>
+                    <div class="upload-dropzone" id="artwork-dropzone">
+                        <p>Upload the final artwork used on your branded release page</p>
+                        <p class="upload-dropzone-meta">Allowed formats: JPG, PNG, WebP. Maximum size: 15 MB.</p>
+                        <button type="button" class="btn btn-secondary" id="artwork-select-button">Select Artwork</button>
+                        <input type="file" id="artwork-file" name="artwork" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" hidden required>
+                    </div>
+                    <ul class="upload-file-list" id="artwork-file-list"></ul>
+                </div>
+
+                <div class="handoff-actions">
+                    <button type="submit" class="btn" id="release-builder-submit">Create Release Page</button>
+                </div>
+                <div class="handoff-status" id="release-builder-status" aria-live="polite"></div>
+            </form>
+        </section>
+
+        <section class="handoff-card handoff-summary release-builder-summary" id="release-builder-success" hidden>
+            <h2>Release Page Created</h2>
+            <p>Your branded release page is ready on your domain.</p>
+            <dl class="handoff-summary-list" id="release-builder-summary-list"></dl>
+            <div class="handoff-actions release-builder-actions">
+                <a href="#" class="btn" id="release-builder-open-link" target="_blank" rel="noopener noreferrer">Open Release Page</a>
+                <button type="button" class="btn btn-secondary" id="release-builder-copy-link">Copy Link</button>
+            </div>
+            <div class="handoff-status" id="release-builder-copy-status" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-legal">
+            <a href="impressum.html" class="footer-legal-link">Legal Notice</a>
+            <a href="datenschutz.html" class="footer-legal-link">Privacy Policy</a>
+        </div>
+        <p>&copy; 2026 Steinbach. All rights reserved.</p>
+    </footer>
+
+    <script src="assets/js/cookie-consent.js"></script>
+    <script src="assets/js/navbar.js"></script>
+    <script src="assets/js/release-links.js"></script>
+</body>
+</html>

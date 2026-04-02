@@ -13,6 +13,7 @@ This backend is a starting structure for:
 - secure delivery links
 - revision requests
 - admin job management
+- branded release landing pages generated from Music Hub links
 
 ## Setup
 
@@ -26,3 +27,4 @@ This backend is a starting structure for:
 - Large resumable uploads are expected to be handled by a tus-compatible upload layer.
 - The current routes return scaffold responses and TODO markers where provider integrations will go.
 - Upload completions can forward project details and the secure download link through Formspree when `FORMSPREE_UPLOAD_ENDPOINT` is configured.
+- Release pages are persisted to JSON in the upload storage directory so generated `/listen-to-*` links survive backend restarts as long as the upload volume persists.

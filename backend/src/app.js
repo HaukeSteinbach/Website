@@ -8,6 +8,7 @@ import { config } from './lib/config.js';
 import { errorHandler, notFoundHandler } from './middleware/errors.js';
 import adminRoutes from './routes/admin.js';
 import publicRoutes from './routes/public.js';
+import releasePageRoutes from './routes/release-pages.js';
 
 const app = express();
 const defaultCspDirectives = helmet.contentSecurityPolicy.getDefaultDirectives();
@@ -88,6 +89,7 @@ app.get('/health', (_request, response) => {
 
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use(releasePageRoutes);
 app.use(express.static(config.publicDir, { index: 'index.html' }));
 
 app.get('/', (_request, response) => {
