@@ -1,6 +1,198 @@
-# Steinbach - Audio Portfolio
+# Steinbach – Audio Engineering & Instruments
 
-A plain HTML, CSS, and JavaScript portfolio site with a small Node/Express backend for upload, delivery, and revision workflows.
+A plain HTML, CSS, and JavaScript portfolio site with a small Node/Express backend for upload, delivery, and revision workflows, plus an interactive instrument showcase built with the Web Audio API.
+
+In the repository, the frontend and backend live side by side.
+In production, both are bundled into one Docker image so the server only has to run a single container.
+
+## Pages
+
+### Portfolio & Services
+- **Homepage** – Introduction with selected work and service overview
+- **Mixing** – Mixing portfolio with A/B audio comparison
+- **Mastering** – Mastering demos with A/B switch and blend slider
+- **Release Link Builder** – Branded release landing pages from a Music Hub link
+
+### Steinbach Instruments – Multisampler
+- **Multisampler** (`multisampler.html`) – Instrument overview page
+- **Historic Organ** (`orgel.html`) – Full product showcase for the Heinrich Röver & Söhne pipe organ sampled at Heilig-Kreuz-Kirche Bevern. Includes an interactive browser console using the real plugin sprite assets, Web Audio API engine, and a complete product page (hero, features, story, gallery, specs, download CTA).
+- **Fender Rhodes** – Coming soon
+
+### File Handoff Workflow
+- **Upload** (`upload.html`) – Client file submission
+- **Delivery** (`delivery.html`) – Engineer delivery to client
+- **Revision** (`revision.html`) – Revision request flow
+
+## Multisampler – Technical Overview
+
+### Audio Engine (`assets/js/orgel.js`)
+- All 17 organ stops are preloaded via `fetch` and decoded into `AudioBuffer` objects
+- On Play, all 17 samples start at exactly the same scheduled `AudioContext` timestamp
+- Each stop has its own `GainNode` (gain 1 = audible, gain 0 = muted)
+- Clicking a stop knob during playback cross-fades the gain in 40 ms – no restart, no timing drift
+- Pause applies a 70 ms exponential gain ramp before stopping sources to prevent the click artifact
+- Master volume is routed through a shared `GainNode`
+
+### Organ UI
+- Background: `Organ_Wallpaper.png` cropped to the same viewport as the standalone plugin (`BG_SHIFT = 95 px`)
+- Stop knobs positioned at the exact Kontakt coordinates from `roever-organ/src/stop_def.rs`
+- Sprite sheets: 43 × 330 px, 6 frames × 55 px. Frame 0 = off (brightness 0.55), frame 5 = on (full brightness)
+- Canvas scales responsively via `transform: scale()` with JS, preserving all pixel-exact positions
+- Available as KONTAKT 8+ instrument, VST3, Audio Unit, and macOS Standalone (Apple Silicon)
+
+## Architecture
+
+The project has two parts:
+
+- Static frontend at the repository root (`index.html`, `orgel.html`, `multisampler.html`, `assets/`)
+- Express backend in `backend/` providing `/api/v1/...` routes for uploads, revisions, deliveries, and admin endpoints
+
+There is no frontend build step. HTML, CSS, JavaScript, and assets are committed directly.
+
+For production, the Docker image copies both parts into one Node runtime:
+
+- Express serves the API routes
+- Express also serves the static frontend files
+- Server starts from `backend/package.json` via `npm start`
+
+## Project Structure
+
+```
+.
+├── index.html                 # Homepage
+├── mixing.html                # Mixing portfolio
+├── mastering.html             # Mastering with audio comparison
+├── multisampler.html          # Instrument overview
+├── orgel.html                 # Historic Organ showcase + interactive console
+├── release-links.html         # Short branded release page generator
+├── upload.html                # Upload workflow
+├── delivery.html              # Delivery workflow
+├── revision.html              # Revision workflow
+├── assets/
+│   ├── css/styles.css         # Global styling
+│   ├── js/
+│   │   ├── navbar.js          # Navbar scroll + hide-on-scroll + dropdown
+│   │   ├── orgel.js           # Organ Web Audio engine
+│   │   └── ...                # Other frontend modules
+│   ├── audio/
+│   │   └── ORGEL/             # 17 organ stop samples (.mp3)
+│   └── images/
+│       └── ORGEL/             # Organ wallpaper + 17 stop sprite sheets + session photos
+├── backend/
+│   ├── package.json
+│   ├── src/                   # Express app and API routes
+│   └── migrations/
+├── Dockerfile
+├── docker-compose.yml
+├── docker-compose.runtime.yml
+└── README.md
+```
+
+## Getting Started
+
+### Static Frontend Preview
+
+```bash
+python3 -m http.server 8000
+# Visit: http://localhost:8000
+```
+
+The interactive organ, multisampler, and all static pages work with this setup.
+API-driven upload/delivery workflows require the full backend.
+
+### Full Production Runtime
+
+The Docker image serves both the static site and the API:
+
+```bash
+docker compose -f docker-compose.runtime.yml pull
+docker compose -f docker-compose.runtime.yml up -d
+```
+
+### Backend Development Only
+
+```bash
+cd backend
+npm install
+npm start
+```
+
+## Audio Comparison (Mastering Page)
+
+### A/B Mode
+Toggle between mix and master instantly. Both tracks stay synchronized.
+
+### Blend Slider Mode
+Smoothly crossfade between mix and master using volume-based blending:
+- 0% = original mix only
+- 100% = mastered version only
+
+Audio files must be identical in duration and start point for accurate comparison.
+
+## Customization
+
+### Colors
+```css
+:root {
+    --primary-color:   #1a1a2e;
+    --secondary-color: #16213e;
+    --highlight-color: #e94560;
+    --text-color:      #eaeaea;
+}
+```
+
+### Adding Organ Samples
+Drop `.mp3` files into `assets/audio/ORGEL/` matching the `data-file` attributes on `.organ-stop-btn` elements in `orgel.html`.
+
+## Deployment
+
+### Docker Image
+
+A GitHub Actions workflow builds and pushes the image on every push to `main`:
+
+```
+ghcr.io/haukesteinbach/haukesteinbach:latest
+ghcr.io/haukesteinbach/haukesteinbach:<commit-sha>
+```
+
+### Server Start
+
+```bash
+docker run -d \
+    --name steinbachapp \
+    -p 3000:3000 \
+    --env-file backend/.env.runtime \
+    -v steinbach_uploads:/var/lib/steinbach/uploads \
+    ghcr.io/haukesteinbach/haukesteinbach:<commit-sha>
+```
+
+Use the immutable commit SHA tag in production, not `latest`.
+
+### Runtime Variables
+
+| Variable | Required | Notes |
+|---|---|---|
+| `APP_ORIGIN` | Yes | e.g. `https://haukesteinbach.de` |
+| `SESSION_SECRET` | Yes | `openssl rand -hex 32` |
+| `CORS_ALLOWED_ORIGINS` | No | Additional allowed origins |
+| `FORMSPREE_UPLOAD_ENDPOINT` | No | Upload notifications |
+| `MAIL_FROM_EMAIL` | No | Direct delivery emails |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` | No | SMTP delivery |
+| `NOTIFICATION_EMAIL` | No | Internal confirmations |
+| `PORT` | No | Default `3000` |
+
+## Troubleshooting
+
+**Organ audio not loading** – Run through a local server (`python3 -m http.server`), not `file://`. Web Audio API requires HTTP.
+
+**API routes not responding locally** – The Node backend is needed. Use the Docker image or start `backend/` separately.
+
+**Audio comparison not syncing** – Ensure mix and master files have identical duration and start time.
+
+## License
+
+Working repository for the Steinbach website.
+
 
 In the repository, the frontend and backend live side by side.
 In production, both are bundled into one Docker image so the server only has to run a single container.
