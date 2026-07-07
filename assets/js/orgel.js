@@ -1,70 +1,62 @@
 /**
  * Orgel – Historic Organ Audio Engine
  *
- * All 17 samples start SIMULTANEOUSLY on Play (same audioCtx timestamp).
- * Each stop has its own GainNode: gain=1 (active) or gain=0 (muted).
- * Pulling/pushing a stop just cross-fades its gain – no restart needed.
+ * Mobile / iOS fix:
+ *   AudioContext is created and resumed SYNCHRONOUSLY inside the Play click
+ *   handler so iOS Safari's autoplay policy is satisfied.
+ *   Audio files are pre-fetched as ArrayBuffers (no AudioContext needed).
+ *   Decoding happens on first Play press and results are cached.
  *
- * Sprite: 43×330 px, 6 frames à 55 px.
- *   Frame 0 (off) = background-position-y: 0
- *   Frame 5 (on)  = background-position-y: -275px
+ * All 17 samples start at the exact same scheduled AudioContext timestamp.
+ * Each stop has its own GainNode (1 = audible, 0 = muted).
+ * Toggling a stop cross-fades its gain – no source restart.
+ * Pause fades master gain to zero first to prevent the click artifact.
  */
 
 (function () {
     'use strict';
 
-    const AUDIO_BASE    = 'assets/audio/ORGEL/';
-    const START_AHEAD_S = 0.06;   // schedule this far in the future so all sources start together
-    const KNOB_FRAME_H  = 55;     // px per sprite frame
-    const FRAME_ON      = 5;
-    const FRAME_OFF     = 0;
-    const GAIN_FADE_S   = 0.04;   // smooth gain ramp duration
+    var AUDIO_BASE    = 'assets/audio/ORGEL/';
+    var START_AHEAD_S = 0.06;
+    var KNOB_FRAME_H  = 55;
+    var FRAME_ON      = 5;
+    var FRAME_OFF     = 0;
+    var GAIN_FADE_S   = 0.04;
+    var DECLICK_S     = 0.07;
 
-    // ── Web Audio ──────────────────────────────────────────────────────────
+    // ── Audio state ────────────────────────────────────────────────────────
     var audioCtx   = null;
     var masterGain = null;
-    var stopGains  = {};  // file → GainNode
-    var sources    = {};  // file → AudioBufferSourceNode (running while isPlaying)
-    var buffers    = {};  // file → AudioBuffer
+    var stopGains  = {};
+    var sources    = {};
+    var rawBuffers = {};   // file → ArrayBuffer  (pre-fetched, no ctx needed)
+    var buffers    = {};   // file → AudioBuffer  (decoded, cached)
     var isPlaying  = false;
 
-    function ensureCtx() {
-        if (!audioCtx) {
-            audioCtx   = new (window.AudioContext || window.webkitAudioContext)();
-            masterGain = audioCtx.createGain();
-            masterGain.gain.value = getVolume();
-            masterGain.connect(audioCtx.destination);
-        }
-        return audioCtx;
-    }
+    // ── File list (populated once DOM is ready) ────────────────────────────
+    var allFiles    = [];
+    var loadedCount = 0;
 
     function getVolume() {
         var s = document.getElementById('organ-volume');
         return s ? parseInt(s.value, 10) / 100 : 0.8;
     }
 
-    // ── Preload all samples ────────────────────────────────────────────────
-    var allFiles   = [];
-    var loadedCount = 0;
-
+    // ── Phase 1: pre-fetch as ArrayBuffers ────────────────────────────────
+    // No AudioContext involved – works before any user gesture.
     function loadAll() {
-        document.querySelectorAll('.organ-stop-btn').forEach(function (btn) {
-            var f = btn.dataset.file;
-            if (f && allFiles.indexOf(f) === -1) allFiles.push(f);
-        });
-
-        var ctx = ensureCtx();  // create early for decodeAudioData
-
         allFiles.forEach(function (file) {
             fetch(AUDIO_BASE + file + '.mp3')
-                .then(function (res) { return res.arrayBuffer(); })
-                .then(function (ab)  { return ctx.decodeAudioData(ab); })
-                .then(function (buf) {
-                    buffers[file] = buf;
+                .then(function (res) {
+                    if (!res.ok) throw new Error(res.status);
+                    return res.arrayBuffer();
+                })
+                .then(function (ab) {
+                    rawBuffers[file] = ab;
                     tickLoad();
                 })
                 .catch(function (err) {
-                    console.warn('[Orgel] load failed:', file, err);
+                    console.warn('[Orgel] fetch failed:', file, err);
                     tickLoad();
                 });
         });
@@ -79,16 +71,36 @@
     }
 
     function onAllLoaded() {
-        var btn  = document.getElementById('organ-play-btn');
-        var icon = document.getElementById('organ-play-icon');
-        var lbl  = document.getElementById('organ-play-label');
-        if (btn)  btn.disabled = false;
-        if (icon) icon.textContent = '▶';
-        if (lbl)  lbl.textContent  = 'Play';
-        // Hide loading bar
-        var bar = document.getElementById('organ-loading-fill');
-        if (bar) { bar.style.opacity = '0'; }
+        var btn = document.getElementById('organ-play-btn');
+        var lbl = document.getElementById('organ-play-label');
+        if (btn) btn.disabled = false;
+        if (lbl) lbl.textContent = 'Play';
+        var fill = document.getElementById('organ-loading-fill');
+        if (fill) setTimeout(function () { fill.style.opacity = '0'; }, 400);
         updateStatus();
+    }
+
+    // ── Phase 2: decode (called on first Play, inside user gesture) ────────
+    // Uses callback form for maximum iOS compatibility.
+    function decodeAll(ctx, done) {
+        var pending = 0;
+        allFiles.forEach(function (file) {
+            if (buffers[file] || !rawBuffers[file]) return;
+            pending++;
+            // slice() so the ArrayBuffer is not detached
+            ctx.decodeAudioData(
+                rawBuffers[file].slice(0),
+                function (decoded) {
+                    buffers[file] = decoded;
+                    if (--pending === 0) done();
+                },
+                function (err) {
+                    console.warn('[Orgel] decode error:', file, err);
+                    if (--pending === 0) done();
+                }
+            );
+        });
+        if (pending === 0) done();
     }
 
     // ── Responsive canvas scaler ───────────────────────────────────────────
@@ -96,17 +108,13 @@
         var scaler = document.getElementById('organ-canvas-scaler');
         var canvas = document.getElementById('organ-canvas');
         if (!scaler || !canvas) return;
-        var rect  = scaler.getBoundingClientRect();
-        var avail = rect.width;
-        if (avail < 10) avail = scaler.parentElement
-            ? scaler.parentElement.clientWidth - 32
-            : 800;
-        var scale = Math.min(1, avail / 1000);
+        var avail  = scaler.getBoundingClientRect().width || 800;
+        var scale  = Math.min(1, avail / 1000);
         canvas.style.transform = 'scale(' + scale + ')';
         scaler.style.height    = Math.round(566 * scale) + 'px';
     }
 
-    // ── Sprite frame helper ────────────────────────────────────────────────
+    // ── Sprite helper ──────────────────────────────────────────────────────
     function setFrame(btn, frame) {
         btn.style.backgroundPositionY = -(frame * KNOB_FRAME_H) + 'px';
     }
@@ -117,114 +125,128 @@
         btn.setAttribute('aria-pressed', String(isNowActive));
         setFrame(btn, isNowActive ? FRAME_ON : FRAME_OFF);
 
-        // If playing, just ramp the per-stop gain
-        var file = btn.dataset.file;
-        if (isPlaying && stopGains[file]) {
-            var ctx = ensureCtx();
-            var targetGain = isNowActive ? 1 : 0;
-            stopGains[file].gain.setTargetAtTime(targetGain, ctx.currentTime, GAIN_FADE_S);
+        if (isPlaying && audioCtx && stopGains[btn.dataset.file]) {
+            var target = isNowActive ? 1 : 0;
+            stopGains[btn.dataset.file].gain
+                .setTargetAtTime(target, audioCtx.currentTime, GAIN_FADE_S);
         }
-
         updateStatus();
     }
 
-    // ── Playback: start ALL samples simultaneously ─────────────────────────
-    function startPlayback() {
-        var ctx = ensureCtx();
-        ctx.resume().catch(function () {});
+    // ── Source management ──────────────────────────────────────────────────
+    function stopAllSources() {
+        Object.keys(sources).forEach(function (f) {
+            try { sources[f].stop(); }    catch (e) {}
+            try { sources[f].disconnect(); } catch (e) {}
+        });
+        Object.keys(stopGains).forEach(function (f) {
+            try { stopGains[f].disconnect(); } catch (e) {}
+        });
+        sources   = {};
+        stopGains = {};
+    }
 
-        // Auto-activate Principal 8' if nothing selected
-        var activeBtns = document.querySelectorAll('.organ-stop-btn.active');
-        if (activeBtns.length === 0) {
-            var p = document.querySelector('[data-file="PRINCIPAL8"]');
-            if (p) toggleStop(p);
-        }
-
-        stopAllSources(); // clean up any leftovers
-
-        var startTime = ctx.currentTime + START_AHEAD_S;
-
-        // Start ALL 17 samples at exactly the same time.
-        // Each has its own GainNode: active stops get gain=1, others gain=0.
+    function scheduleAllSources() {
+        var startTime = audioCtx.currentTime + START_AHEAD_S;
         allFiles.forEach(function (file) {
             if (!buffers[file]) return;
-
             var isActive = !!document.querySelector('[data-file="' + file + '"].active');
-
-            // Per-stop gain
-            var gain = ctx.createGain();
+            var gain = audioCtx.createGain();
             gain.gain.value = isActive ? 1 : 0;
             gain.connect(masterGain);
             stopGains[file] = gain;
 
-            // Source
-            var src = ctx.createBufferSource();
+            var src = audioCtx.createBufferSource();
             src.buffer = buffers[file];
             src.loop   = true;
             src.connect(gain);
             src.start(startTime);
             sources[file] = src;
         });
-
-        isPlaying = true;
-        updatePlayBtn();
-        updateStatus();
     }
 
-    function stopPlayback() {
-        // Ramp master gain to zero first to avoid the click artifact,
-        // then stop all sources after the fade completes.
-        var ctx  = ensureCtx();
-        var now  = ctx.currentTime;
-        var FADE = 0.07;  // 70 ms de-click fade
+    // ── Play ───────────────────────────────────────────────────────────────
+    // AudioContext is created + resumed SYNCHRONOUSLY here (iOS requirement).
+    function startPlayback() {
+        // 1. Create AudioContext synchronously inside the click event
+        if (!audioCtx) {
+            audioCtx   = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = getVolume();
+            masterGain.connect(audioCtx.destination);
+        }
+        // 2. Resume synchronously (iOS needs this in the same call stack)
+        audioCtx.resume();
 
-        masterGain.gain.cancelScheduledValues(now);
-        masterGain.gain.setValueAtTime(masterGain.gain.value || 0.001, now);
-        masterGain.gain.exponentialRampToValueAtTime(0.0001, now + FADE);
+        // Auto-activate Principal 8' when nothing is selected
+        if (!document.querySelector('.organ-stop-btn.active')) {
+            var p = document.querySelector('[data-file="PRINCIPAL8"]');
+            if (p) toggleStop(p);
+        }
 
-        var savedVol = getVolume();
-        setTimeout(function () {
+        // 3. Update UI immediately
+        isPlaying = true;
+        updatePlayBtn();
+
+        var lbl = document.getElementById('organ-play-label');
+        var allDecoded = allFiles.every(function (f) { return !!buffers[f]; });
+
+        if (allDecoded) {
             stopAllSources();
-            // Restore gain for next Play press
-            var c = ensureCtx();
-            masterGain.gain.cancelScheduledValues(c.currentTime);
-            masterGain.gain.setValueAtTime(savedVol, c.currentTime);
+            scheduleAllSources();
+            updateStatus();
+        } else {
+            // Show brief "decoding" state, then start
+            if (lbl) lbl.textContent = '...';
+            decodeAll(audioCtx, function () {
+                stopAllSources();
+                scheduleAllSources();
+                updatePlayBtn();
+                updateStatus();
+            });
+        }
+    }
+
+    // ── Pause ──────────────────────────────────────────────────────────────
+    function stopPlayback() {
+        if (!audioCtx || !masterGain) {
             isPlaying = false;
             updatePlayBtn();
             updateStatus();
-        }, Math.ceil(FADE * 1000) + 30);
+            return;
+        }
 
-        // Update button state immediately so UI feels responsive
+        // Fade out to avoid click
+        var now  = audioCtx.currentTime;
+        var vol  = getVolume();
+        masterGain.gain.cancelScheduledValues(now);
+        masterGain.gain.setValueAtTime(masterGain.gain.value || 0.001, now);
+        masterGain.gain.exponentialRampToValueAtTime(0.0001, now + DECLICK_S);
+
         isPlaying = false;
         updatePlayBtn();
         updateStatus();
+
+        setTimeout(function () {
+            stopAllSources();
+            if (audioCtx && masterGain) {
+                masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+                masterGain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            }
+        }, Math.ceil(DECLICK_S * 1000) + 30);
     }
 
-    function stopAllSources() {
-        Object.keys(sources).forEach(function (file) {
-            try { sources[file].stop(); }    catch (e) {}
-            try { sources[file].disconnect(); } catch (e) {}
-        });
-        Object.keys(stopGains).forEach(function (file) {
-            try { stopGains[file].disconnect(); } catch (e) {}
-        });
-        sources   = {};
-        stopGains = {};
-    }
-
+    // ── Play button UI ─────────────────────────────────────────────────────
     function updatePlayBtn() {
-        var btn  = document.getElementById('organ-play-btn');
-        var icon = document.getElementById('organ-play-icon');
-        var lbl  = document.getElementById('organ-play-label');
+        var btn = document.getElementById('organ-play-btn');
+        var lbl = document.getElementById('organ-play-label');
         if (!btn) return;
         if (isPlaying) {
             btn.classList.add('is-playing');
-            if (icon) icon.textContent = '⏸';
-            if (lbl)  lbl.textContent  = 'Pause';
+            if (lbl) lbl.textContent = 'Pause';
         } else {
             btn.classList.remove('is-playing');
-            if (icon) icon.textContent = '▶';
-            if (lbl)  lbl.textContent  = 'Play';
+            if (lbl) lbl.textContent = 'Play';
         }
     }
 
@@ -233,14 +255,11 @@
         var active  = document.querySelectorAll('.organ-stop-btn.active').length;
         var text    = document.getElementById('organ-status-text');
         var counter = document.getElementById('organ-active-count');
-
         if (counter) counter.textContent = active + ' Register aktiv';
         if (text) {
-            if (isPlaying && active > 0) {
-                text.textContent = active + ' Stop' + (active !== 1 ? 's' : '') + ' · läuft';
-            } else {
-                text.textContent = active + ' Stop' + (active !== 1 ? 's' : '') + ' bereit';
-            }
+            text.textContent = isPlaying && active > 0
+                ? active + ' Stop' + (active !== 1 ? 's' : '') + ' aktiv'
+                : active + ' Stop' + (active !== 1 ? 's' : '') + ' bereit';
         }
     }
 
@@ -251,10 +270,10 @@
         if (!slider) return;
         slider.addEventListener('input', function () {
             if (lbl) lbl.textContent = this.value;
-            if (masterGain) {
+            if (masterGain && audioCtx) {
                 masterGain.gain.setTargetAtTime(
                     parseInt(this.value, 10) / 100,
-                    ensureCtx().currentTime,
+                    audioCtx.currentTime,
                     0.05
                 );
             }
@@ -263,10 +282,13 @@
 
     // ── Init ───────────────────────────────────────────────────────────────
     function init() {
-        // Give the layout a tick to settle before first scale
-        requestAnimationFrame(function () {
-            scaleCanvas();
+        // Collect all file names from DOM
+        document.querySelectorAll('.organ-stop-btn').forEach(function (btn) {
+            var f = btn.dataset.file;
+            if (f && allFiles.indexOf(f) === -1) allFiles.push(f);
         });
+
+        requestAnimationFrame(scaleCanvas);
         window.addEventListener('resize', scaleCanvas);
 
         // Wire stop knobs
@@ -274,7 +296,10 @@
             setFrame(btn, FRAME_OFF);
             btn.addEventListener('click', function () { toggleStop(btn); });
             btn.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleStop(btn); }
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleStop(btn);
+                }
             });
         });
 
@@ -286,7 +311,7 @@
             });
         }
 
-        // Scroll to demo from hero CTA
+        // Hero CTA scroll
         var tryBtn = document.getElementById('hero-try-btn');
         if (tryBtn) {
             tryBtn.addEventListener('click', function () {
@@ -318,6 +343,7 @@
             if (isPlaying) stopPlayback();
         });
 
+        // Start fetching (no AudioContext needed for this)
         loadAll();
         updateStatus();
     }

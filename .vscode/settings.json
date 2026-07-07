@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^git -C \"/Users/haukesteinbach/Library/Mobile Documents/com~apple~CloudDocs/04_Freelance/Hauke Steinbach/Gründung/Weiteres/Website\" diff -- assets/js/hero-fade\\.js assets/css/styles\\.css index\\.html$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
