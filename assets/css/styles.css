@@ -798,7 +798,12 @@ body {
     top: 0;
     z-index: 100;
     box-shadow: var(--shadow);
-    transition: all 0.3s ease;
+    transition: transform 0.32s ease, background-color 0.3s ease, padding 0.3s ease, box-shadow 0.3s ease;
+    will-change: transform;
+}
+
+.navbar.navbar-hidden {
+    transform: translateY(-110%);
 }
 
 .navbar.scrolled {
@@ -2298,4 +2303,982 @@ audio {
     .contact-form-toggle h2 {
         font-size: 1.2rem;
     }
+}
+
+/* ========================================
+   NAV DROPDOWN (More)
+   ======================================== */
+
+.nav-item-dropdown {
+    position: relative;
+}
+
+.nav-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.32rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--text-color);
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid transparent;
+    transition: color 0.3s ease, border-bottom-color 0.3s ease;
+    white-space: nowrap;
+}
+
+.nav-dropdown-trigger:hover,
+.nav-item-dropdown.open .nav-dropdown-trigger {
+    color: var(--highlight-color);
+    border-bottom-color: var(--highlight-color);
+}
+
+.nav-dropdown-caret {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+    transition: transform 0.22s ease;
+    opacity: 0.7;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.nav-item-dropdown.open .nav-dropdown-caret {
+    transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 0.85rem);
+    right: 0;
+    min-width: 16rem;
+    padding: 0.55rem;
+    list-style: none;
+    border: 1px solid rgba(233, 69, 96, 0.2);
+    border-radius: 1rem;
+    background: rgba(13, 18, 31, 0.97);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 18px 52px rgba(0, 0, 0, 0.42);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    z-index: 200;
+}
+
+.nav-item-dropdown.open .nav-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.nav-dropdown-menu li a {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.65rem 0.95rem;
+    border-radius: 0.6rem;
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 0.93rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-dropdown-menu li a:hover {
+    background: rgba(233, 69, 96, 0.12);
+    color: var(--highlight-color);
+}
+
+.nav-dropdown-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.nav-dropdown-sub {
+    display: block;
+    font-size: 0.77rem;
+    color: rgba(234, 234, 234, 0.5);
+    font-weight: 400;
+    margin-top: 0.1rem;
+}
+
+@media (max-width: 768px) {
+    .nav-dropdown-trigger {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .nav-dropdown-menu {
+        position: static;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+        border: none;
+        padding: 0.25rem 0 0.25rem 1rem;
+        display: none;
+    }
+
+    .nav-item-dropdown.open .nav-dropdown-menu {
+        display: block;
+    }
+
+    .nav-dropdown-menu li a {
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    .nav-dropdown-sub {
+        display: none;
+    }
+}
+
+/* ========================================
+   MULTISAMPLER OVERVIEW PAGE
+   ======================================== */
+
+.multisampler-hero {
+    padding: 5rem 2rem 3rem;
+    text-align: center;
+    background: linear-gradient(160deg, rgba(15,52,96,0.6) 0%, rgba(26,26,46,0) 60%);
+}
+
+.multisampler-hero h1 {
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    letter-spacing: -0.04em;
+    color: #fff;
+    margin-bottom: 0.7rem;
+}
+
+.multisampler-hero .hero-kicker {
+    color: var(--highlight-color);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+.multisampler-hero .subtitle {
+    max-width: 55ch;
+    margin: 0 auto;
+    color: rgba(234,234,234,0.72);
+    font-size: 1.08rem;
+    line-height: 1.7;
+}
+
+.multisampler-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.8rem;
+    max-width: 1100px;
+    margin: 3rem auto 5rem;
+    padding: 0 2rem;
+}
+
+.multisampler-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 2rem;
+    border: 1px solid rgba(233, 69, 96, 0.18);
+    border-radius: 1.4rem;
+    background:
+        radial-gradient(circle at top left, rgba(233, 69, 96, 0.1), transparent 50%),
+        linear-gradient(145deg, rgba(15, 22, 39, 0.96), rgba(22, 28, 48, 0.94));
+    box-shadow: 0 16px 48px rgba(0,0,0,0.28);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    overflow: hidden;
+}
+
+.multisampler-card::before {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    border-radius: 1.35rem;
+    border: 1px solid rgba(255,255,255,0.05);
+    pointer-events: none;
+}
+
+.multisampler-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.38);
+    border-color: rgba(233, 69, 96, 0.38);
+}
+
+.multisampler-card-icon {
+    font-size: 3rem;
+    line-height: 1;
+}
+
+.multisampler-card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid rgba(233, 69, 96, 0.3);
+    border-radius: 999px;
+    background: rgba(233, 69, 96, 0.08);
+    color: #ffb8c3;
+    font-size: 0.73rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    width: fit-content;
+}
+
+.multisampler-card h2 {
+    font-size: 1.55rem;
+    letter-spacing: -0.03em;
+    color: #fff;
+    margin: 0;
+}
+
+.multisampler-card p {
+    color: rgba(234,234,234,0.7);
+    font-size: 0.97rem;
+    line-height: 1.65;
+    margin: 0;
+    flex: 1;
+}
+
+.multisampler-card-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: rgba(234,234,234,0.45);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding-top: 0.9rem;
+    margin-top: 0.4rem;
+}
+
+.multisampler-card-arrow {
+    position: absolute;
+    top: 1.8rem;
+    right: 1.8rem;
+    font-size: 1.1rem;
+    opacity: 0.35;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.multisampler-card:hover .multisampler-card-arrow {
+    opacity: 0.8;
+    transform: translateX(3px);
+}
+
+/* ========================================
+   ORGAN CONSOLE UI
+   ======================================== */
+
+.orgel-hero {
+    padding: 5rem 2rem 2.5rem;
+    text-align: center;
+    background: linear-gradient(160deg, rgba(60,35,10,0.35) 0%, rgba(26,26,46,0) 60%);
+}
+
+.orgel-hero h1 {
+    font-size: clamp(2.2rem, 5.5vw, 4rem);
+    letter-spacing: -0.04em;
+    color: #fff;
+    margin-bottom: 0.6rem;
+}
+
+.orgel-hero .hero-kicker {
+    color: #c8a96e;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+.orgel-hero .subtitle {
+    max-width: 58ch;
+    margin: 0 auto;
+    color: rgba(234,234,234,0.72);
+    font-size: 1.06rem;
+    line-height: 1.72;
+}
+
+.orgel-info {
+    max-width: 780px;
+    margin: 2.5rem auto;
+    padding: 0 1.5rem;
+}
+
+.orgel-info p {
+    color: rgba(234,234,234,0.78);
+    font-size: 1.04rem;
+    line-height: 1.75;
+    margin-bottom: 1.1rem;
+}
+
+/* Console wrapper */
+.organ-console {
+    max-width: 1060px;
+    margin: 2rem auto 5rem;
+    padding: 0 1.5rem;
+}
+
+.organ-console-inner {
+    border-radius: 1.8rem;
+    overflow: hidden;
+    background:
+        linear-gradient(170deg, #4a2c10 0%, #2e1b09 35%, #1c1005 100%);
+    border: 2px solid #7a4f22;
+    box-shadow:
+        0 40px 100px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,210,120,0.15),
+        inset 0 -1px 0 rgba(0,0,0,0.4);
+}
+
+/* Console header */
+.organ-console-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 2rem;
+    background: rgba(0,0,0,0.25);
+    border-bottom: 1px solid rgba(255,200,100,0.1);
+}
+
+.organ-brand {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #c8a96e;
+}
+
+.organ-brand span {
+    color: rgba(200,169,110,0.5);
+    font-weight: 400;
+    font-size: 0.75rem;
+    display: block;
+    letter-spacing: 0.1em;
+    margin-top: 0.15rem;
+}
+
+/* Division sections */
+.organ-division {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(255,200,100,0.08);
+}
+
+.organ-division:last-of-type {
+    border-bottom: none;
+}
+
+.organ-division-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(200,169,110,0.6);
+    margin-bottom: 1.1rem;
+}
+
+.organ-stops {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+}
+
+/* Individual stop tab */
+.stop-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.stop-knob {
+    width: 52px;
+    height: 72px;
+    border-radius: 0.55rem 0.55rem 0.3rem 0.3rem;
+    background:
+        linear-gradient(180deg, #f5edd8 0%, #ede0c0 40%, #d4c298 100%);
+    border: 1px solid #b89a6a;
+    box-shadow:
+        0 3px 10px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.6),
+        inset 0 -1px 0 rgba(0,0,0,0.15);
+    position: relative;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 0.5rem;
+}
+
+.stop-knob::before {
+    content: "";
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    height: 2px;
+    border-radius: 1px;
+    background: rgba(0,0,0,0.12);
+}
+
+.stop-knob::after {
+    content: "";
+    position: absolute;
+    top: 12px;
+    left: 6px;
+    right: 6px;
+    height: 2px;
+    border-radius: 1px;
+    background: rgba(0,0,0,0.08);
+}
+
+/* Active (pulled out) state */
+.stop-tab.active .stop-knob {
+    transform: translateY(12px);
+    background:
+        linear-gradient(180deg, #fff3d0 0%, #ffe9a8 40%, #f5d56e 100%);
+    border-color: #d4a830;
+    box-shadow:
+        0 8px 20px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.8),
+        inset 0 -1px 0 rgba(0,0,0,0.1),
+        0 0 0 2px rgba(233,69,96,0.35);
+}
+
+.stop-knob-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.18);
+    transition: background-color 0.18s ease;
+}
+
+.stop-tab.active .stop-knob-dot {
+    background: var(--highlight-color);
+    box-shadow: 0 0 6px rgba(233,69,96,0.6);
+}
+
+.stop-label {
+    font-size: 0.67rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: rgba(200,180,140,0.85);
+    text-align: center;
+    line-height: 1.25;
+    max-width: 58px;
+    text-transform: uppercase;
+    margin-top: 14px; /* space for pulled state */
+    transition: color 0.18s ease;
+}
+
+.stop-tab.active .stop-label {
+    color: #f5d56e;
+}
+
+/* Keyboard */
+.organ-keyboard-section {
+    padding: 0.75rem 2rem 1rem;
+    background: rgba(0,0,0,0.2);
+    border-top: 1px solid rgba(255,200,100,0.08);
+    border-bottom: 1px solid rgba(255,200,100,0.08);
+}
+
+.organ-keyboard {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    position: relative;
+    height: 80px;
+    margin: 0 auto;
+    max-width: 680px;
+    overflow: hidden;
+    border-radius: 0 0 0.4rem 0.4rem;
+}
+
+.key-white {
+    position: relative;
+    width: 28px;
+    height: 75px;
+    background: linear-gradient(180deg, #f8f5ee 0%, #ede8dc 100%);
+    border: 1px solid #b0a080;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    margin-right: 1px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3), inset 0 -2px 0 rgba(0,0,0,0.1);
+    flex-shrink: 0;
+}
+
+.key-black {
+    position: absolute;
+    width: 18px;
+    height: 48px;
+    background: linear-gradient(180deg, #2a2010 0%, #1a1208 100%);
+    border: 1px solid #0a0800;
+    border-radius: 0 0 3px 3px;
+    z-index: 2;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* Controls */
+.organ-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
+    padding: 1.5rem 2rem;
+    flex-wrap: wrap;
+}
+
+.organ-play-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.85rem 2.2rem;
+    border-radius: 999px;
+    background: var(--highlight-color);
+    border: none;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(233,69,96,0.35);
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.organ-play-btn:hover {
+    background: #d63050;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 32px rgba(233,69,96,0.45);
+}
+
+.organ-play-btn:active {
+    transform: translateY(0);
+}
+
+.organ-play-btn.is-playing {
+    background: linear-gradient(135deg, #2d5a8e, #1a3a5e);
+    box-shadow: 0 6px 24px rgba(45,90,142,0.4);
+}
+
+.organ-play-btn.is-playing:hover {
+    background: linear-gradient(135deg, #3668a0, #22486e);
+}
+
+.organ-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(200,180,140,0.65);
+}
+
+.organ-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(200,180,140,0.3);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.organ-status-dot.active {
+    background: #4ade80;
+    box-shadow: 0 0 8px rgba(74,222,128,0.6);
+    animation: pulse-dot 2s ease infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.organ-volume {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.82rem;
+    color: rgba(200,180,140,0.65);
+}
+
+.organ-volume input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 90px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(200,180,140,0.2);
+    outline: none;
+    cursor: pointer;
+}
+
+.organ-volume input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #c8a96e;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.organ-volume input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #c8a96e;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* Console footer info */
+.organ-console-footer {
+    padding: 0.85rem 2rem;
+    background: rgba(0,0,0,0.3);
+    border-top: 1px solid rgba(255,200,100,0.08);
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-size: 0.74rem;
+    color: rgba(200,169,110,0.4);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 700px) {
+    .organ-console-inner {
+        border-radius: 1.2rem;
+    }
+
+    .organ-division {
+        padding: 1.1rem 1rem;
+    }
+
+    .organ-stops {
+        gap: 0.5rem;
+        justify-content: center;
+    }
+
+    .stop-knob {
+        width: 44px;
+        height: 62px;
+    }
+
+    .stop-label {
+        font-size: 0.6rem;
+        max-width: 50px;
+    }
+
+    .organ-controls {
+        padding: 1.2rem 1rem;
+        gap: 0.9rem;
+    }
+
+    .organ-keyboard-section {
+        padding: 0.6rem 1rem 0.8rem;
+    }
+}
+}
+
+/* ========================================
+   ORGAN REAL-UI CANVAS (sprite-based)
+   ======================================== */
+
+.organ-canvas-wrapper {
+    width: 100%;
+    max-width: 1080px;
+    margin: 1.5rem auto 0;
+    padding: 0 1rem;
+}
+
+.organ-canvas-scaler {
+    width: 100%;
+    /* height set by JS */
+    position: relative;
+    overflow: hidden;
+}
+
+.organ-canvas {
+    width: 1000px;
+    height: 566px;
+    position: relative;
+    overflow: hidden;
+    transform-origin: top left;
+    /* transform: scale(N) injected by JS */
+    border-radius: 0;
+    box-shadow: 0 32px 90px rgba(0,0,0,0.6);
+}
+
+.organ-bg {
+    position: absolute;
+    width: 1000px;
+    height: 1906px;
+    top: -95px;
+    left: 0;
+    pointer-events: none;
+    user-select: none;
+    display: block;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+/* Each interactive stop knob – CSS sprite */
+.organ-stop-btn {
+    position: absolute;
+    width: 43px;
+    height: 55px;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    background-size: 43px 330px;  /* full sprite strip */
+    background-position: 0 0;      /* frame 0 = pushed in / off */
+    cursor: pointer;
+    filter: brightness(0.58) saturate(0.45);
+    transition: filter 0.14s ease;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    border-radius: 2px;
+    /* larger invisible hit area */
+    padding: 6px;
+    box-sizing: content-box;
+    background-clip: content-box;
+}
+
+.organ-stop-btn::after {
+    /* tooltip label on hover */
+    content: attr(data-label);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10,6,3,0.92);
+    color: #c8a96e;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    padding: 3px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 10;
+}
+
+.organ-stop-btn:hover::after {
+    opacity: 1;
+}
+
+.organ-stop-btn:hover {
+    filter: brightness(0.8) saturate(0.65);
+}
+
+.organ-stop-btn.active {
+    background-position: 0 -275px;  /* frame 5 = pulled out / on */
+    filter: brightness(1) saturate(1);
+}
+
+.organ-stop-btn:focus-visible {
+    outline: 2px solid rgba(233, 69, 96, 0.7);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+/* Controls bar below the canvas */
+.organ-controls-bar {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0.9rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem 1.4rem;
+    flex-wrap: wrap;
+    background: rgba(10, 6, 3, 0.55);
+    border-top: 1px solid rgba(255, 200, 100, 0.1);
+    backdrop-filter: blur(8px);
+}
+
+.organ-play-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 1.8rem;
+    border-radius: 999px;
+    background: var(--highlight-color);
+    border: none;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(233,69,96,0.35);
+    transition: background-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    flex-shrink: 0;
+}
+
+.organ-play-btn:hover {
+    background: #d63050;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(233,69,96,0.45);
+}
+
+.organ-play-btn:active { transform: translateY(0); }
+
+.organ-play-btn:disabled {
+    background: rgba(255,255,255,0.12);
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.organ-play-btn.is-playing {
+    background: linear-gradient(135deg, #1e4d80, #122e50);
+    box-shadow: 0 5px 20px rgba(30,77,128,0.4);
+}
+
+.organ-play-btn.is-playing:hover {
+    background: linear-gradient(135deg, #265c96, #173660);
+}
+
+.organ-clear-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.65rem 1.2rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.05);
+    color: rgba(234,234,234,0.6);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+
+.organ-clear-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: rgba(234,234,234,0.9);
+}
+
+.organ-vol-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: rgba(200,180,140,0.6);
+    flex-shrink: 0;
+}
+
+.organ-vol-group input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(200,180,140,0.25);
+    outline: none;
+    cursor: pointer;
+}
+
+.organ-vol-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #c8a96e;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.35);
+}
+
+.organ-vol-group input[type="range"]::-moz-range-thumb {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #c8a96e;
+    cursor: pointer;
+    border: none;
+}
+
+.organ-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: rgba(200,180,140,0.5);
+    margin-left: auto;
+}
+
+.organ-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(200,180,140,0.25);
+    flex-shrink: 0;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.organ-status-dot.active {
+    background: #4ade80;
+    box-shadow: 0 0 7px rgba(74,222,128,0.6);
+    animation: organ-pulse 2s ease infinite;
+}
+
+@keyframes organ-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+}
+
+.organ-loading-bar {
+    max-width: 1080px;
+    margin: 0 auto;
+    height: 2px;
+    background: rgba(255,200,100,0.08);
+    overflow: hidden;
+}
+
+.organ-loading-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #c8a96e, #e94560);
+    width: 0%;
+    transition: width 0.25s ease;
+}
+
+/* Below-canvas info line */
+.organ-canvas-footer {
+    max-width: 1080px;
+    margin: 0 auto 4rem;
+    padding: 0.6rem 1.5rem;
+    font-size: 0.73rem;
+    color: rgba(200,169,110,0.35);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    display: flex;
+    gap: 1.2rem;
 }

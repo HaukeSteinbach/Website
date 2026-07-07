@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historic Organ – Steinbach Instruments</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <style>
+        /* ── Page-level tokens ───────────────────────────────────── */
+        :root {
+            --wood-dark: #0d0b08;
+            --wood-mid:  #1a1408;
+            --gold:      #c8a96e;
+            --gold-dim:  rgba(200,169,110,0.45);
+            --gold-faint:rgba(200,169,110,0.12);
+        }
+
+        /* ── HERO ────────────────────────────────────────────────── */
+        .organ-hero {
+            position: relative;
+            min-height: 92vh;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            background: var(--wood-dark);
+        }
+
+        .organ-hero-bg {
+            position: absolute;
+            inset: 0;
+            background-image: url('assets/images/ORGEL/Organ_Wallpaper.png');
+            background-size: cover;
+            background-position: center 18%;
+            filter: brightness(0.32) saturate(0.7);
+        }
+
+        .organ-hero-vignette {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 70% 60% at 50% 100%, rgba(13,11,8,0.95), transparent),
+                linear-gradient(180deg, rgba(13,11,8,0.55) 0%, transparent 30%, rgba(13,11,8,0.8) 85%);
+        }
+
+        .organ-hero-inner {
+            position: relative;
+            z-index: 2;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            text-align: center;
+        }
+
+        .organ-hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.38rem 1rem;
+            border: 1px solid rgba(200,169,110,0.3);
+            border-radius: 999px;
+            background: rgba(200,169,110,0.08);
+            color: var(--gold);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 1.8rem;
+        }
+
+        .organ-hero h1 {
+            font-size: clamp(3rem, 8vw, 6.4rem);
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            line-height: 0.9;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .organ-hero-subtitle {
+            font-size: clamp(1rem, 2.5vw, 1.35rem);
+            color: var(--gold);
+            font-weight: 400;
+            letter-spacing: 0.04em;
+            margin-bottom: 1.5rem;
+        }
+
+        .organ-hero-desc {
+            max-width: 60ch;
+            margin: 0 auto 2.8rem;
+            color: rgba(234,234,234,0.65);
+            font-size: 1.08rem;
+            line-height: 1.75;
+        }
+
+        .organ-hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary-organ {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.9rem 2.2rem;
+            border-radius: 999px;
+            background: var(--highlight-color);
+            border: none;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            box-shadow: 0 6px 28px rgba(233,69,96,0.38);
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            text-decoration: none;
+        }
+        .btn-primary-organ:hover {
+            background: #d63050;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 36px rgba(233,69,96,0.48);
+        }
+
+        .btn-ghost-organ {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.9rem 2.2rem;
+            border-radius: 999px;
+            border: 1px solid rgba(200,169,110,0.35);
+            background: rgba(200,169,110,0.06);
+            color: var(--gold);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: not-allowed;
+            opacity: 0.6;
+            text-decoration: none;
+        }
+
+        .organ-hero-scroll {
+            position: absolute;
+            bottom: 2.2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+            color: rgba(200,169,110,0.4);
+            font-size: 0.72rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .organ-hero-scroll-line {
+            width: 1px;
+            height: 36px;
+            background: linear-gradient(to bottom, rgba(200,169,110,0.4), transparent);
+        }
+
+        /* ── SECTION SHARED ──────────────────────────────────────── */
+        .organ-section {
+            padding: 6rem 2rem;
+        }
+        .organ-section-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .organ-section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--gold);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+        .organ-section-label::before {
+            content: '';
+            display: block;
+            width: 24px;
+            height: 1px;
+            background: var(--gold);
+            opacity: 0.5;
+        }
+        .organ-section h2 {
+            font-size: clamp(2rem, 5vw, 3.6rem);
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            color: #fff;
+            line-height: 1.0;
+            margin-bottom: 1.2rem;
+        }
+        .organ-section-lead {
+            max-width: 60ch;
+            font-size: 1.08rem;
+            color: rgba(234,234,234,0.65);
+            line-height: 1.75;
+            margin-bottom: 3rem;
+        }
+
+        /* ── DEMO SECTION ────────────────────────────────────────── */
+        #demo {
+            background: var(--wood-dark);
+            padding: 5rem 0 0;
+        }
+
+        #demo .organ-section-inner {
+            padding: 0 2rem;
+        }
+
+        #demo .organ-section-inner > .organ-section-label,
+        #demo .organ-section-inner > h2,
+        #demo .organ-section-inner > .organ-section-lead {
+            padding: 0;
+        }
+
+        .organ-demo-hint {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.82rem;
+            color: rgba(200,169,110,0.55);
+            margin-bottom: 2rem;
+        }
+        .organ-demo-hint::before {
+            content: '→';
+            font-size: 0.9rem;
+        }
+
+        /* canvas wrapper – centered, max 840px */
+        .organ-canvas-wrapper {
+            width: 100%;
+            max-width: 840px;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        /* ── ORGAN CANVAS (sprite-based) ─────────────────────────── */
+        .organ-canvas-scaler {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        .organ-canvas {
+            width: 1000px;
+            height: 566px;
+            position: relative;
+            overflow: hidden;
+            transform-origin: top left;
+        }
+        .organ-bg {
+            position: absolute;
+            width: 1000px;
+            height: 1906px;
+            top: -95px;
+            left: 0;
+            pointer-events: none;
+            user-select: none;
+            display: block;
+        }
+
+        /* Stop knobs – no padding that shifts the sprite */
+        .organ-stop-btn {
+            position: absolute;
+            width: 43px;
+            height: 55px;
+            border: none;
+            padding: 0;
+            margin: 0;
+            background-color: transparent;
+            background-repeat: no-repeat;
+            background-size: 43px 330px;
+            background-position: 0 0;
+            cursor: pointer;
+            filter: brightness(0.55) saturate(0.3);
+            transition: filter 0.13s ease;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .organ-stop-btn:hover {
+            filter: brightness(0.8) saturate(0.6);
+        }
+        .organ-stop-btn.active {
+            background-position: 0 -275px;  /* frame 5 */
+            filter: brightness(1) saturate(1);
+        }
+        .organ-stop-btn:focus-visible {
+            outline: 2px solid rgba(233,69,96,0.7);
+            outline-offset: 2px;
+            border-radius: 3px;
+        }
+
+        /* Tooltip on hover */
+        .organ-stop-btn::after {
+            content: attr(data-label);
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(8,5,2,0.95);
+            color: var(--gold);
+            font-size: 9px;
+            font-weight: 700;
+            white-space: nowrap;
+            padding: 3px 7px;
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.12s;
+            z-index: 20;
+        }
+        .organ-stop-btn:hover::after { opacity: 1; }
+
+        /* ── CONTROLS BAR ────────────────────────────────────────── */
+        .organ-controls-bar {
+            max-width: 840px;
+            margin: 0 auto;
+            padding: 0.85rem 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: rgba(8, 5, 2, 0.72);
+            border-top: 1px solid rgba(200,169,110,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .organ-play-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.65rem 1.65rem;
+            border-radius: 999px;
+            background: var(--highlight-color);
+            border: none;
+            color: #fff;
+            font-size: 0.93rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(233,69,96,0.32);
+            transition: background 0.2s, transform 0.15s;
+            flex-shrink: 0;
+        }
+        .organ-play-btn:hover { background: #d63050; transform: translateY(-1px); }
+        .organ-play-btn:disabled {
+            background: rgba(255,255,255,0.1);
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .organ-play-btn.is-playing {
+            background: linear-gradient(135deg, #1e4d80, #122e50);
+            box-shadow: 0 5px 18px rgba(30,77,128,0.4);
+        }
+        .organ-play-btn.is-playing:hover { background: linear-gradient(135deg, #255c97,#163866); }
+
+        .organ-clear-btn {
+            padding: 0.6rem 1.1rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: rgba(234,234,234,0.55);
+            font-size: 0.83rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+            flex-shrink: 0;
+        }
+        .organ-clear-btn:hover { background: rgba(255,255,255,0.08); color: rgba(234,234,234,0.85); }
+
+        .organ-vol-group {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.78rem;
+            color: rgba(200,169,110,0.5);
+            flex-shrink: 0;
+        }
+        .organ-vol-group input[type="range"] {
+            -webkit-appearance: none;
+            width: 76px; height: 3px;
+            border-radius: 2px;
+            background: rgba(200,169,110,0.2);
+            outline: none; cursor: pointer;
+        }
+        .organ-vol-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+        }
+        .organ-vol-group input[type="range"]::-moz-range-thumb {
+            width: 12px; height: 12px;
+            border-radius: 50%; background: var(--gold); border: none; cursor: pointer;
+        }
+
+        .organ-status-text {
+            margin-left: auto;
+            font-size: 0.78rem;
+            color: rgba(200,169,110,0.4);
+        }
+
+        /* Loading bar */
+        .organ-loading-bar {
+            max-width: 840px;
+            margin: 0 auto;
+            height: 1px;
+            background: rgba(200,169,110,0.08);
+            overflow: hidden;
+        }
+        .organ-loading-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold), var(--highlight-color));
+            width: 0%;
+            transition: width 0.3s ease, opacity 0.5s ease;
+        }
+
+        /* ── FEATURES ────────────────────────────────────────────── */
+        #features { background: var(--wood-mid); }
+
+        .organ-features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .organ-feature-card {
+            padding: 2rem 1.8rem;
+            border: 1px solid rgba(200,169,110,0.1);
+            border-radius: 1.2rem;
+            background: rgba(200,169,110,0.04);
+        }
+
+        .organ-feature-icon {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .organ-feature-card h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.6rem;
+            letter-spacing: -0.02em;
+        }
+
+        .organ-feature-card p {
+            font-size: 0.92rem;
+            color: rgba(234,234,234,0.6);
+            line-height: 1.65;
+            margin: 0;
+        }
+
+        /* ── STORY ───────────────────────────────────────────────── */
+        #story { background: var(--wood-dark); }
+
+        .organ-story-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5rem;
+            align-items: center;
+        }
+
+        .organ-story-img-wrap {
+            position: relative;
+            border-radius: 1.2rem;
+            overflow: hidden;
+            aspect-ratio: 3/4;
+        }
+
+        .organ-story-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 30%;
+            filter: sepia(0.15) contrast(1.05);
+            display: block;
+        }
+
+        .organ-story-img-caption {
+            position: absolute;
+            bottom: 0;
+            left: 0; right: 0;
+            padding: 1rem 1.2rem;
+            background: linear-gradient(to top, rgba(8,5,2,0.9), transparent);
+            font-size: 0.76rem;
+            color: rgba(200,169,110,0.7);
+            letter-spacing: 0.06em;
+        }
+
+        .organ-story-text p {
+            color: rgba(234,234,234,0.68);
+            font-size: 1.02rem;
+            line-height: 1.8;
+            margin-bottom: 1.2rem;
+        }
+        .organ-story-text p:last-child { margin-bottom: 0; }
+
+        /* ── GALLERY ─────────────────────────────────────────────── */
+        #gallery { background: var(--wood-mid); }
+
+        .organ-gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .organ-gallery-grid img {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            border-radius: 0.75rem;
+            display: block;
+            filter: brightness(0.9);
+            transition: filter 0.2s ease, transform 0.2s ease;
+        }
+
+        .organ-gallery-grid img:hover {
+            filter: brightness(1.05);
+            transform: scale(1.01);
+        }
+
+        /* ── SPECS ───────────────────────────────────────────────── */
+        #specs { background: var(--wood-dark); }
+
+        .organ-specs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 0;
+            border: 1px solid rgba(200,169,110,0.1);
+            border-radius: 1.2rem;
+            overflow: hidden;
+        }
+
+        .organ-spec-item {
+            padding: 1.6rem 1.8rem;
+            border-right: 1px solid rgba(200,169,110,0.08);
+            border-bottom: 1px solid rgba(200,169,110,0.08);
+        }
+
+        .organ-spec-item:nth-child(3n) { border-right: none; }
+        .organ-spec-item:nth-last-child(-n+3) { border-bottom: none; }
+
+        .organ-spec-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--gold-dim);
+            margin-bottom: 0.4rem;
+        }
+
+        .organ-spec-value {
+            font-size: 1.12rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: -0.01em;
+        }
+
+        .organ-spec-sub {
+            font-size: 0.82rem;
+            color: rgba(200,169,110,0.4);
+            margin-top: 0.15rem;
+        }
+
+        /* ── DOWNLOAD CTA ────────────────────────────────────────── */
+        #download {
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 0%, rgba(200,169,110,0.07), transparent),
+                var(--wood-mid);
+            text-align: center;
+        }
+
+        .organ-cta-badge {
+            display: inline-block;
+            padding: 0.3rem 0.9rem;
+            border: 1px solid rgba(200,169,110,0.25);
+            border-radius: 999px;
+            color: var(--gold);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+
+        #download h2 { max-width: 14ch; margin: 0 auto 1.2rem; }
+
+        .organ-cta-desc {
+            max-width: 50ch;
+            margin: 0 auto 2.5rem;
+            color: rgba(234,234,234,0.6);
+            font-size: 1.04rem;
+            line-height: 1.72;
+        }
+
+        .organ-cta-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.2rem;
+        }
+
+        .organ-dl-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 1rem 2.6rem;
+            border-radius: 999px;
+            background: var(--gold);
+            border: none;
+            color: #0d0b08;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: not-allowed;
+            opacity: 0.45;
+        }
+
+        .organ-dl-sub {
+            font-size: 0.8rem;
+            color: rgba(200,169,110,0.4);
+        }
+
+        .organ-dl-formats {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2.5rem;
+            flex-wrap: wrap;
+        }
+
+        .organ-dl-format {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 1rem;
+            border: 1px solid rgba(200,169,110,0.12);
+            border-radius: 0.6rem;
+            font-size: 0.8rem;
+            color: rgba(200,169,110,0.5);
+        }
+
+        /* ── RESPONSIVE ──────────────────────────────────────────── */
+        @media (max-width: 860px) {
+            .organ-story-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+            .organ-story-img-wrap { aspect-ratio: 16/9; max-height: 360px; }
+            .organ-gallery-grid { grid-template-columns: repeat(2,1fr); }
+            .organ-specs-grid { grid-template-columns: 1fr 1fr; }
+            .organ-spec-item:nth-child(3n) { border-right: 1px solid rgba(200,169,110,0.08); }
+            .organ-spec-item:nth-child(2n) { border-right: none; }
+        }
+
+        @media (max-width: 540px) {
+            .organ-section { padding: 4rem 1.2rem; }
+            .organ-gallery-grid { grid-template-columns: 1fr; }
+            .organ-specs-grid { grid-template-columns: 1fr; }
+            .organ-spec-item { border-right: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">Steinbach</a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Toggle navigation">
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
+            <ul class="nav-menu" id="primary-navigation">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="mixing.html" class="nav-link">Mixing</a></li>
+                <li><a href="mastering.html" class="nav-link">Mastering</a></li>
+                <li class="nav-item-dropdown">
+                    <button class="nav-dropdown-trigger" aria-expanded="false" aria-haspopup="true">
+                        More <span class="nav-dropdown-caret"></span>
+                    </button>
+                    <ul class="nav-dropdown-menu">
+                        <li><a href="multisampler.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="9" width="20" height="10" rx="1.5"/><line x1="7" y1="9" x2="7" y2="19"/><line x1="12" y1="9" x2="12" y2="19"/><line x1="17" y1="9" x2="17" y2="19"/><rect x="4.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/><rect x="9.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/><rect x="14.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/></svg></span><span><span>Multisampler</span><span class="nav-dropdown-sub">Interactive sample instruments</span></span></a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════ HERO ══ -->
+    <section class="organ-hero">
+        <div class="organ-hero-bg" aria-hidden="true"></div>
+        <div class="organ-hero-vignette" aria-hidden="true"></div>
+
+        <div class="organ-hero-inner">
+            <span class="organ-hero-eyebrow">Steinbach Instruments · Digital Heritage</span>
+            <h1>Historic<br>Organ</h1>
+            <p class="organ-hero-subtitle">Heinrich Röver &amp; Söhne · Heilig-Kreuz-Kirche Bevern</p>
+            <p class="organ-hero-desc">A late-romantic German pipe organ, fully sampled register by register. 17 stops. Multi-microphone capture. Preserved for artists, producers and future generations.</p>
+            <div class="organ-hero-actions">
+                <button class="btn-primary-organ" id="hero-try-btn">▶ Try it live</button>
+                <span class="btn-ghost-organ">Download (Coming Soon)</span>
+            </div>
+        </div>
+
+        <div class="organ-hero-scroll" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">
+            <div class="organ-hero-scroll-line"></div>
+            <span>Explore</span>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ DEMO ══ -->
+    <section class="organ-section" id="demo">
+        <div class="organ-section-inner">
+            <span class="organ-section-label">Interactive Preview</span>
+            <h2>Pull the stops.<br>Press play.</h2>
+            <p class="organ-section-lead">Click any register knob to activate it. Press Play, and all selected stops start simultaneously. Add or remove registers while playing to shape your sound in real time.</p>
+
+            <p class="organ-demo-hint">Click the round knobs on the left and right side panels to activate registers</p>
+        </div>
+
+        <!-- Loading bar -->
+        <div class="organ-loading-bar">
+            <div class="organ-loading-fill" id="organ-loading-fill"></div>
+        </div>
+
+        <!-- Organ canvas -->
+        <div class="organ-canvas-wrapper">
+            <div class="organ-canvas-scaler" id="organ-canvas-scaler">
+                <div class="organ-canvas" id="organ-canvas">
+
+                    <img class="organ-bg"
+                         src="assets/images/ORGEL/Organ_Wallpaper.png"
+                         alt="" draggable="false" aria-hidden="true">
+
+                    <!-- Row ky=102 → top=52px -->
+                    <button class="organ-stop-btn" style="left:25px;top:52px;background-image:url('assets/images/ORGEL/H_Gambe_8.png')"          data-file="GAMBE8"         data-label="Gambe 8'"         aria-pressed="false" title="Gambe 8'"></button>
+                    <button class="organ-stop-btn" style="left:91px;top:52px;background-image:url('assets/images/ORGEL/H_Principal_8.png')"      data-file="PRINCIPAL8"     data-label="Principal 8'"     aria-pressed="false" title="Principal 8'"></button>
+                    <button class="organ-stop-btn" style="left:864px;top:52px;background-image:url('assets/images/ORGEL/C_Mixtur3fach.png')"      data-file="MIXTUR3FACH"    data-label="Mixtur 3-fach"    aria-pressed="false" title="Mixtur 3-fach"></button>
+                    <button class="organ-stop-btn" style="left:930px;top:52px;background-image:url('assets/images/ORGEL/H_Bordun_16.png')"        data-file="BORDUN16"       data-label="Bordun 16'"       aria-pressed="false" title="Bordun 16'"></button>
+
+                    <!-- Row ky=179 → top=129px -->
+                    <button class="organ-stop-btn" style="left:25px;top:129px;background-image:url('assets/images/ORGEL/H_Oktave_4.png')"         data-file="OCTAVE4"        data-label="Oktave 4'"        aria-pressed="false" title="Oktave 4'"></button>
+                    <button class="organ-stop-btn" style="left:91px;top:129px;background-image:url('assets/images/ORGEL/C_ManualCoppel.png')"     data-file="COPPEL"         data-label="ManualCoppel"     aria-pressed="false" title="ManualCoppel"></button>
+                    <button class="organ-stop-btn" style="left:864px;top:129px;background-image:url('assets/images/ORGEL/H_Hohlfloete_8.png')"    data-file="HOHLFLOETE8"    data-label="Hohlflöte 8'"    aria-pressed="false" title="Hohlflöte 8'"></button>
+                    <button class="organ-stop-btn" style="left:930px;top:129px;background-image:url('assets/images/ORGEL/H_Oktave_2.png')"        data-file="OCTAVE2"        data-label="Oktave 2'"        aria-pressed="false" title="Oktave 2'"></button>
+
+                    <!-- Row ky=256 → top=206px -->
+                    <button class="organ-stop-btn" style="left:25px;top:206px;background-image:url('assets/images/ORGEL/P_Prinzipalbass_8.png')"  data-file="PRINCIPALBASS8" data-label="Prinzipalbass 8'" aria-pressed="false" title="Prinzipalbass 8'"></button>
+                    <button class="organ-stop-btn" style="left:91px;top:206px;background-image:url('assets/images/ORGEL/P_Gedackt_8.png')"        data-file="GEDACKT8"       data-label="Gedackt 8'"       aria-pressed="false" title="Gedackt 8'"></button>
+                    <button class="organ-stop-btn" style="left:864px;top:206px;background-image:url('assets/images/ORGEL/S_Waldfloete_2.png')"    data-file="WALDFLOETE2"    data-label="Waldfloete 2'"    aria-pressed="false" title="Waldfloete 2'"></button>
+                    <button class="organ-stop-btn" style="left:930px;top:206px;background-image:url('assets/images/ORGEL/S_FlautoTraverso_8.png')" data-file="FLAUTOTRAVERSO8" data-label="FlautoTraverso 8'" aria-pressed="false" title="FlautoTraverso 8'"></button>
+
+                    <!-- Row ky=333 → top=283px -->
+                    <button class="organ-stop-btn" style="left:25px;top:283px;background-image:url('assets/images/ORGEL/P_Subbass_16.png')"        data-file="SUBBASS16"      data-label="Subbass 16'"      aria-pressed="false" title="Subbass 16'"></button>
+                    <button class="organ-stop-btn" style="left:91px;top:283px;background-image:url('assets/images/ORGEL/P_Octave_4.png')"          data-file="OCTAVBASS"      data-label="Octavbass 16'"    aria-pressed="false" title="Octavbass 16'"></button>
+                    <button class="organ-stop-btn" style="left:864px;top:283px;background-image:url('assets/images/ORGEL/S_LieblGedackt_8.png')"   data-file="LIEBLGEDACKT8"  data-label="Liebl.Gedackt 8'" aria-pressed="false" title="Lieblich Gedackt 8'"></button>
+                    <button class="organ-stop-btn" style="left:930px;top:283px;background-image:url('assets/images/ORGEL/S_Salicional_8.png')"     data-file="SILICIONAL8"    data-label="Salicional 8'"    aria-pressed="false" title="Salicional 8'"></button>
+
+                    <!-- Row ky=410 → top=360px -->
+                    <button class="organ-stop-btn" style="left:930px;top:360px;background-image:url('assets/images/ORGEL/S_FlautoDolce_4.png')"   data-file="FLAUTODOLCE4"   data-label="FlautoDolce 4'"   aria-pressed="false" title="FlautoDolce 4'"></button>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="organ-controls-bar">
+            <button class="organ-play-btn" id="organ-play-btn" type="button" disabled>
+                <span id="organ-play-icon">⏳</span>
+                <span id="organ-play-label">Lädt…</span>
+            </button>
+            <button class="organ-clear-btn" id="organ-clear-btn" type="button">Alle aus</button>
+            <div class="organ-vol-group">
+                <span>Vol</span>
+                <input type="range" id="organ-volume" min="0" max="100" value="80" aria-label="Volume">
+                <span id="organ-vol-label">80</span>
+            </div>
+            <span class="organ-status-text" id="organ-status-text">0 Stops bereit</span>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ FEATURES ══ -->
+    <section class="organ-section" id="features">
+        <div class="organ-section-inner">
+            <span class="organ-section-label">Instrument</span>
+            <h2>Built for depth.<br>Designed for history.</h2>
+            <p class="organ-section-lead">Every aspect of the recording was designed to capture not just the pitch, but the character: the room, the mechanics, the centuries.</p>
+
+            <div class="organ-features-grid">
+                <div class="organ-feature-card">
+                    <span class="organ-feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="8" cy="6" r="2.2" fill="white" stroke="none"/><circle cx="15" cy="12" r="2.2" fill="white" stroke="none"/><circle cx="11" cy="18" r="2.2" fill="white" stroke="none"/></svg></span>
+                    <h3>17 Individual Registers</h3>
+                    <p>Every stop sampled in isolation, from the 16' Subbass to the bright Mixtur 3-fach, giving you precise control over the full tonal range.</p>
+                </div>
+                <div class="organ-feature-card">
+                    <span class="organ-feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg></span>
+                    <h3>Multi-Microphone Capture</h3>
+                    <p>Multiple microphone positions document the natural room acoustics of Heilig-Kreuz-Kirche Bevern, preserving the spatial character of the instrument.</p>
+                </div>
+                <div class="organ-feature-card">
+                    <span class="organ-feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><line x1="3" y1="22" x2="21" y2="22"/><polyline points="3 5 12 1 21 5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="5" y1="5" x2="5" y2="22"/><line x1="9" y1="9" x2="9" y2="22"/><line x1="15" y1="9" x2="15" y2="22"/><line x1="19" y1="5" x2="19" y2="22"/></svg></span>
+                    <h3>Cultural Preservation</h3>
+                    <p>The Rover organ is a late-romantic instrument at risk from age and limited restoration funds. This library is a permanent digital archive of its sound.</p>
+                </div>
+                <div class="organ-feature-card">
+                    <span class="organ-feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+                    <h3>KONTAKT Ready</h3>
+                    <p>Mapped for Native Instruments KONTAKT with a custom GUI that replicates the original console, the same stop positions, the same wooden aesthetic.</p>
+                </div>
+                <div class="organ-feature-card">
+                    <span class="organ-feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><path d="M2 11 Q6 5 12 11 Q18 17 22 11"/><path d="M2 7 Q6 1 12 7 Q18 13 22 7" stroke-opacity="0.45"/><path d="M2 15 Q6 9 12 15 Q18 21 22 15" stroke-opacity="0.45"/></svg></span>
+                    <h3>Authentic Church Reverb</h3>
+                    <p>In the final release, the natural reverberation of Heilig-Kreuz-Kirche is captured using acoustic measurement technology and convolution, embedded directly into the playable instrument.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ STORY ══ -->
+    <section class="organ-section" id="story">
+        <div class="organ-section-inner">
+            <div class="organ-story-grid">
+                <div class="organ-story-img-wrap">
+                    <img src="assets/images/ORGEL/church-historic.jpg"
+                         alt="The Röver pipe organ in Heilig-Kreuz-Kirche Bevern"
+                         loading="lazy">
+                    <span class="organ-story-img-caption">Heilig-Kreuz-Kirche Bevern · Heinrich Röver &amp; Söhne</span>
+                </div>
+
+                <div class="organ-story-text">
+                    <span class="organ-section-label">The Instrument</span>
+                    <h2>A century of sound. Preserved.</h2>
+
+                    <p>The Röver organ in Heilig-Kreuz-Kirche Bevern is a late-romantic instrument built by <strong style="color:#c8a96e;">Heinrich Röver &amp; Söhne</strong>, one of the most respected German organ builders of their era. Its pipes carry the characteristic warmth and clarity of the late 1800s, a tonal ideal that shaped sacred music for generations.</p>
+
+                    <p>Like many historic church organs, it exists in a fragile state: aging mechanical components, limited restoration funds, and a shrinking community of specialists who understand instruments of this period. Without intervention, sounds like these can be lost within a generation.</p>
+
+                    <p>The <em>Digital Heritage Organ</em> project was conceived to change that: to capture the full sonic identity of this instrument with professional multisampling techniques and make it accessible to artists and researchers worldwide, permanently and without barriers.</p>
+
+                    <p>Recorded on-location in Bevern with multiple microphone positions, the library documents all 17 registers across Hauptwerk, Schwellwerk, and Pedal. Every pipe row, every tonal color, preserved with fidelity.</p>
+
+                    <p>The final release also incorporates the authentic acoustic signature of the church itself. Using specialized measurement technology, the natural reverb of Heilig-Kreuz-Kirche was captured as a convolution impulse response and integrated directly into the instrument, so every note you play breathes with the same room the organ has inhabited for over a century.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════ GALLERY ══ -->
+    <section class="organ-section" id="gallery">
+        <div class="organ-section-inner">
+            <span class="organ-section-label">Recording Session</span>
+            <h2>In the field.</h2>
+            <p class="organ-section-lead">The recording took place on-site at Heilig-Kreuz-Kirche, capturing the organ in its natural acoustic environment.</p>
+
+            <div class="organ-gallery-grid">
+                <img src="assets/images/ORGEL/console-session.jpg" alt="Organ console during recording session" loading="lazy">
+                <img src="assets/images/ORGEL/session-mic.jpg"     alt="Microphone placement setup" loading="lazy">
+                <img src="assets/images/ORGEL/session-setup.jpg"   alt="Recording setup inside the church" loading="lazy">
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ SPECS ══ -->
+    <section class="organ-section" id="specs">
+        <div class="organ-section-inner">
+            <span class="organ-section-label">Technical</span>
+            <h2>What's inside.</h2>
+            <p class="organ-section-lead" style="margin-bottom:2.5rem;">Complete technical specifications for the Digital Heritage Organ library.</p>
+
+            <div class="organ-specs-grid">
+                <div class="organ-spec-item">
+                    <div class="organ-spec-label">Registers</div>
+                    <div class="organ-spec-value">17 Stops</div>
+                    <div class="organ-spec-sub">HW · SW · Pedal</div>
+                </div>
+                <div class="organ-spec-item">
+                    <div class="organ-spec-label">Sample Format</div>
+                    <div class="organ-spec-value">24-bit / 96 kHz</div>
+                    <div class="organ-spec-sub">Lossless WAV</div>
+                </div>
+                <div class="organ-spec-item">
+                    <div class="organ-spec-label">Microphones</div>
+                    <div class="organ-spec-value">Multi-position</div>
+                    <div class="organ-spec-sub">Near-field + room</div>
+                </div>
+                <div class="organ-spec-item">
+                    <div class="organ-spec-label">Platform</div>
+                    <div class="organ-spec-value">KONTAKT 8+</div>
+                    <div class="organ-spec-sub">VST3 + AU + Standalone</div>
+                </div>
+                <div class="organ-spec-item">
+                    <div class="organ-spec-label">Compatibility</div>
+                    <div class="organ-spec-value">macOS</div>
+                    <div class="organ-spec-sub">Apple Silicon (M-series)</div>
+                </div>
+                <div class="organ-spec-item">
+                    <div class="organ-spec-label">Location</div>
+                    <div class="organ-spec-value">Bevern, Germany</div>
+                    <div class="organ-spec-sub">Heilig-Kreuz-Kirche</div>
+                </div>
+                <div class="organ-spec-item">
+                    <div class="organ-spec-label">Builder</div>
+                    <div class="organ-spec-value">Röver &amp; Söhne</div>
+                    <div class="organ-spec-sub">Late romantic era</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════ DOWNLOAD CTA ══ -->
+    <section class="organ-section" id="download">
+        <div class="organ-section-inner" style="text-align:center;">
+            <span class="organ-cta-badge">Coming Soon</span>
+            <h2>Get the full instrument.</h2>
+            <p class="organ-cta-desc">The complete Digital Heritage Organ library, all registers, all microphone positions, authentic church reverb, full KONTAKT mapping with original GUI. Free.</p>
+
+            <div class="organ-cta-actions">
+                <button class="organ-dl-btn" disabled aria-disabled="true">
+                    Download for KONTAKT
+                </button>
+            </div>
+            <p class="organ-dl-sub">Free download · Requires Native Instruments KONTAKT 8+</p>
+
+            <div class="organ-dl-formats">
+                <span class="organ-dl-format"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 4v16"/></svg> KONTAKT 8+</span>
+                <span class="organ-dl-format"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="12" rx="1"/><path d="M7 21h10M12 17v4"/></svg> macOS Standalone</span>
+                <span class="organ-dl-format"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><path d="M12 2v6M8 8h8l2 5H6l2-5z"/><line x1="10" y1="18" x2="10" y2="21"/><line x1="14" y1="18" x2="14" y2="21"/><line x1="7" y1="13" x2="7" y2="18"/><line x1="17" y1="13" x2="17" y2="18"/></svg> VST3 + AU</span>
+                <span class="organ-dl-format"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ~7 GB</span>
+                <span class="organ-dl-format">Apple Silicon (M-series)</span>
+            </div>
+        </div>
+    </section>
+
+    <script src="assets/js/navbar.js"></script>
+    <script src="assets/js/orgel.js"></script>
+    <script src="assets/js/cookie-consent.js"></script>
+</body>
+</html>

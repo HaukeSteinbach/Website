@@ -82,6 +82,8 @@ router.post('/api/v1/public/release-pages', (request, response) => {
         return fail(response, requestError.statusCode, requestError.code, requestError.message);
       }
 
+      console.error('Unexpected release page creation error:', requestError);
+
       return fail(response, 500, 'release_page_error', 'Unable to create the release page right now.');
     }
   });

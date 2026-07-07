@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import express from 'express';
 
 import { requireAdmin } from '../middleware/auth.js';
@@ -9,7 +10,7 @@ router.post('/auth/login', (request, response) => {
   ok(response, {
     ok: true,
     admin: {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       email: request.body.email || 'admin@yourdomain.com',
       role: 'admin'
     }
@@ -18,7 +19,7 @@ router.post('/auth/login', (request, response) => {
 
 router.get('/auth/me', requireAdmin, (_request, response) => {
   ok(response, {
-    id: crypto.randomUUID(),
+    id: randomUUID(),
     email: 'admin@yourdomain.com',
     role: 'admin'
   });
@@ -32,7 +33,7 @@ router.get('/jobs', requireAdmin, (_request, response) => {
   ok(response, {
     items: [
       {
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         reference: 'SB-2026-000123',
         clientName: 'Anna Meyer',
         email: 'anna@example.com',
@@ -70,7 +71,7 @@ router.get('/jobs/:jobId', requireAdmin, (request, response) => {
     projectNotes: '2-track EP, reference included.',
     sourceFiles: [
       {
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         name: 'mixdown.wav',
         sizeBytes: 812345678,
         uploadedAt: '2026-03-26T10:10:00Z'
@@ -99,7 +100,7 @@ router.post('/jobs/:jobId/source-download', requireAdmin, (_request, response) =
       expiresInSeconds: 900,
       urls: [
         {
-          fileId: crypto.randomUUID(),
+          fileId: randomUUID(),
           fileName: 'mixdown.wav',
           url: 'https://storage.example.com/source-download'
         }
@@ -112,7 +113,7 @@ router.post('/jobs/:jobId/deliveries', requireAdmin, (_request, response) => {
   ok(response, {
     ok: true,
     delivery: {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       version: 1,
       expiresAt: '2026-04-26T12:00:00Z',
       event: 'delivered'

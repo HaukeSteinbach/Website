@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multisampler – Steinbach</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">Steinbach</a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Toggle navigation">
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
+            <ul class="nav-menu" id="primary-navigation">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="mixing.html" class="nav-link">Mixing</a></li>
+                <li><a href="mastering.html" class="nav-link">Mastering</a></li>
+                <li class="nav-item-dropdown">
+                    <button class="nav-dropdown-trigger" aria-expanded="false" aria-haspopup="true">
+                        More <span class="nav-dropdown-caret"></span>
+                    </button>
+                    <ul class="nav-dropdown-menu">
+                        <li><a href="multisampler.html"><span class="nav-dropdown-icon">🎹</span><span><span>Multisampler</span><span class="nav-dropdown-sub">Interactive sample instruments</span></span></a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="multisampler-hero">
+        <p class="hero-kicker">Instruments</p>
+        <h1>Multisampler</h1>
+        <p class="subtitle">Carefully recorded, multi-register sample instruments — playable directly in the browser. Each instrument is sampled with individual registers that can be freely combined.</p>
+    </header>
+
+    <main>
+        <div class="multisampler-grid">
+
+            <!-- Orgel -->
+            <a href="orgel.html" class="multisampler-card">
+                <span class="multisampler-card-arrow">→</span>
+                <div class="multisampler-card-icon">🎹</div>
+                <span class="multisampler-card-tag">Available Now</span>
+                <h2>Orgel</h2>
+                <p>A German pipe organ with 17 individually recorded registers across two divisions — Hauptwerk and Pedal. Pull the drawbars to combine stops and create your own sound.</p>
+                <div class="multisampler-card-meta">
+                    <span>17 Stops</span>
+                    <span>Hauptwerk + Pedal</span>
+                    <span>Loop playback</span>
+                </div>
+            </a>
+
+            <!-- Placeholder card -->
+            <div class="multisampler-card" style="opacity: 0.45; cursor: default; pointer-events: none;">
+                <div class="multisampler-card-icon">🎻</div>
+                <span class="multisampler-card-tag">Coming Soon</span>
+                <h2>Streicher</h2>
+                <p>A lush string ensemble sampled in multiple articulations — sustained, pizzicato, and tremolo — with adjustable section balance.</p>
+                <div class="multisampler-card-meta">
+                    <span>In production</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="assets/js/navbar.js"></script>
+    <script src="assets/js/cookie-consent.js"></script>
+</body>
+</html>

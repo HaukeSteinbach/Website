@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import fs from 'fs';
 import path from 'path';
 
@@ -88,7 +89,7 @@ router.post('/jobs', (request, response) => {
     return fail(response, 422, 'validation_error', 'One or more required fields are missing.');
   }
 
-  const jobId = crypto.randomUUID();
+  const jobId = randomUUID();
   const reference = createPublicReference();
 
   jobs.set(jobId, {
@@ -208,7 +209,7 @@ router.post('/jobs/:jobId/uploads/complete', async (request, response) => {
 });
 
 router.post('/direct-deliveries', (request, response) => {
-  request.deliveryId = crypto.randomUUID();
+  request.deliveryId = randomUUID();
 
   directDeliveryUpload.array('files')(request, response, async (error) => {
     if (error) {
@@ -231,11 +232,11 @@ router.post('/direct-deliveries', (request, response) => {
     }
 
     const reference = createPublicReference();
-    const token = crypto.randomUUID().replace(/-/g, '');
+    const token = randomUUID().replace(/-/g, '');
     const expiresAt = new Date(Date.now() + (config.sourceDownloadLinkTtlHours * 60 * 60 * 1000)).toISOString();
     const pageUrl = createDirectDeliveryPageUrl(token);
     const files = uploadedFiles.map((file) => ({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       storageKey: path.relative(config.uploadDir, file.path).split(path.sep).join('/'),
       originalFilename: file.originalname,
       mimeType: file.mimetype || 'application/octet-stream',
@@ -374,8 +375,8 @@ router.get('/deliveries/:token', (request, response) => {
     deliveryVersion: 1,
     expiresAt: '2026-04-26T12:00:00Z',
     files: [
-      { id: crypto.randomUUID(), name: 'Track01_Master_24bit.wav', sizeBytes: 124567890 },
-      { id: crypto.randomUUID(), name: 'Track02_Master_24bit.wav', sizeBytes: 118000210 }
+      { id: randomUUID(), name: 'Track01_Master_24bit.wav', sizeBytes: 124567890 },
+      { id: randomUUID(), name: 'Track02_Master_24bit.wav', sizeBytes: 118000210 }
     ],
     revisionAllowed: true,
     revisionAlreadyUsed: false
@@ -395,12 +396,12 @@ router.post('/deliveries/:token/download', (request, response) => {
       expiresInSeconds: 900,
       urls: [
         {
-          fileId: crypto.randomUUID(),
+          fileId: randomUUID(),
           fileName: 'Track01_Master_24bit.wav',
           url: 'https://storage.example.com/signed-download-1'
         },
         {
-          fileId: crypto.randomUUID(),
+          fileId: randomUUID(),
           fileName: 'Track02_Master_24bit.wav',
           url: 'https://storage.example.com/signed-download-2'
         }
@@ -431,7 +432,7 @@ function getDirectDeliveryDir(deliveryId) {
 }
 
 function createSourceDownload(job) {
-  const token = crypto.randomUUID().replace(/-/g, '');
+  const token = randomUUID().replace(/-/g, '');
   const expiresAt = new Date(Date.now() + (config.sourceDownloadLinkTtlHours * 60 * 60 * 1000)).toISOString();
   const pageUrl = `${config.appOrigin.replace(/\/$/, '')}/api/v1/public/source-downloads/${token}`;
 
@@ -442,7 +443,7 @@ function createSourceDownload(job) {
     email: job.email,
     expiresAt,
     files: job.uploadedFiles.map((file) => ({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       originalFilename: file.originalFilename,
       sizeBytes: file.sizeBytes,
       absolutePath: path.join(config.uploadDir, file.storageKey)
@@ -469,7 +470,7 @@ function createStoredFilename(file) {
   const baseName = path.basename(file.originalname || 'upload', extension);
   const safeBaseName = baseName.replace(/[^a-zA-Z0-9-_]+/g, '-').replace(/^-+|-+$/g, '') || 'upload';
 
-  return `${Date.now()}-${crypto.randomUUID()}-${safeBaseName}${extension}`;
+  return `${Date.now()}-${randomUUID()}-${safeBaseName}${extension}`;
 }
 
 function sanitizeSegment(value) {

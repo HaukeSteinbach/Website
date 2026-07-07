@@ -8,4 +8,4 @@ backend/.env
 backend/.env.*
 !backend/.env.example
 secrets/
-.vscode/
+.vscode/*.zip

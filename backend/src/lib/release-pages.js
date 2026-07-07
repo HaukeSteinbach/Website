@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import fs from 'fs';
 import path from 'path';
 
@@ -32,11 +33,15 @@ export class ReleasePageError extends Error {
 }
 
 export function ensureReleasePageStorage() {
-  fs.mkdirSync(releaseArtworkDir, { recursive: true });
-  fs.mkdirSync(releaseIncomingDir, { recursive: true });
+  try {
+    fs.mkdirSync(releaseArtworkDir, { recursive: true });
+    fs.mkdirSync(releaseIncomingDir, { recursive: true });
 
-  if (!fs.existsSync(releaseIndexFile)) {
-    fs.writeFileSync(releaseIndexFile, JSON.stringify({ pages: [] }, null, 2));
+    if (!fs.existsSync(releaseIndexFile)) {
+      fs.writeFileSync(releaseIndexFile, JSON.stringify({ pages: [] }, null, 2));
+    }
+  } catch {
+    throw new ReleasePageError(500, 'storage_error', 'Release page storage is not available right now. Check the uploads directory permissions and try again.');
   }
 }
 
@@ -103,10 +108,14 @@ export async function createReleasePage(input) {
   const artworkFilename = `${slug}${artworkExtension}`;
   const artworkDestination = path.join(releaseArtworkDir, artworkFilename);
 
-  fs.renameSync(input.artworkFile.path, artworkDestination);
+  try {
+    fs.renameSync(input.artworkFile.path, artworkDestination);
+  } catch {
+    throw new ReleasePageError(500, 'artwork_storage_error', 'The artwork could not be stored right now. Check the uploads directory permissions and try again.');
+  }
 
   const releasePage = {
-    id: crypto.randomUUID(),
+    id: randomUUID(),
     slug,
     path: `/${slug}`,
     sourceUrl,
@@ -397,7 +406,18 @@ function readReleasePageIndex() {
 
 function writeReleasePageIndex(index) {
   ensureReleasePageStorage();
-  fs.writeFileSync(releaseIndexFile, JSON.stringify(index, null, 2));
+  const temporaryIndexFile = `${releaseIndexFile}.tmp`;
+
+  try {
+    fs.writeFileSync(temporaryIndexFile, JSON.stringify(index, null, 2));
+    fs.renameSync(temporaryIndexFile, releaseIndexFile);
+  } catch {
+    if (fs.existsSync(temporaryIndexFile)) {
+      fs.unlinkSync(temporaryIndexFile);
+    }
+
+    throw new ReleasePageError(500, 'storage_error', 'The release page could not be saved right now. Check the uploads directory permissions and try again.');
+  }
 }
 
 function validateSourceUrl(value) {
