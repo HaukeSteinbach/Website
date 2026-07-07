@@ -9,3 +9,5 @@ backend/.env.*
 !backend/.env.example
 secrets/
 .vscode/*.zip
+*.zip
+.vscode/
