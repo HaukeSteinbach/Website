@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecLight – Studio Status LED · Pre-order</title>
+    <meta name="description" content="Pre-order RecLight: a wireless studio status LED for your door. Connects to your DAW over WiFi.">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <style>
+        /* ── RecLight variables ─────────────────────────────────── */
+        :root {
+            --rl-bg:    #0a0b10;
+            --rl-panel: #111219;
+            --rl-red:   #e94560;
+        }
+
+        /* ── HERO ───────────────────────────────────────────────── */
+        .rl-hero {
+            position: relative;
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--rl-bg);
+            overflow: hidden;
+        }
+        .rl-hero-glow {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 65% 55% at 50% 38%, rgba(233,69,96,0.13) 0%, transparent 70%);
+        }
+        .rl-hero-inner {
+            position: relative;
+            z-index: 2;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 7rem 2rem 5rem;
+            text-align: center;
+        }
+        .rl-led-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ff4466 0%, #cc1133 55%, #880022 100%);
+            box-shadow:
+                0 0 28px 10px rgba(233,69,96,0.52),
+                0 0 80px 32px rgba(233,69,96,0.18);
+            margin-bottom: 2rem;
+            animation: rl-pulse 3s ease-in-out infinite;
+        }
+        @keyframes rl-pulse {
+            0%, 100% {
+                box-shadow: 0 0 28px 10px rgba(233,69,96,0.52),
+                            0 0 80px 32px rgba(233,69,96,0.18);
+            }
+            50% {
+                box-shadow: 0 0 44px 18px rgba(233,69,96,0.72),
+                            0 0 115px 52px rgba(233,69,96,0.28);
+            }
+        }
+        .rl-hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 1.1rem;
+            border: 1px solid rgba(233,69,96,0.28);
+            border-radius: 999px;
+            background: rgba(233,69,96,0.07);
+            color: var(--rl-red);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 1.6rem;
+        }
+        .rl-hero h1 {
+            font-size: clamp(3.2rem, 9.5vw, 6.2rem);
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            line-height: 0.88;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+        .rl-hero h1 em {
+            color: var(--rl-red);
+            font-style: normal;
+        }
+        .rl-hero-tagline {
+            font-size: clamp(1rem, 2.3vw, 1.18rem);
+            color: rgba(234,234,234,0.5);
+            line-height: 1.7;
+            max-width: 50ch;
+            margin: 1.4rem auto 2rem;
+        }
+        .rl-badge-preorder {
+            display: inline-block;
+            padding: 0.55rem 1.5rem;
+            border-radius: 999px;
+            background: rgba(233,69,96,0.12);
+            border: 1px solid rgba(233,69,96,0.38);
+            color: var(--rl-red);
+            font-size: 0.92rem;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+        }
+
+        /* ── ABOUT ──────────────────────────────────────────────── */
+        .rl-about {
+            padding: 5.5rem 2rem;
+            background: var(--rl-bg);
+        }
+        .rl-about-inner {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .rl-kicker {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--rl-red);
+            margin-bottom: 1rem;
+        }
+        .rl-about h2 {
+            font-size: clamp(1.9rem, 4.5vw, 2.9rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: #fff;
+            margin-bottom: 1.2rem;
+        }
+        .rl-about > .rl-about-inner > p {
+            color: rgba(234,234,234,0.55);
+            font-size: 1.06rem;
+            line-height: 1.78;
+        }
+        .rl-features {
+            display: flex;
+            gap: 1.2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 3rem;
+        }
+        .rl-feature {
+            flex: 1;
+            min-width: 160px;
+            max-width: 200px;
+            background: var(--rl-panel);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 1.4rem 1rem;
+            text-align: center;
+        }
+        .rl-feature-icon {
+            display: flex;
+            justify-content: center;
+            color: var(--rl-red);
+            margin-bottom: 0.7rem;
+        }
+        .rl-feature h3 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.3rem;
+        }
+        .rl-feature p {
+            font-size: 0.78rem;
+            color: rgba(234,234,234,0.42);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        /* ── FORM SECTION ───────────────────────────────────────── */
+        .rl-form-section {
+            padding: 5.5rem 2rem 7rem;
+            background: var(--rl-panel);
+        }
+        .rl-form-inner {
+            max-width: 660px;
+            margin: 0 auto;
+        }
+        .rl-form-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .rl-form-header h2 {
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: #fff;
+            margin: 0.6rem 0 0.5rem;
+        }
+        .rl-form-header p {
+            color: rgba(234,234,234,0.48);
+            font-size: 0.95rem;
+            line-height: 1.65;
+        }
+
+        /* Section dividers inside the form */
+        .rl-field-section {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--rl-red);
+            margin: 2.8rem 0 1.4rem;
+            padding-bottom: 0.55rem;
+            border-bottom: 1px solid rgba(233,69,96,0.18);
+        }
+        .rl-field-section:first-of-type {
+            margin-top: 0.5rem;
+        }
+
+        /* Custom radio/checkbox pills */
+        .rl-option-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            margin-top: 0.55rem;
+        }
+        .rl-option-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.52rem 1.1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.03);
+            color: rgba(234,234,234,0.72);
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: border-color 0.18s, background 0.18s, color 0.18s;
+            user-select: none;
+        }
+        .rl-option-pill:hover {
+            border-color: rgba(233,69,96,0.42);
+            color: #fff;
+        }
+        .rl-option-pill input[type="radio"],
+        .rl-option-pill input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--rl-red);
+            margin: 0;
+            flex-shrink: 0;
+        }
+        .rl-option-pill:has(input:checked) {
+            border-color: rgba(233,69,96,0.62);
+            background: rgba(233,69,96,0.09);
+            color: #fff;
+        }
+
+        /* Two-column grid */
+        .rl-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 500px) {
+            .rl-grid-2 { grid-template-columns: 1fr; }
+        }
+
+        /* Spacing helpers */
+        .rl-mt { margin-top: 1rem; }
+
+        /* Pre-order confirm box */
+        .rl-preorder-box {
+            margin-top: 2.8rem;
+            padding: 1.6rem 1.8rem;
+            background: rgba(233,69,96,0.06);
+            border: 1px solid rgba(233,69,96,0.24);
+            border-radius: 14px;
+        }
+        .rl-price {
+            font-size: 2.6rem;
+            font-weight: 800;
+            color: var(--rl-red);
+            letter-spacing: -0.04em;
+            line-height: 1;
+            margin-bottom: 0.2rem;
+        }
+        .rl-price-sub {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: rgba(234,234,234,0.4);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin: 0 0 0.9rem;
+        }
+        .rl-preorder-box > p {
+            color: rgba(234,234,234,0.52);
+            font-size: 0.87rem;
+            line-height: 1.65;
+            margin: 0 0 1.2rem;
+        }
+        .rl-confirm-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.7rem;
+            cursor: pointer;
+            color: rgba(234,234,234,0.68);
+            font-size: 0.87rem;
+            line-height: 1.55;
+        }
+        .rl-confirm-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--rl-red);
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* Submit */
+        .rl-submit-btn {
+            display: block;
+            width: 100%;
+            margin-top: 2rem;
+            padding: 1.05rem;
+            border-radius: 999px;
+            background: var(--rl-red);
+            border: none;
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            box-shadow: 0 6px 28px rgba(233,69,96,0.38);
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+        }
+        .rl-submit-btn:hover {
+            background: #d63050;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(233,69,96,0.52);
+        }
+        .rl-submit-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Pre-order price breakdown */
+        .rl-price-breakdown {
+            margin-bottom: 1.2rem;
+        }
+        .rl-price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 0.9rem;
+            color: rgba(234,234,234,0.55);
+            padding: 0.28rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .rl-price-row span {
+            font-variant-numeric: tabular-nums;
+        }
+        .rl-price-row-shipping span {
+            font-size: 0.78rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .rl-price-row-total {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--rl-red);
+            letter-spacing: -0.02em;
+            border-bottom: none;
+            padding-top: 0.6rem;
+            margin-top: 0.2rem;
+        }
+        .rl-price-row-total span {
+            color: var(--rl-red);
+        }
+        .rl-label-hint {
+            color: rgba(234,234,234,0.38);
+            font-weight: 400;
+        }
+        .rl-pill-price {
+            margin-left: 0.25rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--rl-red);
+            opacity: 0.85;
+        }
+        .rl-hero-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">Steinbach</a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Toggle navigation">
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
+            <ul class="nav-menu" id="primary-navigation">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="mixing.html" class="nav-link">Mixing</a></li>
+                <li><a href="mastering.html" class="nav-link">Mastering</a></li>
+                <li class="nav-item-dropdown">
+                    <button class="nav-dropdown-trigger" aria-expanded="false" aria-haspopup="true">
+                        More <span class="nav-dropdown-caret"></span>
+                    </button>
+                    <ul class="nav-dropdown-menu">
+                        <li><a href="multisampler.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="9" width="20" height="10" rx="1.5"/><line x1="7" y1="9" x2="7" y2="19"/><line x1="12" y1="9" x2="12" y2="19"/><line x1="17" y1="9" x2="17" y2="19"/><rect x="4.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/><rect x="9.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/><rect x="14.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/></svg></span><span><span>Multisampler</span><span class="nav-dropdown-sub">Interactive sample instruments</span></span></a></li>
+                        <li class="dropdown-divider"></li>
+                        <li><a href="steinbach-eq.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><path d="M2 14 L5 10 L8 14 L12 6 L16 14 L19 11 L22 14"/></svg></span><span><span>Steinbach EQ</span><span class="nav-dropdown-sub">AU &middot; VST3 &middot; macOS</span></span></a></li>
+                        <li class="dropdown-divider"></li>
+                        <li><a href="reclight.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9.5"/></svg></span><span><span>RecLight</span><span class="nav-dropdown-sub">Studio Status LED &middot; Pre-order</span></span></a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- ── HERO ──────────────────────────────────────────────────── -->
+    <section class="rl-hero">
+        <video class="rl-hero-video" autoplay loop muted playsinline aria-hidden="true">
+            <source src="assets/Video/BGRECLIGHT.mov" type="video/mp4">
+        </video>
+        <div class="rl-hero-glow" aria-hidden="true"></div>
+        <div class="rl-hero-inner">
+            <div class="rl-led-icon" aria-hidden="true">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="6" fill="white" opacity="0.95"/>
+                    <circle cx="12" cy="12" r="10.5" stroke="white" stroke-width="1" opacity="0.22"/>
+                </svg>
+            </div>
+            <h1>Rec<em>Light</em></h1>
+            <p class="rl-hero-tagline">A wireless studio status LED for your door. Connects to your DAW and lights up when you're recording.</p>
+            <span class="rl-badge-preorder">€ 30 &middot; Reserve now</span>
+        </div>
+    </section>
+
+    <!-- ── ABOUT ──────────────────────────────────────────────────── -->
+    <section class="rl-about">
+        <div class="rl-about-inner">
+            <h2>Your studio. Your signal.</h2>
+            <p>A compact LED that mounts outside your studio door and syncs with your DAW over WiFi. When a session starts, it glows.</p>
+            <div class="rl-features">
+                <div class="rl-feature">
+                    <div class="rl-feature-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/></svg></div>
+                    <h3>WiFi</h3>
+                    <p>2.4 GHz or 5 GHz, runs on your local network.</p>
+                </div>
+                <div class="rl-feature">
+                    <div class="rl-feature-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></div>
+                    <h3>DAW Integration</h3>
+                    <p>macOS and Windows support.</p>
+                </div>
+                <div class="rl-feature">
+                    <div class="rl-feature-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5" fill="currentColor" stroke="none" opacity="0.85"/><circle cx="12" cy="12" r="9.5"/></svg></div>
+                    <h3>Always Visible</h3>
+                    <p>Bright, minimal, clear.</p>
+                </div>
+                <div class="rl-feature">
+                    <div class="rl-feature-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+                    <h3>First Batch</h3>
+                    <p>Limited pre-order, early backers lock in the price.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── PRE-ORDER FORM ─────────────────────────────────────────── -->
+    <section class="rl-form-section">
+        <div class="rl-form-inner">
+            <div class="rl-form-header">
+                <h2>Pre-order RecLight</h2>
+                <p>Fill in the details below. I'll be in touch once the first batch is confirmed. No payment is taken now.</p>
+            </div>
+
+            <form id="reclight-form" action="https://formspree.io/f/xgopedgb" method="POST" novalidate>
+                <input type="hidden" name="form_source" value="RecLight pre-order">
+                <!-- Honeypot anti-spam field -->
+                <input type="text" name="website" class="contact-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+                <!-- ── Studio WiFi ────────────────────────────── -->
+                <p class="rl-field-section">Studio WiFi Setup</p>
+
+                <div class="form-group">
+                    <label>Is WiFi available inside your studio?</label>
+                    <div class="rl-option-group" role="group">
+                        <label class="rl-option-pill">
+                            <input type="radio" name="wifi_studio" value="Yes" required> Yes
+                        </label>
+                        <label class="rl-option-pill">
+                            <input type="radio" name="wifi_studio" value="No"> No
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group rl-mt">
+                    <label>Is WiFi available in front of your studio door?</label>
+                    <div class="rl-option-group" role="group">
+                        <label class="rl-option-pill">
+                            <input type="radio" name="wifi_door" value="Yes" required> Yes
+                        </label>
+                        <label class="rl-option-pill">
+                            <input type="radio" name="wifi_door" value="No"> No
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group rl-mt">
+                    <label>Available WiFi frequency bands <span class="rl-label-hint">(select all that apply)</span></label>
+                    <div class="rl-option-group">
+                        <label class="rl-option-pill">
+                            <input type="checkbox" name="wifi_frequency" value="2.4 GHz"> 2.4 GHz
+                        </label>
+                        <label class="rl-option-pill">
+                            <input type="checkbox" name="wifi_frequency" value="5 GHz"> 5 GHz
+                        </label>
+                    </div>
+                </div>
+
+                <!-- ── Technical Setup ───────────────────────── -->
+                <p class="rl-field-section">Technical Setup</p>
+
+                <div class="form-group">
+                    <label>Operating System</label>
+                    <div class="rl-option-group" role="group">
+                        <label class="rl-option-pill">
+                            <input type="radio" name="os" value="macOS Intel" required> macOS Intel
+                        </label>
+                        <label class="rl-option-pill">
+                            <input type="radio" name="os" value="macOS Apple Silicon"> macOS Apple Silicon
+                        </label>
+                        <label class="rl-option-pill">
+                            <input type="radio" name="os" value="Windows"> Windows
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group rl-mt">
+                    <label for="rl-daw">DAW <span class="rl-label-hint">(z. B. Ableton Live, Logic Pro, Cubase …)</span></label>
+                    <input type="text" id="rl-daw" name="daw" placeholder="Your primary DAW" required autocomplete="off">
+                </div>
+
+                <!-- ── Personal Details ──────────────────────── -->
+                <p class="rl-field-section">Personal Details</p>
+
+                <div class="rl-grid-2">
+                    <div class="form-group">
+                        <label for="rl-firstname">First Name</label>
+                        <input type="text" id="rl-firstname" name="first_name" required autocomplete="given-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="rl-lastname">Last Name</label>
+                        <input type="text" id="rl-lastname" name="last_name" required autocomplete="family-name">
+                    </div>
+                </div>
+
+                <div class="form-group rl-mt">
+                    <label for="rl-email">Email Address</label>
+                    <input type="email" id="rl-email" name="email" required autocomplete="email">
+                </div>
+
+                <div class="form-group rl-mt">
+                    <label for="rl-instagram">Instagram <span class="rl-label-hint">(optional)</span></label>
+                    <input type="text" id="rl-instagram" name="instagram" placeholder="@yourhandle" autocomplete="off">
+                </div>
+
+                <!-- ── Shipping Address ──────────────────────── -->
+                <p class="rl-field-section">Shipping Address</p>
+
+                <div class="rl-grid-2">
+                    <div class="form-group">
+                        <label for="rl-street">Street</label>
+                        <input type="text" id="rl-street" name="street" required autocomplete="address-line1">
+                    </div>
+                    <div class="form-group">
+                        <label for="rl-housenr">House No.</label>
+                        <input type="text" id="rl-housenr" name="house_number" required autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="rl-grid-2 rl-mt">
+                    <div class="form-group">
+                        <label for="rl-zip">Postal Code</label>
+                        <input type="text" id="rl-zip" name="postal_code" required autocomplete="postal-code">
+                    </div>
+                    <div class="form-group">
+                        <label for="rl-city">City</label>
+                        <input type="text" id="rl-city" name="city" required autocomplete="address-level2">
+                    </div>
+                </div>
+
+                <div class="form-group rl-mt">
+                    <label for="rl-country">Country</label>
+                    <input type="text" id="rl-country" name="country" required autocomplete="country-name">
+                </div>
+
+                <!-- ── USB Adapter ─────────────────────────── -->
+                <p class="rl-field-section">Accessories</p>
+
+                <div class="form-group">
+                    <label>USB cable <span class="rl-label-hint">(optional)</span></label>
+                    <div class="rl-option-group">
+                        <label class="rl-option-pill">
+                            <input type="checkbox" name="usb_cable" value="Yes"> USB cable <span class="rl-pill-price">+5 €</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group rl-mt">
+                    <label>Plug type <span class="rl-label-hint">(optional)</span></label>
+                    <div class="rl-option-group" role="radiogroup">
+                        <label class="rl-option-pill">
+                            <input type="radio" name="plug_type" value="EU plug (+10€)"> EU <span class="rl-pill-price">+10 €</span>
+                        </label>
+                        <label class="rl-option-pill">
+                            <input type="radio" name="plug_type" value="UK plug (+10€)"> UK <span class="rl-pill-price">+10 €</span>
+                        </label>
+                        <label class="rl-option-pill">
+                            <input type="radio" name="plug_type" value="US plug (+10€)"> US <span class="rl-pill-price">+10 €</span>
+                        </label>
+                        <label class="rl-option-pill">
+                            <input type="radio" name="plug_type" value="None"> None
+                        </label>
+                    </div>
+                </div>
+
+                <!-- ── Beta Testing ───────────────────────── -->
+                <p class="rl-field-section">Beta Testing &amp; Reviews</p>
+
+                <div class="form-group">
+                    <label>Would you be interested in testing new plugins or hardware in the future and sharing your feedback?</label>
+                    <div class="rl-option-group" role="group">
+                        <label class="rl-option-pill">
+                            <input type="radio" name="beta_tester" value="Yes"> Yes, I'm in!
+                        </label>
+                        <label class="rl-option-pill">
+                            <input type="radio" name="beta_tester" value="No"> Not right now
+                        </label>
+                    </div>
+                </div>
+
+                <!-- ── Pre-order Confirmation ────────────────── -->
+                <div class="rl-preorder-box">
+                    <div class="rl-price-breakdown">
+                        <div class="rl-price-row">RecLight<span>30 €</span></div>
+                        <div class="rl-price-row rl-price-row-accessory" id="pb-cable" style="display:none">USB cable<span>5 €</span></div>
+                        <div class="rl-price-row rl-price-row-accessory" id="pb-plug" style="display:none">Plug<span>10 €</span></div>
+                        <div class="rl-price-row rl-price-row-shipping">Shipping<span id="pb-shipping">TBD</span></div>
+                        <div class="rl-price-row rl-price-row-total">Total<span id="pb-total">30 €</span></div>
+                    </div>
+                    <p>Pre-order reservation. No payment is taken now. Once the first batch is confirmed, you'll receive an email with payment instructions.</p>
+                    <label class="rl-confirm-label">
+                        <input type="checkbox" name="preorder_confirmed" value="Yes" required>
+                        I understand this is a pre-order reservation and that I will be contacted by email before any payment is requested.
+                    </label>
+                </div>
+
+                <button type="submit" class="rl-submit-btn" id="rl-submit">Reserve My RecLight &rarr;</button>
+                <div class="form-status" id="rl-form-status" role="status" aria-live="polite"></div>
+            </form>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-support">
+            <span>Support My Work:</span>
+            <a href="https://patreon.com/Steinbach" target="_blank" rel="noopener noreferrer" aria-label="Patreon" class="footer-icon">
+                <img src="assets/images/PatreonIcon.png" alt="Patreon icon" class="footer-icon-image">
+                <span class="footer-link-text">patreon.com/steinbach</span>
+            </a>
+            <a href="https://www.instagram.com/steinbach.wctw/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="footer-icon">
+                <img src="assets/images/InstagramIcon.png" alt="Instagram icon" class="footer-icon-image">
+                <span class="footer-link-text">instagram.com/steinbach.wctw</span>
+            </a>
+        </div>
+        <div class="footer-legal">
+            <a href="impressum.html" class="footer-legal-link">Legal Notice</a>
+            <a href="datenschutz.html" class="footer-legal-link">Privacy Policy</a>
+        </div>
+        <p>&copy; 2025 Steinbach. All rights reserved.</p>
+    </footer>
+
+    <script src="assets/js/cookie-consent.js"></script>
+    <script src="assets/js/navbar.js"></script>
+    <script src="assets/js/hero-fade.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('reclight-form');
+        var statusEl = document.getElementById('rl-form-status');
+        var submitBtn = document.getElementById('rl-submit');
+
+        if (!form) return;
+
+        // ── Dynamic price calculator ──────────────────────────────
+        var pbCable    = document.getElementById('pb-cable');
+        var pbPlug     = document.getElementById('pb-plug');
+        var pbShipping = document.getElementById('pb-shipping');
+        var pbTotal    = document.getElementById('pb-total');
+        var countryEl  = document.getElementById('rl-country');
+
+        var SHIPPING = (function () {
+            var de  = ['germany','deutschland','de'];
+            var eu  = ['austria','österreich','belgium','belgien','bulgaria','bulgarien',
+                       'croatia','kroatien','czech republic','tschechien','czechia',
+                       'denmark','dänemark','estonia','estland','finland','finnland',
+                       'france','frankreich','greece','griechenland','hungary','ungarn',
+                       'ireland','irland','italy','italien','latvia','lettland',
+                       'lithuania','litauen','luxembourg','luxemburg','malta',
+                       'netherlands','niederlande','holland','poland','polen',
+                       'portugal','romania','rumänien','slovakia','slowakei',
+                       'slovenia','slowenien','spain','spanien','sweden','schweden',
+                       'switzerland','schweiz','norway','norwegen','liechtenstein'];
+            var uk  = ['uk','united kingdom','england','britain','great britain',
+                       'scotland','wales','northern ireland'];
+            var far = ['usa','united states','us','canada','kanada',
+                       'australia','australien','new zealand','neuseeland'];
+            return function (country) {
+                var c = (country || '').trim().toLowerCase();
+                if (!c) return null;
+                if (de.indexOf(c)  !== -1) return 5;
+                if (eu.indexOf(c)  !== -1) return 10;
+                if (uk.indexOf(c)  !== -1) return 15;
+                if (far.indexOf(c) !== -1) return 20;
+                return 20;
+            };
+        }());
+
+        function updatePrice() {
+            var base     = 30;
+            var hasCable = !!document.querySelector('input[name="usb_cable"]:checked');
+            var plugEl   = document.querySelector('input[name="plug_type"]:checked');
+            var hasPlug  = plugEl && plugEl.value !== 'None';
+            var shipping = SHIPPING(countryEl ? countryEl.value : '');
+
+            if (hasCable) base += 5;
+            if (hasPlug)  base += 10;
+
+            if (pbCable) pbCable.style.display = hasCable ? '' : 'none';
+            if (pbPlug)  pbPlug.style.display  = hasPlug  ? '' : 'none';
+
+            if (pbShipping) {
+                pbShipping.textContent = shipping !== null ? shipping + ' €' : 'TBD';
+            }
+            if (pbTotal) {
+                pbTotal.textContent = shipping !== null
+                    ? (base + shipping) + ' €'
+                    : base + ' € + shipping';
+            }
+        }
+
+        document.querySelectorAll('input[name="usb_cable"], input[name="plug_type"]').forEach(function (el) {
+            el.addEventListener('change', updatePrice);
+        });
+        if (countryEl) countryEl.addEventListener('input', updatePrice);
+        // ─────────────────────────────────────────────────────────
+
+        form.addEventListener('submit', async function (e) {            e.preventDefault();
+
+            var endpoint = form.getAttribute('action');
+            if (!endpoint) {
+                statusEl.className = 'form-status error';
+                statusEl.textContent = 'Form endpoint not configured yet. Please check back soon.';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending\u2026';
+            statusEl.className = 'form-status';
+            statusEl.textContent = '';
+
+            try {
+                var res = await fetch(endpoint, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                var data = {};
+                var ct = res.headers.get('content-type') || '';
+                if (ct.includes('application/json')) {
+                    data = await res.json();
+                }
+
+                if (!res.ok) {
+                    var msg = Array.isArray(data.errors)
+                        ? data.errors.map(function (err) { return err.message; }).join(' ')
+                        : (data.message || 'Submission failed.');
+                    throw new Error(msg);
+                }
+
+                statusEl.className = 'form-status success';
+                statusEl.textContent = 'Your pre-order is reserved! I\u2019ll be in touch with payment details once the first batch is confirmed. Thank you!';
+                form.reset();
+            } catch (err) {
+                statusEl.className = 'form-status error';
+                statusEl.textContent = 'Something went wrong. Please try again or reach out directly via email.';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Reserve My RecLight \u2192';
+            }
+        });
+    });
+    </script>
+</body>
+</html>

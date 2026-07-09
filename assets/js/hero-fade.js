@@ -1,19 +1,19 @@
 /**
  * Hero exit on scroll
- * Starts fading the hero copy before it reaches the bottom edge, without clipping it.
+ * Fades the hero copy out as the hero section scrolls upward.
  */
 
 document.addEventListener('DOMContentLoaded', function() {
     const hero = document.querySelector('.hero');
     const heroContent = document.querySelector('.hero-content');
     const mobileQuery = window.matchMedia('(max-width: 768px)');
-    
+
     if (!hero || !heroContent) return;
 
     function resetHeroStyles() {
         heroContent.style.opacity = '1';
-        heroContent.style.pointerEvents = 'auto';
         heroContent.style.transform = '';
+        heroContent.style.pointerEvents = 'auto';
     }
 
     function updateHeroFade() {
@@ -23,29 +23,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const heroRect = hero.getBoundingClientRect();
-        const contentRect = heroContent.getBoundingClientRect();
-        const scrollTop = Math.max(window.scrollY, 0);
-        const fadeStart = 36;
-        const fadeWindow = 220;
-        const rawProgress = (scrollTop - fadeStart) / fadeWindow;
-        const fadeProgress = Math.max(0, Math.min(1, rawProgress));
-        const opacity = 1 - (fadeProgress * 0.92);
-        const drift = fadeProgress * 18;
+        const navHeight = 72;
+        // scrolledPast: how far the hero top has moved above the nav bottom
+        const scrolledPast = navHeight - heroRect.top;
+        const fadeRange = hero.offsetHeight * 0.5;
 
-        if (scrollTop <= fadeStart) {
+        if (scrolledPast <= 0) {
             resetHeroStyles();
             return;
         }
 
-        if (heroRect.bottom <= contentRect.top) {
-            heroContent.style.opacity = 0;
-            heroContent.style.pointerEvents = 'none';
-        } else {
-            heroContent.style.opacity = String(opacity);
-            heroContent.style.pointerEvents = opacity < 0.08 ? 'none' : 'auto';
-        }
+        const progress = Math.min(1, scrolledPast / fadeRange);
+        const opacity = 1 - progress * 0.97;
+        const drift = -progress * 20;
 
-        heroContent.style.transform = `translate(-50%, calc(-50% + ${drift}px))`;
+        heroContent.style.opacity = String(Math.max(0, opacity));
+        heroContent.style.transform = `translateY(${drift}px)`;
+        heroContent.style.pointerEvents = opacity < 0.08 ? 'none' : 'auto';
     }
 
     updateHeroFade();
@@ -53,3 +47,4 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('resize', updateHeroFade);
     mobileQuery.addEventListener('change', updateHeroFade);
 });
+
