@@ -397,6 +397,101 @@
             opacity: 0.35;
             pointer-events: none;
         }
+
+        /* ── DOWNLOAD SECTION ───────────────────────────────────── */
+        .rl-download-section {
+            padding: 5.5rem 2rem;
+            background: var(--rl-panel);
+        }
+        .rl-download-inner {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .rl-download-inner h2 {
+            font-size: clamp(1.9rem, 4.5vw, 2.9rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: #fff;
+            margin-bottom: 0.7rem;
+        }
+        .rl-download-inner > p {
+            color: rgba(234,234,234,0.5);
+            font-size: 1rem;
+            line-height: 1.72;
+            margin-bottom: 2.8rem;
+        }
+        .rl-download-cards {
+            display: flex;
+            gap: 1.2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .rl-download-card {
+            flex: 1;
+            min-width: 220px;
+            max-width: 300px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 2rem 1.6rem 1.8rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+            transition: border-color 0.2s;
+        }
+        .rl-download-card:hover {
+            border-color: rgba(233,69,96,0.38);
+        }
+        .rl-download-card-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            background: rgba(233,69,96,0.1);
+            color: var(--rl-red);
+        }
+        .rl-download-card h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
+        }
+        .rl-download-card p {
+            font-size: 0.82rem;
+            color: rgba(234,234,234,0.42);
+            line-height: 1.55;
+            margin: 0;
+        }
+        .rl-download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.6rem;
+            padding: 0.65rem 1.5rem;
+            border-radius: 999px;
+            background: var(--rl-red);
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-decoration: none;
+            box-shadow: 0 4px 18px rgba(233,69,96,0.32);
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+        }
+        .rl-download-btn:hover {
+            background: #d63050;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(233,69,96,0.48);
+        }
+        .rl-download-note {
+            margin-top: 2rem;
+            font-size: 0.82rem;
+            color: rgba(234,234,234,0.3);
+        }
     </style>
 </head>
 <body>
@@ -474,6 +569,40 @@
                     <p>Limited pre-order, early backers lock in the price.</p>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- ── DOWNLOAD SOFTWARE ─────────────────────────────────────── -->
+    <section class="rl-download-section">
+        <div class="rl-download-inner">
+            <p class="rl-kicker">DAW Integration</p>
+            <h2>Download Software</h2>
+            <p>Install the RecLight plugin to connect your DAW to the LED. Available as AU and VST3 for macOS.</p>
+            <div class="rl-download-cards">
+                <div class="rl-download-card">
+                    <div class="rl-download-card-icon" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </div>
+                    <h3>RecLight AU</h3>
+                    <p>Audio Unit &middot; macOS<br>Logic Pro, GarageBand &amp; more</p>
+                    <a href="assets/Downloads/RecLight-AU.pkg" download class="rl-download-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download .pkg
+                    </a>
+                </div>
+                <div class="rl-download-card">
+                    <div class="rl-download-card-icon" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </div>
+                    <h3>RecLight VST3</h3>
+                    <p>VST3 &middot; macOS<br>Ableton Live, Cubase &amp; more</p>
+                    <a href="assets/Downloads/RecLight-VST3.pkg" download class="rl-download-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download .pkg
+                    </a>
+                </div>
+            </div>
+            <p class="rl-download-note">macOS only &middot; Requires RecLight hardware</p>
         </div>
     </section>
 
