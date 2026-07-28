@@ -3267,3 +3267,305 @@ audio {
     display: flex;
     gap: 1.2rem;
 }
+
+/* ========================================
+   SCORES & SKETCHES ARCHIVE
+   ======================================== */
+
+.scores-archive-container {
+    max-width: 1100px;
+}
+
+.scores-gate {
+    display: flex;
+    justify-content: center;
+    padding: 2rem 0 3rem;
+}
+
+.scores-gate[hidden] {
+    display: none;
+}
+
+.scores-gate-card {
+    width: min(100%, 26rem);
+    padding: 2rem;
+    border: 1px solid rgba(233, 69, 96, 0.2);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    text-align: center;
+}
+
+.scores-gate-card h2 {
+    margin-bottom: 0.6rem;
+    color: var(--text-color);
+}
+
+.scores-gate-card p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    font-size: 0.92rem;
+}
+
+.scores-gate-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    text-align: left;
+}
+
+.scores-gate-form .btn {
+    align-self: center;
+}
+
+.scores-archive-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.scores-signed-in {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+}
+
+.scores-archive-intro {
+    color: var(--text-secondary);
+    margin-bottom: 1.75rem;
+    font-size: 0.95rem;
+}
+
+.scores-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+}
+
+.scores-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 720px;
+}
+
+.scores-table thead th {
+    text-align: left;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.scores-table tbody td {
+    padding: 1rem 1.1rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+    font-size: 0.92rem;
+}
+
+.scores-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.scores-title-cell {
+    font-weight: 600;
+    color: var(--text-color);
+    white-space: nowrap;
+}
+
+.scores-owner-cell {
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.scores-contact-link {
+    color: var(--highlight-color);
+    text-decoration: none;
+    word-break: break-word;
+}
+
+.scores-contact-link:hover {
+    text-decoration: underline;
+}
+
+.scores-waveform-cell {
+    min-width: 260px;
+}
+
+.scores-waveform {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.scores-play-btn {
+    flex-shrink: 0;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 50%;
+    border: 1px solid var(--highlight-color);
+    background: transparent;
+    color: var(--highlight-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.scores-play-btn:hover {
+    background: rgba(233, 69, 96, 0.12);
+}
+
+.scores-play-btn.playing {
+    background: var(--highlight-color);
+    color: #fff;
+}
+
+.scores-play-btn.is-loading {
+    cursor: wait;
+    opacity: 0.75;
+}
+
+.scores-play-btn.is-error {
+    border-color: rgba(170, 48, 62, 0.9);
+    color: rgba(170, 48, 62, 0.9);
+}
+
+.scores-play-btn:disabled {
+    cursor: wait;
+}
+
+.scores-waveform-canvas-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 160px;
+    height: 44px;
+    border-radius: 0.4rem;
+    background: rgba(255, 255, 255, 0.03);
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.scores-waveform-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.scores-waveform-progress-wrap {
+    position: absolute;
+    inset: 0;
+    width: 0%;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* Width is set inline by JS to match the full waveform (not the shrinking
+   wrapper), so the clipped canvas reveals rather than squishes the peaks. */
+.scores-waveform-progress-wrap .scores-waveform-canvas {
+    width: auto;
+}
+
+.scores-waveform-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    color: rgba(234, 234, 234, 0.55);
+    background: rgba(13, 18, 31, 0.35);
+    pointer-events: none;
+}
+
+.scores-waveform-label[hidden] {
+    display: none;
+}
+
+.scores-time {
+    flex-shrink: 0;
+    width: 2.6rem;
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.scores-download-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+}
+
+.scores-download-status {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    min-height: 1em;
+}
+
+.scores-download-status.is-success {
+    color: var(--success-color);
+}
+
+.scores-archive-note {
+    margin-top: 1.75rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid rgba(233, 69, 96, 0.25);
+    border-radius: 0.6rem;
+    background: rgba(233, 69, 96, 0.06);
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.7;
+}
+
+@media (max-width: 640px) {
+    .scores-table-wrap {
+        border: none;
+        overflow: visible;
+    }
+
+    .scores-table {
+        min-width: 0;
+    }
+
+    .scores-table thead {
+        display: none;
+    }
+
+    .scores-table tbody tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+
+    .scores-table tbody td {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .scores-table tbody tr:last-child td:last-child {
+        border-bottom: none;
+    }
+
+    .scores-table tbody td::before {
+        content: attr(data-label);
+        flex-shrink: 0;
+        width: 5rem;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+    }
+}

@@ -11,3 +11,8 @@ secrets/
 .vscode/*.zip
 *.zip
 .vscode/
+
+# Scores & Sketches archive: keep only the compressed web copies (.mp3) in
+# git. The original WAV masters stay on disk but exceed GitHub's file size
+# limit, so they must not be committed.
+assets/audio/ScoresArchive/*.wav

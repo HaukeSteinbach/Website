@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mastering - Steinbach</title>
+    <title>Scores &amp; Sketches - Steinbach</title>
+    <meta name="description" content="A growing archive of non-exclusive film music by Hauke Steinbach, open for browsing and licensing inquiries.">
     <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
@@ -18,7 +19,7 @@
             <ul class="nav-menu" id="primary-navigation">
                 <li><a href="index.html" class="nav-link">Home</a></li>
                 <li><a href="mixing.html" class="nav-link">Mixing</a></li>
-                <li><a href="mastering.html" class="nav-link active">Mastering</a></li>
+                <li><a href="mastering.html" class="nav-link">Mastering</a></li>
                 <li class="nav-item-dropdown">
                     <button class="nav-dropdown-trigger" aria-expanded="false" aria-haspopup="true">
                         More <span class="nav-dropdown-caret"></span>
@@ -38,63 +39,73 @@
     </nav>
 
     <header class="section-header">
-        <h1>Mastering</h1>
-        <p>Mastering work with A/B comparison</p>
+        <h1>Scores &amp; Sketches</h1>
+        <p>A growing archive of non-exclusive film music</p>
     </header>
 
-    <main class="container">
-        <section class="mastering-grid" id="mastering">
-            <!-- Mastering cards with audio comparison will be inserted here via JavaScript -->
+    <main class="container scores-archive-container">
+        <section class="scores-gate" id="scores-gate">
+            <div class="scores-gate-card">
+                <h2>Members Access</h2>
+                <p>This archive is reserved for people I've shared access with. Enter your full name and the archive password to continue.</p>
+                <form class="scores-gate-form" id="scores-gate-form" novalidate>
+                    <div class="form-group">
+                        <label for="scores-name">Full Name</label>
+                        <input type="text" id="scores-name" name="scores-name" placeholder="First Last" autocomplete="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="scores-password">Password</label>
+                        <input type="password" id="scores-password" name="scores-password" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="btn">Enter Archive</button>
+                    <div class="form-status" id="scores-gate-status"></div>
+                </form>
+            </div>
+        </section>
+
+        <section class="scores-archive-content" id="scores-archive-content" hidden>
+            <div class="scores-archive-toolbar">
+                <p class="scores-signed-in">Signed in as <strong id="scores-signed-in-name"></strong></p>
+                <button type="button" class="btn btn-secondary" id="scores-logout">Log Out</button>
+            </div>
+
+            <p class="scores-archive-intro">This archive is being extended over time as new scores and sketches become available for review.</p>
+
+            <div class="scores-table-wrap">
+                <table class="scores-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Title</th>
+                            <th scope="col">Waveform</th>
+                            <th scope="col">Owner</th>
+                            <th scope="col">Contact</th>
+                            <th scope="col">Download</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scores-table-body">
+                        <!-- Rows are rendered by assets/js/scores-archive.js -->
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="scores-archive-note">
+                All scores and sketches remain the property of their respective owners. Any use &mdash; sync licensing, remixing, re-release, or public performance &mdash; requires prior written consent from the owner. Tracks can be downloaded here for review purposes.
+            </p>
         </section>
     </main>
 
-    <section class="contact-section">
-        <div class="container">
-            <div class="contact-form-wrapper">
-                <button class="contact-form-toggle" id="contact-toggle">
-                    <h2>Get in Touch</h2>
-                    <span class="toggle-icon">+</span>
-                </button>
-                <div class="contact-form-content" id="contact-content">
-                    <p>Have a project in mind? Let's work together.</p>
-                    <form class="contact-form" id="contact-form" action="https://formspree.io/f/xgopedgb" method="post">
-                        <input type="hidden" name="form_source" value="Mastering page">
-                        <input type="text" name="website" class="contact-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
-                        <div class="form-group">
-                            <label for="name">Name</label>
-                            <input type="text" id="name" name="name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email</label>
-                            <input type="email" id="email" name="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="phone">Phone</label>
-                            <input type="tel" id="phone" name="phone">
-                        </div>
-                        <div class="form-group">
-                            <label for="subject">Subject</label>
-                            <select id="subject" name="subject" required>
-                                <option value="">Select a subject</option>
-                                <option value="productions">Productions Inquiry</option>
-                                <option value="mixing">Mixing Services</option>
-                                <option value="mastering">Mastering Services</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="message">Message</label>
-                            <textarea id="message" name="message" rows="5" required></textarea>
-                        </div>
-                        <button type="submit" class="btn">Send Message</button>
-                        <div class="form-status" id="form-status"></div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <footer class="footer">
+        <div class="footer-support">
+            <span>Support My Work:</span>
+            <a href="https://patreon.com/Steinbach" target="_blank" aria-label="Patreon" class="footer-icon">
+                <img src="assets/images/PatreonIcon.png" alt="Patreon icon" class="footer-icon-image">
+                <span class="footer-link-text">patreon.com/steinbach</span>
+            </a>
+            <a href="https://www.instagram.com/steinbach.wctw/" target="_blank" aria-label="Instagram" class="footer-icon">
+                <img src="assets/images/InstagramIcon.png" alt="Instagram icon" class="footer-icon-image">
+                <span class="footer-link-text">instagram.com/steinbach.wctw</span>
+            </a>
+        </div>
         <div class="footer-legal">
             <a href="impressum.html" class="footer-legal-link">Legal Notice</a>
             <a href="datenschutz.html" class="footer-legal-link">Privacy Policy</a>
@@ -105,8 +116,6 @@
     <script src="assets/js/cookie-consent.js"></script>
     <script src="assets/js/navbar.js"></script>
     <script src="assets/js/hero-fade.js"></script>
-    <script src="assets/js/audio-comparison.js"></script>
-    <script src="assets/js/portfolio.js"></script>
-    <script src="assets/js/contact.js"></script>
+    <script src="assets/js/scores-archive.js"></script>
 </body>
 </html>
