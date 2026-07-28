@@ -40,6 +40,30 @@
             file: 'assets/audio/ScoresArchive/Tiny World.mp3',
             owner: 'Hauke Steinbach',
             email: 'mail@haukesteinbach.de'
+        },
+        {
+            title: 'Mini Me',
+            file: 'assets/audio/ScoresArchive/Mini Me.mp3',
+            owner: 'Hauke Steinbach',
+            email: 'mail@haukesteinbach.de'
+        },
+        {
+            title: 'New Homes',
+            file: 'assets/audio/ScoresArchive/New Homes.mp3',
+            owner: 'Hauke Steinbach',
+            email: 'mail@haukesteinbach.de'
+        },
+        {
+            title: 'Place to Be',
+            file: 'assets/audio/ScoresArchive/Place to Be.mp3',
+            owner: 'Hauke Steinbach',
+            email: 'mail@haukesteinbach.de'
+        },
+        {
+            title: 'Toms Drums',
+            file: 'assets/audio/ScoresArchive/Toms Drums.mp3',
+            owner: 'Hauke Steinbach',
+            email: 'mail@haukesteinbach.de'
         }
     ];
 
