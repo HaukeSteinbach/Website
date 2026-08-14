@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IR Maker: Free Impulse Response Generator from Sine Sweeps | Steinbach</title>
+    <meta name="description" content="Free browser-based impulse response (IR) generator for audio engineers. Deconvolve sine-sweep recordings from up to 20 microphones into WAV impulse responses for convolution reverb, cabinet, room and mic IRs. Runs 100% locally, no upload.">
+    <meta name="keywords" content="impulse response generator, IR maker, sine sweep deconvolution, convolution reverb IR, cabinet IR, room IR, microphone impulse response, exponential sine sweep, ESS, create IR wav, free IR tool">
+    <meta name="author" content="Hauke Steinbach">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://haukesteinbach.de/ir-maker.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="IR Maker: Free Impulse Response Generator from Sine Sweeps">
+    <meta property="og:description" content="Turn sine-sweep recordings into clean WAV impulse responses right in your browser. Up to 20 named microphones, intelligent hum/room-noise removal, multitrack or ZIP export. No upload, no sign-up.">
+    <meta property="og:url" content="https://haukesteinbach.de/ir-maker.html">
+    <meta property="og:site_name" content="Steinbach">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="IR Maker: Free Impulse Response Generator">
+    <meta name="twitter:description" content="Deconvolve sine-sweep recordings into WAV impulse responses in your browser. Up to 20 mics, hum/room-noise removal, multitrack or ZIP export.">
+
+    <link rel="stylesheet" href="assets/css/styles.css">
+
+    <!-- Structured data for search engines -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "IR Maker",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "Web browser",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+      "description": "Free browser-based impulse response generator. Deconvolve sine-sweep recordings from up to 20 microphones into WAV impulse responses for convolution reverb, cabinet, room and microphone IRs. All processing runs locally in the browser.",
+      "url": "https://haukesteinbach.de/ir-maker.html",
+      "author": { "@type": "Person", "name": "Hauke Steinbach" },
+      "featureList": [
+        "Exponential sine-sweep deconvolution",
+        "Up to 20 named microphone inputs",
+        "Bring your own sweep sample",
+        "Phase-preserving hum and room-noise removal",
+        "Automatic sweep alignment",
+        "Multitrack WAV or named-WAV ZIP export",
+        "Built-in high-quality sweep generator"
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to create an impulse response from a sine sweep",
+      "step": [
+        { "@type": "HowToStep", "name": "Load reference sweep", "text": "Load the exponential sine-sweep file you played through the system (or generate one below)." },
+        { "@type": "HowToStep", "name": "Load microphone recordings", "text": "Add up to 20 named microphones and load each recorded sweep response." },
+        { "@type": "HowToStep", "name": "Trim and align", "text": "Set the start point where the sweep enters. Enable automatic alignment to match each mic to the reference." },
+        { "@type": "HowToStep", "name": "Remove noise", "text": "Optionally remove hum and room noise using phase-preserving spectral subtraction." },
+        { "@type": "HowToStep", "name": "Generate IRs", "text": "Deconvolve each recording into an impulse response and export as a multitrack WAV or a ZIP of named WAV files." }
+      ]
+    }
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">Steinbach</a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Toggle navigation">
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
+            <ul class="nav-menu" id="primary-navigation">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="mixing.html" class="nav-link">Mixing</a></li>
+                <li><a href="mastering.html" class="nav-link">Mastering</a></li>
+                <li class="nav-item-dropdown">
+                    <button class="nav-dropdown-trigger" aria-expanded="false" aria-haspopup="true">
+                        More <span class="nav-dropdown-caret"></span>
+                    </button>
+                    <ul class="nav-dropdown-menu">
+                        <li><a href="https://steinbach-instruments.de" target="_blank" rel="noopener noreferrer"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="9" width="20" height="10" rx="1.5"/><line x1="7" y1="9" x2="7" y2="19"/><line x1="12" y1="9" x2="12" y2="19"/><line x1="17" y1="9" x2="17" y2="19"/><rect x="4.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/><rect x="9.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/><rect x="14.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/></svg></span><span><span>Multisampler</span><span class="nav-dropdown-sub">Interactive sample instruments</span></span></a></li>
+                        <li class="dropdown-divider"></li>
+                        <li><a href="steinbach-eq.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><path d="M2 14 L5 10 L8 14 L12 6 L16 14 L19 11 L22 14"/></svg></span><span><span>Steinbach EQ</span><span class="nav-dropdown-sub">AU &middot; VST3 &middot; macOS</span></span></a></li>
+                        <li class="dropdown-divider"></li>
+                        <li><a href="reclight.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9.5"/></svg></span><span><span>RecLight</span><span class="nav-dropdown-sub">Studio Status LED &middot; Pre-order</span></span></a></li>
+                        <li class="dropdown-divider"></li>
+                        <li><a href="ir-maker.html" class="active"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M2 20 L7 20 L9 4 L11 20 L13 13 L15 20 L17 16 L19 20 L22 18"/></svg></span><span><span>IR Maker</span><span class="nav-dropdown-sub">Impulse response generator</span></span></a></li>
+                        <li class="dropdown-divider"></li>
+                        <li><a href="scores-archive.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><line x1="4" y1="10" x2="4" y2="14"/><line x1="8" y1="6" x2="8" y2="18"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="16" y1="7" x2="16" y2="17"/><line x1="20" y1="9" x2="20" y2="15"/></svg></span><span><span>Scores &amp; Sketches</span><span class="nav-dropdown-sub">Non-exclusive score archive</span></span></a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="section-header">
+        <h1>IR Maker</h1>
+        <p>Turn sine-sweep recordings into clean impulse responses, right in your browser.</p>
+    </header>
+
+    <main class="container ir-page">
+        <p class="ir-intro">
+            A focused tool for audio engineers. Load your reference sweep, add your microphone
+            recordings, and IR Maker deconvolves each one into a WAV impulse response ready for any
+            convolution reverb or cabinet loader. Everything runs locally in your browser, so your audio
+            never leaves your computer.
+        </p>
+
+        <!-- ══════════ STEP 1 · REFERENCE SWEEP ══ -->
+        <section class="ir-step" id="step-reference">
+            <div class="ir-step-head">
+                <span class="ir-step-num">1</span>
+                <div>
+                    <h2>Reference sweep</h2>
+                    <p>The exponential sine sweep you played through the system. Use your own file or <a href="#sweep-generator">generate one below</a>.</p>
+                </div>
+            </div>
+
+            <div class="ir-dropzone" id="reference-drop" tabindex="0" role="button" aria-label="Load reference sweep file">
+                <input type="file" id="reference-input" accept="audio/*,.wav,.aiff,.aif,.flac" hidden>
+                <div class="ir-dropzone-empty" id="reference-empty">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span><strong>Drop your sweep file</strong> or click to browse</span>
+                    <small>WAV, AIFF or FLAC</small>
+                </div>
+                <div class="ir-file-loaded" id="reference-loaded" hidden>
+                    <div class="ir-file-meta">
+                        <span class="ir-file-name" id="reference-name"></span>
+                        <span class="ir-file-info" id="reference-info"></span>
+                    </div>
+                    <button type="button" class="ir-file-clear" id="reference-clear" aria-label="Remove reference sweep">Remove</button>
+                </div>
+            </div>
+
+            <div class="ir-waveform-block" id="reference-waveform-block" hidden>
+                <div class="ir-waveform" id="reference-waveform">
+                    <canvas class="ir-wave-canvas" id="reference-canvas"></canvas>
+                    <div class="ir-trim-handle ir-trim-start" id="reference-trim-start" title="Trim start"></div>
+                    <div class="ir-trim-handle ir-trim-end" id="reference-trim-end" title="Trim end"></div>
+                    <div class="ir-trim-shade ir-shade-left" id="reference-shade-left"></div>
+                    <div class="ir-trim-shade ir-shade-right" id="reference-shade-right"></div>
+                </div>
+                <div class="ir-waveform-foot">
+                    <label class="ir-check ir-check-inline">
+                        <input type="checkbox" id="opt-snap" checked>
+                        <span><strong>Snap to transient</strong></span>
+                    </label>
+                    <p class="ir-waveform-hint">Drag the handles to trim the sweep region. The start point is copied to every microphone track.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════ STEP 2 · MICROPHONES ══ -->
+        <section class="ir-step" id="step-mics">
+            <div class="ir-step-head">
+                <span class="ir-step-num">2</span>
+                <div>
+                    <h2>Microphones</h2>
+                    <p>Add microphones or drop several files at once. Each mic is named after the first word of its file, and matching L/R files are linked into a stereo pair automatically.</p>
+                </div>
+            </div>
+
+            <div class="ir-mic-list" id="mic-list"><!-- mic rows injected here --></div>
+
+            <div class="ir-mic-actions">
+                <button type="button" class="btn ir-add-mic" id="upload-all">Upload all mics</button>
+                <button type="button" class="btn btn-secondary ir-add-mic" id="add-mic">+ Add microphone</button>
+            </div>
+            <input type="file" id="upload-all-input" accept="audio/*,.wav,.aiff,.aif,.flac" multiple hidden>
+        </section>
+
+        <!-- ══════════ STEP 3 · PROCESSING ══ -->
+        <section class="ir-step" id="step-options">
+            <div class="ir-step-head">
+                <span class="ir-step-num">3</span>
+                <div>
+                    <h2>Processing &amp; export</h2>
+                    <p>Choose how the impulse responses are cleaned up and delivered.</p>
+                </div>
+            </div>
+
+            <div class="ir-options-grid">
+                <label class="ir-check">
+                    <input type="checkbox" id="opt-align" checked>
+                    <span>
+                        <strong>Auto-align &amp; polarity check</strong>
+                        <small>Find each mic start point by cross correlation and flip inverted mics for full mono compatibility, before anything is shifted.</small>
+                    </span>
+                </label>
+
+                <label class="ir-check">
+                    <input type="checkbox" id="opt-denoise">
+                    <span>
+                        <strong>Remove hum &amp; room noise</strong>
+                        <small>Phase preserving spectral subtraction. Removes mains hum and steady room noise without shifting phase.</small>
+                    </span>
+                </label>
+
+                <label class="ir-check">
+                    <input type="checkbox" id="opt-normalize" checked>
+                    <span>
+                        <strong>Normalize output</strong>
+                        <small>Scale each IR to a common peak level of -1 dBFS.</small>
+                    </span>
+                </label>
+
+                <label class="ir-check">
+                    <input type="checkbox" id="opt-monolow">
+                    <span>
+                        <strong>Mono below 80 Hz (natural phase)</strong>
+                        <small>Sum linked stereo pairs to mono under 80 Hz with a linear phase crossover for a solid, mono safe low end.</small>
+                    </span>
+                </label>
+
+                <div class="ir-field">
+                    <label for="opt-irlength">IR length</label>
+                    <select id="opt-irlength">
+                        <option value="1" selected>1 s</option>
+                        <option value="2">2 s</option>
+                        <option value="3">3 s</option>
+                        <option value="4">4 s</option>
+                        <option value="5">5 s</option>
+                        <option value="6">6 s</option>
+                        <option value="7">7 s</option>
+                        <option value="8">8 s</option>
+                        <option value="9">9 s</option>
+                        <option value="10">10 s</option>
+                        <option value="12">12 s</option>
+                        <option value="14">14 s</option>
+                        <option value="16">16 s</option>
+                        <option value="18">18 s</option>
+                        <option value="20">20 s</option>
+                        <option value="full">Full (start to end point)</option>
+                    </select>
+                </div>
+
+                <div class="ir-field">
+                    <label for="opt-samplerate">Working sample rate</label>
+                    <select id="opt-samplerate">
+                        <option value="44100">44.1 kHz</option>
+                        <option value="48000" selected>48 kHz</option>
+                        <option value="96000">96 kHz</option>
+                    </select>
+                </div>
+
+                <div class="ir-field">
+                    <label for="opt-bitdepth">Bit depth</label>
+                    <select id="opt-bitdepth">
+                        <option value="24" selected>24-bit PCM</option>
+                        <option value="32f">32-bit float</option>
+                        <option value="16">16-bit PCM</option>
+                    </select>
+                </div>
+
+                <div class="ir-field">
+                    <label for="opt-format">Export format</label>
+                    <select id="opt-format">
+                        <option value="zip" selected>ZIP of named WAV files</option>
+                        <option value="multi">Single multitrack WAV</option>
+                        <option value="ableton">Ableton rack (.adg + samples)</option>
+                    </select>
+                </div>
+
+                <div class="ir-field">
+                    <label for="opt-rackname">Amp / rack name</label>
+                    <input type="text" id="opt-rackname" placeholder="e.g. JazzChorusAmp (Ableton export)" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="ir-process-row">
+                <button type="button" class="btn ir-process-btn" id="process-btn">Generate impulse responses</button>
+            </div>
+
+            <div class="ir-progress-block" id="progress-block" hidden>
+                <div class="ir-progress-track"><div class="ir-progress-bar" id="progress-bar"></div></div>
+                <div class="ir-progress-status">
+                    <span id="progress-label">Preparing…</span>
+                    <span id="progress-pct">0%</span>
+                </div>
+                <ul class="ir-log" id="progress-log"></ul>
+            </div>
+
+            <div class="ir-results" id="results-block" hidden>
+                <h3>Done</h3>
+                <div class="ir-results-list" id="results-list"></div>
+            </div>
+        </section>
+
+        <!-- ══════════ SWEEP GENERATOR ══ -->
+        <section class="ir-step ir-generator" id="sweep-generator">
+            <div class="ir-step-head">
+                <span class="ir-step-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12 C4 4, 6 4, 8 12 S12 20, 14 12 S18 6, 22 12"/></svg>
+                </span>
+                <div>
+                    <h2>Sweep generator</h2>
+                    <p>Don't have a sweep yet? Generate a high-quality exponential sine sweep to play through your system.</p>
+                </div>
+            </div>
+
+            <div class="ir-options-grid">
+                <div class="ir-field">
+                    <label for="gen-duration">Duration</label>
+                    <select id="gen-duration">
+                        <option value="5">5 s</option>
+                        <option value="10">10 s</option>
+                        <option value="15" selected>15 s</option>
+                        <option value="20">20 s</option>
+                        <option value="30">30 s</option>
+                        <option value="60">60 s</option>
+                        <option value="120">2 min</option>
+                        <option value="180">3 min</option>
+                        <option value="300">5 min (max quality)</option>
+                    </select>
+                </div>
+                <div class="ir-field">
+                    <label for="gen-samplerate">Sample rate</label>
+                    <select id="gen-samplerate">
+                        <option value="44100">44.1 kHz</option>
+                        <option value="48000" selected>48 kHz</option>
+                        <option value="96000">96 kHz</option>
+                        <option value="192000">192 kHz</option>
+                    </select>
+                </div>
+                <div class="ir-field">
+                    <label for="gen-fstart">Start frequency</label>
+                    <select id="gen-fstart">
+                        <option value="20" selected>20 Hz</option>
+                        <option value="30">30 Hz</option>
+                        <option value="50">50 Hz</option>
+                    </select>
+                </div>
+                <div class="ir-field">
+                    <label for="gen-fend">End frequency</label>
+                    <select id="gen-fend">
+                        <option value="20000" selected>20 kHz</option>
+                        <option value="22000">22 kHz</option>
+                        <option value="24000">24 kHz (96 kHz+)</option>
+                    </select>
+                </div>
+                <div class="ir-field">
+                    <label for="gen-bitdepth">Bit depth</label>
+                    <select id="gen-bitdepth">
+                        <option value="24" selected>24-bit PCM</option>
+                        <option value="32f">32-bit float</option>
+                        <option value="16">16-bit PCM</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="ir-process-row">
+                <button type="button" class="btn ir-process-btn" id="generate-sweep-btn">Generate &amp; download sweep</button>
+                <button type="button" class="btn btn-secondary" id="preview-sweep-btn">Preview</button>
+            </div>
+            <p class="ir-gen-note">Play this sweep through your system at a steady level, record every microphone, then load the recordings above. Longer sweeps give a better signal-to-noise ratio.</p>
+        </section>
+
+        <!-- ══════════ HOW IT WORKS ══ -->
+        <section class="ir-info">
+            <h2>How impulse response deconvolution works</h2>
+            <p>
+                An impulse response (IR) captures how a space, speaker cabinet or microphone colours sound.
+                Instead of firing an impossible perfect impulse, engineers play a controlled
+                <strong>exponential sine sweep</strong> and record the result. IR Maker recovers the impulse
+                response by <strong>deconvolving</strong> the recording against the reference sweep using a
+                regularized inverse filter, which stays stable outside the sweep band and rejects
+                out-of-band noise.
+            </p>
+            <p>
+                The optional noise stage uses <strong>phase-preserving spectral subtraction</strong>: it
+                estimates the steady hum and room-noise spectrum and removes it from each recording while
+                leaving the phase untouched, so the resulting IR keeps its true transient and stereo image.
+                Results export as individually named WAV files in a ZIP, or as a single multitrack WAV.
+            </p>
+            <p class="ir-info-privacy">
+                <strong>100% local &amp; private.</strong> All decoding, deconvolution and export happens in
+                your browser. Nothing is uploaded to any server.
+            </p>
+            <p>
+                <strong>Ableton rack export.</strong> Choose the Ableton rack format to receive a ready to
+                use Audio Effect Rack (.adg) with one convolution chain per microphone plus a Samples
+                folder. Unzip it, drop the .adg into Live, and blend your mics. The chains use the free
+                Convolution Reverb Pro device, so install that Ableton pack first.
+            </p>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-support">
+            <span>Support My Work:</span>
+            <a href="https://patreon.com/Steinbach" target="_blank" aria-label="Patreon" class="footer-icon">
+                <img src="assets/images/PatreonIcon.png" alt="Patreon icon" class="footer-icon-image">
+                <span class="footer-link-text">patreon.com/steinbach</span>
+            </a>
+            <a href="https://www.instagram.com/steinbach.wctw/" target="_blank" aria-label="Instagram" class="footer-icon">
+                <img src="assets/images/InstagramIcon.png" alt="Instagram icon" class="footer-icon-image">
+                <span class="footer-link-text">instagram.com/steinbach.wctw</span>
+            </a>
+        </div>
+        <div class="footer-legal">
+            <a href="impressum.html" class="footer-legal-link">Legal Notice</a>
+            <a href="datenschutz.html" class="footer-legal-link">Privacy Policy</a>
+        </div>
+        <p>&copy; 2025 Steinbach. All rights reserved.</p>
+    </footer>
+
+    <script src="assets/js/cookie-consent.js"></script>
+    <script src="assets/js/navbar.js"></script>
+    <script src="assets/js/ableton-rack-template.js"></script>
+    <script src="assets/js/ir-maker.js"></script>
+</body>
+</html>

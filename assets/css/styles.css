@@ -3569,3 +3569,639 @@ audio {
         color: var(--text-secondary);
     }
 }
+
+/* ========================================
+   IR MAKER
+   ======================================== */
+
+.ir-page {
+    max-width: 900px;
+}
+
+.ir-intro {
+    max-width: 68ch;
+    margin: 0 auto 3rem;
+    text-align: center;
+    color: var(--text-secondary);
+    line-height: 1.75;
+}
+
+.ir-step {
+    background-color: var(--secondary-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.9rem;
+    margin-bottom: 1.75rem;
+}
+
+.ir-step-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.ir-step-num,
+.ir-step-icon {
+    flex-shrink: 0;
+    width: 2.1rem;
+    height: 2.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(233, 69, 96, 0.12);
+    border: 1px solid rgba(233, 69, 96, 0.35);
+    color: var(--highlight-color);
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.ir-step-head h2 {
+    font-size: 1.3rem;
+    color: var(--text-color);
+    margin: 0 0 0.25rem;
+}
+
+.ir-step-head p {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    margin: 0;
+}
+
+.ir-step-head a {
+    color: var(--highlight-color);
+    text-decoration: none;
+}
+
+.ir-step-head a:hover {
+    text-decoration: underline;
+}
+
+/* ── Dropzone ── */
+.ir-dropzone {
+    border: 1.5px dashed rgba(233, 69, 96, 0.35);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.ir-dropzone:hover,
+.ir-dropzone:focus-visible,
+.ir-dropzone.ir-dragover {
+    border-color: var(--highlight-color);
+    background: rgba(233, 69, 96, 0.06);
+    outline: none;
+}
+
+.ir-dropzone-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.ir-dropzone-empty svg {
+    color: var(--highlight-color);
+    opacity: 0.8;
+}
+
+.ir-dropzone-empty strong {
+    color: var(--text-color);
+}
+
+.ir-dropzone-empty small {
+    font-size: 0.78rem;
+    opacity: 0.7;
+}
+
+.ir-file-loaded {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.ir-file-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.ir-file-name {
+    color: var(--text-color);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ir-file-info,
+.ir-mic-info {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+}
+
+.ir-file-clear,
+.ir-mic-remove {
+    background: transparent;
+    border: 1px solid rgba(233, 69, 96, 0.35);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.ir-file-clear:hover,
+.ir-mic-remove:hover {
+    background: rgba(233, 69, 96, 0.12);
+    color: var(--text-color);
+}
+
+/* ── Waveform ── */
+.ir-waveform-block {
+    margin-top: 1rem;
+}
+
+.ir-waveform,
+.ir-mic-wave {
+    position: relative;
+    width: 100%;
+    height: 90px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    user-select: none;
+}
+
+.ir-mic-wave {
+    height: 60px;
+    margin-top: 0.75rem;
+}
+
+.ir-wave-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.ir-trim-handle {
+    position: absolute;
+    top: 0;
+    width: 12px;
+    height: 100%;
+    margin-left: -6px;
+    cursor: ew-resize;
+    z-index: 3;
+}
+
+.ir-trim-handle::before {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--highlight-color);
+}
+
+.ir-trim-handle::after {
+    content: "";
+    position: absolute;
+    left: 1px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 20px;
+    border-radius: 3px;
+    background: var(--highlight-color);
+}
+
+.ir-mic-start-handle::before,
+.ir-mic-start-handle::after {
+    background: #4a90d9;
+}
+
+.ir-trim-shade {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.ir-shade-left { left: 0; }
+
+.ir-waveform-hint {
+    margin-top: 0.6rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.ir-waveform-foot {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin-top: 0.6rem;
+}
+
+.ir-waveform-foot .ir-waveform-hint {
+    margin-top: 0;
+    flex: 1;
+    min-width: 200px;
+}
+
+.ir-check-inline {
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* ── Mic rows ── */
+.ir-mic-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin-bottom: 1.25rem;
+}
+
+.ir-mic-row {
+    display: flex;
+    gap: 0.9rem;
+    padding: 0.9rem;
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.02);
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.ir-mic-row.ir-dragover {
+    border-color: var(--highlight-color);
+    background: rgba(233, 69, 96, 0.06);
+}
+
+.ir-mic-index {
+    flex-shrink: 0;
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.ir-mic-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.ir-mic-top {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.ir-mic-name {
+    flex: 1;
+    min-width: 140px;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid rgba(233, 69, 96, 0.2);
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.ir-mic-name:focus {
+    outline: none;
+    border-color: rgba(233, 69, 96, 0.5);
+    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+}
+
+.ir-mic-file-btn {
+    background: transparent;
+    border: 1px solid rgba(233, 69, 96, 0.35);
+    color: var(--text-color);
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.ir-mic-file-btn:hover {
+    background: rgba(233, 69, 96, 0.12);
+}
+
+.ir-mic-remove {
+    padding: 0.3rem 0.65rem;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.ir-mic-link-btn {
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid rgba(74, 144, 217, 0.45);
+    background: rgba(74, 144, 217, 0.14);
+    color: #9ec8f0;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.ir-mic-link-btn:hover {
+    background: rgba(74, 144, 217, 0.24);
+}
+
+.ir-mic-link-btn.is-unlinked {
+    border-color: rgba(233, 69, 96, 0.35);
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.ir-mic-link-btn.is-unlinked:hover {
+    background: rgba(233, 69, 96, 0.12);
+    color: var(--text-color);
+}
+
+.ir-add-mic {
+    width: 100%;
+}
+
+.ir-mic-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.ir-mic-actions .ir-add-mic {
+    width: auto;
+    flex: 1;
+    min-width: 180px;
+}
+
+/* ── Options ── */
+.ir-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+.ir-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    cursor: pointer;
+}
+
+.ir-check input {
+    margin-top: 0.2rem;
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--highlight-color);
+    flex-shrink: 0;
+}
+
+.ir-check span {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.ir-check strong {
+    color: var(--text-color);
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.ir-check small {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
+.ir-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.ir-field label {
+    font-size: 0.85rem;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.ir-field select {
+    padding: 0.6rem 2.4rem 0.6rem 0.7rem;
+    border: 1px solid rgba(233, 69, 96, 0.15);
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 0.9rem;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23b0b0b0" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+}
+
+.ir-field select:focus {
+    outline: none;
+    border-color: rgba(233, 69, 96, 0.5);
+    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+}
+
+.ir-field input {
+    padding: 0.6rem 0.7rem;
+    border: 1px solid rgba(233, 69, 96, 0.15);
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.ir-field input:focus {
+    outline: none;
+    border-color: rgba(233, 69, 96, 0.5);
+    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+}
+
+/* ── Process / progress ── */
+.ir-process-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.ir-process-btn {
+    font-size: 1rem;
+    padding: 0.85rem 2rem;
+}
+
+.ir-process-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.ir-progress-block {
+    margin-top: 1.5rem;
+}
+
+.ir-progress-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.ir-progress-bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--highlight-color), #ff7a90);
+    border-radius: 999px;
+    transition: width 0.25s ease;
+}
+
+.ir-progress-status {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.6rem;
+    font-size: 0.88rem;
+    color: var(--text-color);
+}
+
+.ir-log {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0.75rem 1rem;
+    max-height: 170px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.ir-log li {
+    padding: 0.12rem 0;
+}
+
+/* ── Results ── */
+.ir-results {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.ir-results h3 {
+    color: var(--highlight-color);
+    margin: 0 0 1rem;
+}
+
+.ir-result-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.ir-result-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.ir-result-name {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.ir-result-sub {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+}
+
+/* ── How it works ── */
+.ir-info {
+    margin-top: 1rem;
+}
+
+.ir-info h2 {
+    font-size: 1.35rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.ir-info p {
+    color: var(--text-secondary);
+    line-height: 1.75;
+    margin-bottom: 1rem;
+    max-width: 72ch;
+}
+
+.ir-info strong {
+    color: var(--text-color);
+}
+
+.ir-info-privacy {
+    padding: 1rem 1.15rem;
+    border-left: 3px solid var(--highlight-color);
+    background: rgba(233, 69, 96, 0.06);
+    border-radius: 0 8px 8px 0;
+}
+
+.ir-gen-note {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+    .ir-step {
+        padding: 1.3rem;
+    }
+    .ir-result-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .ir-mic-top {
+        gap: 0.5rem;
+    }
+}
