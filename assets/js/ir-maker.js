@@ -603,7 +603,7 @@
         });
     }
 
-    // Clone one branch template, retargeting name and both wav sample refs.
+    // Clone one branch template, retargeting name, wav sample refs, and Volume macro AutomationTarget.
     function buildRackBranch(tpl, id, displayName, relFile, size) {
         var b = tpl.replace(/^<AudioEffectBranchPreset Id="\d+">/,
             '<AudioEffectBranchPreset Id="' + id + '">');
@@ -617,6 +617,14 @@
                 .replace(/<OriginalFileSize Value="[^"]*" \/>/, '<OriginalFileSize Value="' + size + '" />')
                 .replace(/<OriginalCrc Value="[^"]*" \/>/, '<OriginalCrc Value="0" />');
             return '<FileRef>' + nn + '</FileRef>';
+        });
+        // Bind MacroControls.(id) to this chain's Volume via matching AutomationTarget Id.
+        b = b.replace(/<AudioBranchMixerDevice([\s\S]*?)<\/AudioBranchMixerDevice>/, function (full, inner) {
+            var updated = inner.replace(/<Volume>([\s\S]*?)<\/Volume>/, function (vfull, vinner) {
+                var vupdated = vinner.replace(/(<AutomationTarget Id=")0(">)/, '$1' + (id + 1) + '$2');
+                return '<Volume>' + vupdated + '</Volume>';
+            });
+            return '<AudioBranchMixerDevice' + updated + '</AudioBranchMixerDevice>';
         });
         return b;
     }
@@ -634,10 +642,26 @@
 
             head = head.replace(/(<UserName Value=")JazzChorusAmp Convolution - Steinbach(" \/>)/,
                 '$1' + escXml(rackName) + '$2');
+            // Set number of visible macros and wire each one to the corresponding chain volume.
+            head = head.replace(/<NumVisibleMacroControls Value="\d+" \/>/,
+                '<NumVisibleMacroControls Value="' + Math.min(branches.length, 16) + '" />');
             for (var k = 0; k < 16; k++) {
                 var nm = k < branches.length ? branches[k].name : 'Macro ' + (k + 1);
                 head = head.replace(new RegExp('(<MacroDisplayNames\\.' + k + ' Value=")[^"]*(")'),
                     '$1' + escXml(nm) + '$2');
+                // Macro Manual ~63.6 = 0 dB on the Volume MidiControllerRange (0.0003-1.9952).
+                var macroManual = k < branches.length ? '63.6' : '0';
+                var macroAtId   = k < branches.length ? String(k + 1) : '0';
+                (function (ki, manual, atId) {
+                    head = head.replace(
+                        new RegExp('(<MacroControls\\.' + ki + '>[\\s\\S]*?<Manual Value=")[^"]*(")', 'g'),
+                        '$1' + manual + '$2'
+                    );
+                    head = head.replace(
+                        new RegExp('(<MacroControls\\.' + ki + '>[\\s\\S]*?<AutomationTarget Id=")0(">)'),
+                        '$1' + atId + '$2'
+                    );
+                }(k, macroManual, macroAtId));
             }
             var body = branches.map(function (b, i) {
                 return buildRackBranch(tpl, i, b.name, b.file, b.size);
