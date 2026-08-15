@@ -260,9 +260,37 @@
             overflow: hidden;
             box-shadow: 0 8px 40px rgba(0,0,0,0.65);
         }
-        .eq-feature-img img {
+        .eq-feature-img img,
+        .eq-feature-img video {
             width: 100%;
             display: block;
+        }
+        /* Hero: echtes Bildschirmvideo statt Standbild. Stark abgedunkelt,
+           damit die Typografie darueber lesbar bleibt. */
+        .eq-hero-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 40%;
+            filter: brightness(0.20) saturate(0.65);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .eq-hero-video { display: none; }
+        }
+        .eq-version-badge {
+            display: inline-block;
+            margin-left: 0.5rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 999px;
+            background: rgba(74,144,217,0.16);
+            border: 1px solid rgba(74,144,217,0.35);
+            color: var(--eq-blue);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            vertical-align: middle;
         }
 
         .eq-feature-list {
@@ -460,9 +488,14 @@
     <!-- ══════════ HERO ══ -->
     <section class="eq-hero">
         <div class="eq-hero-bg" aria-hidden="true"></div>
+        <video class="eq-hero-video" autoplay muted loop playsinline preload="metadata"
+               poster="assets/Video/steinbach-eq/poster_eq.jpg" aria-hidden="true">
+            <source src="assets/Video/steinbach-eq/clip_eq.webm" type="video/webm">
+            <source src="assets/Video/steinbach-eq/clip_eq.mp4"  type="video/mp4">
+        </video>
         <div class="eq-hero-vignette" aria-hidden="true"></div>
         <div class="eq-hero-inner">
-            <span class="eq-hero-eyebrow">Steinbach Audio &middot; Plugin</span>
+            <span class="eq-hero-eyebrow">Steinbach Audio &middot; Plugin <span class="eq-version-badge">v1.3</span></span>
             <h1><em>Steinbach</em> EQ</h1>
             <p class="eq-hero-tagline">EQ, multiband saturation, and multiband transient shaping in one plugin. Shape your sound with precision, add analogue character, and control transients per frequency band.</p>
             <div class="eq-hero-actions">
@@ -514,7 +547,11 @@
         <div class="eq-section-inner">
             <div class="eq-feature">
                 <div class="eq-feature-img">
-                    <img src="assets/images/steinbach-eq/EQ.png" alt="Steinbach EQ parametric equaliser" loading="lazy">
+                    <video autoplay muted loop playsinline preload="none"
+                           poster="assets/Video/steinbach-eq/poster_eq.jpg" aria-label="Screen recording: EQ bands being shaped while the analyser runs">
+                        <source src="assets/Video/steinbach-eq/clip_eq.webm" type="video/webm">
+                        <source src="assets/Video/steinbach-eq/clip_eq.mp4"  type="video/mp4">
+                    </video>
                 </div>
                 <div>
                     <span class="eq-kicker">EQ Module</span>
@@ -548,7 +585,11 @@
         <div class="eq-section-inner">
             <div class="eq-feature reversed">
                 <div class="eq-feature-img">
-                    <img src="assets/images/steinbach-eq/SAT.png" alt="Steinbach EQ multiband saturator" loading="lazy">
+                    <video autoplay muted loop playsinline preload="none"
+                           poster="assets/Video/steinbach-eq/poster_sat.jpg" aria-label="Screen recording: per-band saturation drive being raised">
+                        <source src="assets/Video/steinbach-eq/clip_sat.webm" type="video/webm">
+                        <source src="assets/Video/steinbach-eq/clip_sat.mp4"  type="video/mp4">
+                    </video>
                 </div>
                 <div>
                     <span class="eq-kicker">SAT Module</span>
@@ -578,7 +619,11 @@
         <div class="eq-section-inner">
             <div class="eq-feature">
                 <div class="eq-feature-img">
-                    <img src="assets/images/steinbach-eq/TR.png" alt="Steinbach EQ transient shaper" loading="lazy">
+                    <video autoplay muted loop playsinline preload="none"
+                           poster="assets/Video/steinbach-eq/poster_tr.jpg" aria-label="Screen recording: transient attack and sustain being adjusted">
+                        <source src="assets/Video/steinbach-eq/clip_tr.webm" type="video/webm">
+                        <source src="assets/Video/steinbach-eq/clip_tr.mp4"  type="video/mp4">
+                    </video>
                 </div>
                 <div>
                     <span class="eq-kicker">TR Module</span>
@@ -604,6 +649,34 @@
     </section>
 
     <!-- ══════════ VIDEO ══ -->
+    <!-- ── Neu in 1.3 ─────────────────────────────────────────────────── -->
+    <section class="eq-section" id="whats-new" style="background:var(--eq-panel);">
+        <div class="eq-section-inner">
+            <div class="eq-feature reversed">
+                <div class="eq-feature-img">
+                    <video autoplay muted loop playsinline preload="none"
+                           poster="assets/Video/steinbach-eq/poster_presets.jpg"
+                           aria-label="Screen recording: the preset browser opening over a blurred plugin window">
+                        <source src="assets/Video/steinbach-eq/clip_presets.webm" type="video/webm">
+                        <source src="assets/Video/steinbach-eq/clip_presets.mp4"  type="video/mp4">
+                    </video>
+                </div>
+                <div>
+                    <span class="eq-kicker">New in 1.3</span>
+                    <h2>Dynamic bands, a chain you can rearrange, and 17 presets.</h2>
+                    <p class="eq-lead">Version 1.3 is the largest update so far. Every band can now work dynamically, the three modules can be dragged into any order, and presets live in the plugin window instead of a system menu.</p>
+                    <ul class="eq-feature-list">
+                        <li><strong>Dynamic EQ</strong> &ndash; right-click a band and make it dynamic. Bipolar ratio compresses or expands, and the ghost band shows the movement live.</li>
+                        <li><strong>Reorderable chain</strong> &ndash; drag EQ, SAT and TR into whichever order the material needs. The modules animate into place.</li>
+                        <li><strong>Preset browser</strong> &ndash; an in-window overlay over a blurred backdrop. Cmd+click auditions a preset without closing it.</li>
+                        <li><strong>Gain-matched A/B</strong> on Cmd+B, without the shortcut leaking through to your DAW.</li>
+                        <li><strong>Quieter CLIP stage</strong> &ndash; a numerical fault in the DC blocker was producing audible crackle on bass-heavy material. Its noise floor is now 87&nbsp;dB lower.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section class="eq-section" id="video" style="background:var(--eq-panel);">
         <div class="eq-section-inner" style="text-align:center;">
             <span class="eq-kicker">Mix Demo</span>
