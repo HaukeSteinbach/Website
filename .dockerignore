@@ -8,3 +8,5 @@
 !backend/package.json
 !backend/src/
 !backend/src/**
+!robots.txt
+!sitemap.xml
