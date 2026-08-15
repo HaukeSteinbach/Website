@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steinbach Head Tracker | Head Tracking Plugin for Binaural Mixing</title>
+<meta name="description" content="Head tracking plugin for binaural mixing on macOS. Combines a USB head tracker and your webcam, and sends head orientation to your spatial audio renderer over OSC. Standalone, VST3 and AU.">
+<meta name="keywords" content="head tracking, head tracker plugin, binaural mixing, spatial audio, immersive audio, OSC head tracking, Dolby Atmos head tracking, macOS audio plugin, VST3, AU">
+<link rel="canonical" href="https://haukesteinbach.de/steinbach-head-tracker.html">
+<meta property="og:type" content="product">
+<meta property="og:title" content="Steinbach Head Tracker | Head Tracking Plugin for Binaural Mixing">
+<meta property="og:description" content="Head tracking plugin for binaural mixing on macOS. Combines a USB head tracker and your webcam, and sends head orientation to your spatial audio renderer over OSC. Standalone, VST3 and AU.">
+<meta property="og:url" content="https://haukesteinbach.de/steinbach-head-tracker.html">
+<meta property="og:image" content="https://haukesteinbach.de/assets/images/og-head-tracker.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+<link rel="stylesheet" href="assets/css/styles.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication",
+"name":"Steinbach Head Tracker","applicationCategory":"MultimediaApplication",
+"operatingSystem":"macOS 12 or newer",
+"description":"Head tracking plugin for binaural mixing on macOS. Combines a USB head tracker and your webcam, and sends head orientation to your spatial audio renderer over OSC. Standalone, VST3 and AU.",
+"url":"https://haukesteinbach.de/steinbach-head-tracker.html",
+"image":"https://haukesteinbach.de/assets/headtracker/ui.jpg",
+"author":{"@type":"Person","name":"Hauke Steinbach","url":"https://haukesteinbach.de"},
+"offers":{"@type":"Offer","price":"20","priceCurrency":"EUR","url":"https://www.patreon.com/Steinbach","availability":"https://schema.org/InStock"}}
+</script>
+<style>
+:root{--ht-dark:#0b0c12;--ht-panel:#111219;--ht-red:#e84242;--ht-blue:#40a8ff;--ht-cream:#e9e3d2;--ht-dim:#8d8879}
+.ht-hero{position:relative;min-height:74vh;display:flex;align-items:center;background:
+ radial-gradient(ellipse 70% 60% at 50% 0%,rgba(64,168,255,.10),transparent),var(--ht-dark);
+ padding:120px 24px 80px;overflow:hidden}
+.ht-hero-inner{position:relative;max-width:820px;margin:0 auto;text-align:center}
+.ht-eyebrow{color:var(--ht-blue);letter-spacing:.22em;text-transform:uppercase;font-size:.72rem;margin:0 0 18px}
+.ht-hero h1{font-size:clamp(2.3rem,6vw,4rem);line-height:1.05;margin:0 0 22px;color:#fff;letter-spacing:-.01em}
+.ht-lede{font-size:clamp(1rem,2vw,1.2rem);line-height:1.65;color:#b9bcc6;margin:0 auto 30px;max-width:660px}
+.ht-badges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:32px}
+.ht-badges span{border:1px solid rgba(255,255,255,.14);border-radius:100px;padding:6px 16px;font-size:.78rem;color:var(--ht-dim)}
+.ht-section{padding:88px 24px;background:var(--ht-dark)}
+.ht-section-alt{background:var(--ht-panel)}
+.ht-wrap{max-width:1120px;margin:0 auto}
+.ht-wrap-narrow{max-width:760px}
+.ht-section h2{font-size:clamp(1.6rem,3.4vw,2.3rem);color:#fff;margin:0 0 18px;line-height:1.2}
+.ht-section h3{font-size:1.05rem;color:#fff;margin:0 0 6px}
+.ht-section p{color:#a9adb8;line-height:1.7;margin:0 0 16px}
+.ht-centered{text-align:center}
+.ht-sub{max-width:620px;margin:0 auto 44px;color:#8f94a0}
+.ht-split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.ht-split-reverse>figure{order:-1}
+.ht-list{list-style:none;padding:0;margin:22px 0 0}
+.ht-list li{color:#a9adb8;padding:8px 0 8px 26px;position:relative;line-height:1.5}
+.ht-list li:before{content:"";position:absolute;left:0;top:15px;width:7px;height:7px;border-radius:50%;background:var(--ht-blue)}
+.ht-figure{margin:0}
+.ht-figure video{width:100%;height:auto;display:block;border-radius:10px;border:1px solid rgba(255,255,255,.09);background:#000}
+.ht-figure-tall video{max-width:330px;margin:0 auto}
+.ht-figure figcaption{color:#6f7480;font-size:.82rem;text-align:center;margin-top:14px}
+.ht-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-bottom:44px}
+.ht-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:28px 24px}
+.ht-card-accent{border-color:rgba(64,168,255,.35);background:rgba(64,168,255,.06)}
+.ht-card-role{color:var(--ht-blue);font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;margin:0 0 14px}
+.ht-card p:last-child{margin:0;font-size:.94rem}
+.ht-note{max-width:720px;margin:0 auto;color:#7e838f;font-size:.92rem;line-height:1.7;text-align:center}
+.ht-specs{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.08);
+ border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;margin-top:48px}
+.ht-specs>div{background:var(--ht-dark);padding:22px 24px;display:flex;flex-direction:column;gap:6px}
+.ht-spec-k{color:#6f7480;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase}
+.ht-spec-v{color:#e6e8ec;font-size:.98rem}
+.ht-req{display:grid;grid-template-columns:1fr 1fr;gap:36px;margin:40px 0 36px}
+.ht-cta{padding:96px 24px;background:
+ radial-gradient(ellipse 60% 80% at 50% 100%,rgba(64,168,255,.12),transparent),var(--ht-panel)}
+.ht-cta h2{margin-bottom:10px}
+.ht-price{margin:0 0 18px}
+.ht-price-sub{color:#7e838f;font-size:.88rem;margin:0 0 6px}
+.ht-price-value{font-size:2.6rem;color:#fff;font-weight:600}
+.ht-button{display:inline-block;background:var(--ht-blue);color:#04121f;font-weight:600;
+ padding:15px 38px;border-radius:100px;text-decoration:none;margin-top:12px;transition:transform .15s,filter .15s}
+.ht-button:hover{transform:translateY(-2px);filter:brightness(1.08)}
+.ht-button-hero{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.28)}
+.ht-cta-sub{margin-top:22px;font-size:.9rem}
+.ht-cta-sub a{color:var(--ht-blue)}
+
+/* Overflow guards. Grid and flex children default to min-width:auto, so a wide
+   child (a video, a long unbroken word) can push the whole page wider than the
+   phone screen instead of shrinking. */
+.ht-hero,.ht-section,.ht-cta{overflow-x:hidden}
+.ht-split>*,.ht-cards>*,.ht-specs>*,.ht-req>*{min-width:0}
+.ht-figure video,.ht-figure img{max-width:100%;height:auto}
+.ht-hero h1,.ht-section h2,.ht-section h3{overflow-wrap:break-word;hyphens:auto}
+.ht-wrap,.ht-wrap-narrow,.ht-hero-inner{width:100%;box-sizing:border-box}
+@media(max-width:560px){
+ .ht-hero{padding:96px 18px 60px;min-height:auto}
+ .ht-hero h1{font-size:clamp(1.9rem,8vw,2.6rem)}
+ .ht-badges span{font-size:.72rem;padding:5px 12px}
+ .ht-figure-tall video{max-width:100%}
+}
+@media(max-width:860px){
+ .ht-split,.ht-cards,.ht-specs,.ht-req{grid-template-columns:1fr}
+ .ht-split{gap:36px}.ht-split-reverse>figure{order:0}
+ .ht-section{padding:64px 20px}
+}
+</style>
+    <meta name="twitter:image" content="https://haukesteinbach.de/assets/images/og-head-tracker.jpg">
+</head>
+<body>
+<nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">Steinbach</a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Toggle navigation">
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
+            <ul class="nav-menu" id="primary-navigation">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="mixing.html" class="nav-link">Mixing</a></li>
+                <li><a href="mastering.html" class="nav-link">Mastering</a></li>
+                <li class="nav-item-dropdown">
+                    <button class="nav-dropdown-trigger" aria-expanded="false" aria-haspopup="true">
+                        More <span class="nav-dropdown-caret"></span>
+                    </button>
+                    <ul class="nav-dropdown-menu">
+                        <li><a href="https://steinbach-instruments.de" target="_blank" rel="noopener noreferrer"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="9" width="20" height="10" rx="1.5"/><line x1="7" y1="9" x2="7" y2="19"/><line x1="12" y1="9" x2="12" y2="19"/><line x1="17" y1="9" x2="17" y2="19"/><rect x="4.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/><rect x="9.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/><rect x="14.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/></svg></span><span><span>Multisampler</span><span class="nav-dropdown-sub">Interactive sample instruments</span></span></a></li>
+                        <li class="dropdown-divider"></li>
+                        <li><a href="recordings.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg></span><span><span>Recording Studio</span><span class="nav-dropdown-sub">Hamburg &middot; Band &amp; vocal sessions</span></span></a></li>
+                        <li><a href="steinbach-eq.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><path d="M2 14 L5 10 L8 14 L12 6 L16 14 L19 11 L22 14"/></svg></span><span><span>Steinbach EQ</span><span class="nav-dropdown-sub">AU &middot; VST3 &middot; macOS</span></span></a></li>
+                        <li class="dropdown-divider"></li>
+                        <li><a href="reclight.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9.5"/></svg></span><span><span>RecLight</span><span class="nav-dropdown-sub">Studio Status LED &middot; Pre-order</span></span></a></li>
+                        <li class="dropdown-divider"></li>
+                        <li><a href="ir-maker.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M2 20 L7 20 L9 4 L11 20 L13 13 L15 20 L17 16 L19 20 L22 18"/></svg></span><span><span>IR Maker</span><span class="nav-dropdown-sub">Impulse response generator</span></span></a></li>
+                        <li class="dropdown-divider"></li>
+                        <li><a href="scores-archive.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><line x1="4" y1="10" x2="4" y2="14"/><line x1="8" y1="6" x2="8" y2="18"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="16" y1="7" x2="16" y2="17"/><line x1="20" y1="9" x2="20" y2="15"/></svg></span><span><span>Scores &amp; Sketches</span><span class="nav-dropdown-sub">Non-exclusive score archive</span></span></a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </nav>
+<!-- HERO -->
+<section class="ht-hero">
+    <div class="ht-hero-inner">
+        <p class="ht-eyebrow">Head Tracking Plugin for macOS</p>
+        <h1>Steinbach Head Tracker</h1>
+        <p class="ht-lede">
+            Head tracking for binaural mixing that stays accurate all session long.
+            The plugin reads a USB head tracker and your webcam at the same time,
+            combines both, and sends the head orientation to your spatial audio
+            renderer over OSC.
+        </p>
+        <div class="ht-badges">
+            <span>Standalone</span><span>VST3</span><span>AU</span><span>macOS</span>
+        </div>
+        <a class="ht-button ht-button-hero" href="#buy">Get it for 20 &euro;</a>
+    </div>
+</section>
+
+<!-- WHAT IT DOES -->
+<section class="ht-section">
+    <div class="ht-wrap">
+        <div class="ht-split">
+            <div>
+                <h2>One window, one button</h2>
+                <p>
+                    Look at your screen, press Set Forward, and mix. The main window
+                    shows where your head is pointing, whether the sensors are running,
+                    and where the data is going. Nothing else, because nothing else is
+                    needed while you work.
+                </p>
+                <p>
+                    Every setting lives behind a single Settings button. It is there when
+                    you set the plugin up and out of the way when you do not.
+                </p>
+                <ul class="ht-list">
+                    <li>Live plan view of your head orientation</li>
+                    <li>Yaw, pitch and roll as precise numeric readouts</li>
+                    <li>Status lamps for tracker, camera and output</li>
+                    <li>Recentre at any time with one click</li>
+                </ul>
+            </div>
+            <figure class="ht-figure ht-figure-tall">
+                <video src="assets/headtracker/ui.mp4" poster="assets/headtracker/ui.jpg"
+                       autoplay loop muted playsinline preload="none"
+                       width="660" height="978"
+                       aria-label="Main window of the Steinbach Head Tracker following head movement"></video>
+                <figcaption>The everyday view. Tracker and webcam running together.</figcaption>
+            </figure>
+        </div>
+    </div>
+</section>
+
+<!-- FUSION -->
+<section class="ht-section ht-section-alt">
+    <div class="ht-wrap">
+        <h2 class="ht-centered">Two sensors that fail in opposite ways</h2>
+        <p class="ht-centered ht-sub">
+            This is why combining them is worth more than using either on its own.
+        </p>
+
+        <div class="ht-cards">
+            <div class="ht-card">
+                <h3>The head tracker</h3>
+                <p class="ht-card-role">Provides the motion</p>
+                <p>
+                    Fast and smooth at up to 120 Hz, with almost no noise. But nothing
+                    inside it defines where forward is, so its yaw slowly drifts away
+                    over the course of a session.
+                </p>
+            </div>
+            <div class="ht-card">
+                <h3>The webcam</h3>
+                <p class="ht-card-role">Provides the reference</p>
+                <p>
+                    Slower and a little noisy, but absolute. It measures your head
+                    against the screen, and that measurement is just as true after an
+                    hour as it was at the start.
+                </p>
+            </div>
+            <div class="ht-card ht-card-accent">
+                <h3>Together</h3>
+                <p class="ht-card-role">Fast and accurate</p>
+                <p>
+                    The camera never moves the output directly. It only steers a slow
+                    correction to the tracker. So the result reacts at tracker speed
+                    while staying aligned at camera accuracy.
+                </p>
+            </div>
+        </div>
+
+        <p class="ht-note">
+            Most head trackers use a built in compass as their absolute reference. In a
+            studio full of monitor magnets, steel racks and power supplies, that compass
+            is usually the least trustworthy sensor in the room. A camera cannot be
+            fooled by steel, which is why it does the job better.
+        </p>
+    </div>
+</section>
+
+<!-- RENDERER -->
+<section class="ht-section">
+    <div class="ht-wrap">
+        <h2 class="ht-centered">Straight into your renderer</h2>
+        <p class="ht-centered ht-sub">
+            Head movement arrives as OSC, so the binaural image stays locked to the room
+            while you turn your head.
+        </p>
+        <figure class="ht-figure">
+            <video src="assets/headtracker/renderer.mp4" poster="assets/headtracker/renderer.jpg"
+                   autoplay loop muted playsinline preload="none"
+                   width="1180" height="686"
+                   aria-label="A spatial audio renderer following the tracked head movement in real time"></video>
+            <figcaption>The renderer following live head movement.</figcaption>
+        </figure>
+
+        <div class="ht-specs">
+            <div><span class="ht-spec-k">Protocol</span><span class="ht-spec-v">OSC over UDP</span></div>
+            <div><span class="ht-spec-k">Update rate</span><span class="ht-spec-v">Up to 100 Hz, adjustable</span></div>
+            <div><span class="ht-spec-k">Targets</span><span class="ht-spec-v">As many as you like, at once</span></div>
+            <div><span class="ht-spec-k">Formats</span><span class="ht-spec-v">Yaw pitch roll, quaternion, separate axes</span></div>
+            <div><span class="ht-spec-k">Also sends</span><span class="ht-spec-v">MIDI CC, 7 or 14 bit</span></div>
+            <div><span class="ht-spec-k">Automation</span><span class="ht-spec-v">Head X and Head Y as host parameters</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- SETTINGS -->
+<section class="ht-section ht-section-alt">
+    <div class="ht-wrap">
+        <div class="ht-split ht-split-reverse">
+            <figure class="ht-figure">
+                <video src="assets/headtracker/settings.mp4" poster="assets/headtracker/settings.jpg"
+                       autoplay loop muted playsinline preload="none"
+                       width="1180" height="838"
+                       aria-label="The settings view with sensor fusion, OSC targets and MIDI options"></video>
+                <figcaption>Settings, open only when you need them.</figcaption>
+            </figure>
+            <div>
+                <h2>Adjustable where it matters</h2>
+                <p>
+                    Every receiver in spatial audio has its own idea of address, unit and
+                    sign convention. So nothing is compiled in. Address, port, degrees or
+                    radians, rate and the direction of every axis can be corrected in
+                    place.
+                </p>
+                <ul class="ht-list">
+                    <li>Sensor fusion timing, so you decide how firmly the camera corrects</li>
+                    <li>Per axis inversion for both sensors and every target</li>
+                    <li>MIDI channel, controller numbers and resolution</li>
+                    <li>Automation range, from a small head turn to a full look around</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- WORKS WITH -->
+<section class="ht-section">
+    <div class="ht-wrap ht-wrap-narrow">
+        <h2 class="ht-centered">What you need</h2>
+        <div class="ht-req">
+            <div>
+                <h3>Hardware</h3>
+                <p>
+                    A USB MIDI head tracker, a webcam, or both. With both connected you
+                    get the best result. With only one, the plugin keeps working on that
+                    one alone.
+                </p>
+            </div>
+            <div>
+                <h3>Software</h3>
+                <p>
+                    macOS 12 or newer. Runs as a standalone app next to your renderer, or
+                    as VST3 and AU inside your DAW when you want head movement recorded
+                    as automation.
+                </p>
+            </div>
+        </div>
+        <p class="ht-note ht-centered">
+            Compatible with spatial audio renderers that accept head tracking over OSC,
+            including the Dolby Atmos Renderer.
+        </p>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="ht-cta" id="buy">
+    <div class="ht-wrap ht-wrap-narrow ht-centered">
+        <h2>Get the Steinbach Head Tracker</h2>
+        <p class="ht-price"><span class="ht-price-value">20 &euro;</span></p>
+        <p class="ht-price-sub">One-time payment &middot; Free updates &middot; via Patreon</p>
+        <p>
+            Available through Patreon. You get the standalone app plus the VST3 and AU
+            versions, and every update that follows.
+        </p>
+        <a class="ht-button" href="https://www.patreon.com/Steinbach" target="_blank" rel="noopener noreferrer">Buy on Patreon</a>
+        <p class="ht-cta-sub">Questions first? <a href="contact.html">Get in touch</a>.</p>
+    </div>
+</section>
+
+
+<script src="assets/js/navbar.js"></script>
+<script src="assets/js/cookie-consent.js"></script>
+
+</body>
+</html>
