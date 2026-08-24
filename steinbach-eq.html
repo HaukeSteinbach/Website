@@ -3,737 +3,386 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steinbach EQ | Multiband EQ, Saturation & Transient Plugin (AU, VST3)</title>
-        <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
-<link rel="stylesheet" href="assets/css/styles.css">
-    <style>
-        :root {
-            --eq-dark:   #0b0c12;
-            --eq-panel:  #111219;
-            --eq-red:    #e94560;
-            --eq-blue:   #4a90d9;
-        }
-
-        /* ── HERO ─────────────────────────────────────────────────── */
-        .eq-hero {
-            position: relative;
-            min-height: 88vh;
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            background: var(--eq-dark);
-        }
-        .eq-hero-bg {
-            position: absolute;
-            inset: 0;
-            background-image: url('assets/images/steinbach-eq/EQ.png');
-            background-size: cover;
-            background-position: center 35%;
-            filter: brightness(0.14) saturate(0.5);
-        }
-        .eq-hero-vignette {
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(ellipse 80% 55% at 50% 100%, rgba(11,12,18,1), transparent),
-                linear-gradient(180deg, rgba(11,12,18,0.65) 0%, transparent 30%, rgba(11,12,18,0.9) 75%);
-        }
-        .eq-hero-inner {
-            position: relative;
-            z-index: 2;
-            max-width: 820px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            text-align: center;
-        }
-        .eq-hero-eyebrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.35rem 1rem;
-            border: 1px solid rgba(233,69,96,0.25);
-            border-radius: 999px;
-            background: rgba(233,69,96,0.07);
-            color: var(--eq-red);
-            font-size: 0.77rem;
-            font-weight: 700;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            margin-bottom: 1.8rem;
-        }
-        .eq-hero h1 {
-            font-size: clamp(3rem, 8.5vw, 6.5rem);
-            font-weight: 800;
-            letter-spacing: -0.05em;
-            line-height: 0.88;
-            margin-bottom: 0.6rem;
-            color: #fff;
-        }
-        .eq-hero h1 em {
-            color: var(--eq-red);
-            font-style: normal;
-        }
-        .eq-hero-tagline {
-            font-size: clamp(1rem, 2.4vw, 1.22rem);
-            color: rgba(234,234,234,0.55);
-            letter-spacing: 0.01em;
-            margin-bottom: 1.6rem;
-            font-weight: 400;
-            line-height: 1.6;
-            max-width: 52ch;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .eq-hero-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        .eq-hero-footnote {
-            font-size: 0.8rem;
-            color: rgba(234,234,234,0.3);
-            letter-spacing: 0.04em;
-            margin: 0;
-        }
-        .btn-buy {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.55rem;
-            padding: 0.92rem 2.3rem;
-            border-radius: 999px;
-            background: var(--eq-red);
-            border: none;
-            color: #fff;
-            font-size: 1rem;
-            font-weight: 800;
-            letter-spacing: 0.01em;
-            cursor: pointer;
-            text-decoration: none;
-            box-shadow: 0 6px 32px rgba(233,69,96,0.38);
-            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-        }
-        .btn-buy:hover {
-            background: #d63050;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 40px rgba(233,69,96,0.5);
-        }
-        .btn-outline-eq {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.88rem 1.8rem;
-            border-radius: 999px;
-            border: 1px solid rgba(234,234,234,0.18);
-            background: transparent;
-            color: rgba(234,234,234,0.65);
-            font-size: 0.95rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: border-color 0.2s, color 0.2s;
-        }
-        .btn-outline-eq:hover { border-color: rgba(234,234,234,0.45); color: #fff; }
-        .eq-hero-scroll {
-            position: absolute;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.4rem;
-            color: rgba(234,234,234,0.2);
-            font-size: 0.68rem;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            cursor: pointer;
-        }
-        .eq-hero-scroll-line {
-            width: 1px; height: 30px;
-            background: linear-gradient(to bottom, rgba(234,234,234,0.2), transparent);
-        }
-
-        /* ── SHARED ───────────────────────────────────────────────── */
-        .eq-section { padding: 6rem 2rem; }
-        .eq-section-inner { max-width: 1080px; margin: 0 auto; }
-        .eq-kicker {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--eq-red);
-            font-size: 0.74rem;
-            font-weight: 700;
-            letter-spacing: 0.22em;
-            text-transform: uppercase;
-            margin-bottom: 0.9rem;
-        }
-        .eq-kicker::before {
-            content: '';
-            display: block;
-            width: 20px; height: 1px;
-            background: var(--eq-red);
-            opacity: 0.55;
-        }
-        .eq-section h2 {
-            font-size: clamp(2rem, 4.5vw, 3.4rem);
-            font-weight: 700;
-            letter-spacing: -0.04em;
-            color: #fff;
-            line-height: 1.05;
-            margin-bottom: 1rem;
-        }
-        .eq-lead {
-            font-size: 1.06rem;
-            color: rgba(234,234,234,0.58);
-            line-height: 1.76;
-            max-width: 55ch;
-            margin-bottom: 0;
-        }
-
-        /* ── CHAIN OVERVIEW ───────────────────────────────────────── */
-        .eq-chain {
-            display: flex;
-            align-items: stretch;
-            justify-content: center;
-            gap: 0;
-            margin-top: 3rem;
-            flex-wrap: wrap;
-        }
-        .eq-chain-node {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.4rem;
-            padding: 1.6rem 2rem;
-            border: 1px solid rgba(255,255,255,0.06);
-            background: rgba(255,255,255,0.025);
-            min-width: 155px;
-            flex: 1;
-            max-width: 220px;
-        }
-        .eq-chain-node:first-child { border-radius: 0.9rem 0 0 0.9rem; }
-        .eq-chain-node:last-child  { border-radius: 0 0.9rem 0.9rem 0; border-left: none; }
-        .eq-chain-node:not(:first-child):not(:last-child) { border-left: none; }
-        .eq-chain-badge {
-            display: inline-block;
-            padding: 0.16rem 0.6rem;
-            border-radius: 999px;
-            font-size: 0.68rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin-bottom: 0.3rem;
-        }
-        .badge-eq  { background: rgba(74,144,217,0.15); color: #5ca0e8; border: 1px solid rgba(74,144,217,0.22); }
-        .badge-sat { background: rgba(233,140,80,0.15);  color: #e8a060; border: 1px solid rgba(233,140,80,0.22); }
-        .badge-tr  { background: rgba(74,200,130,0.15);  color: #50c890; border: 1px solid rgba(74,200,130,0.22); }
-        .badge-clip{ background: rgba(233,69,96,0.15);   color: #e94560; border: 1px solid rgba(233,69,96,0.22); }
-        .eq-chain-node h3 {
-            font-size: 0.97rem;
-            font-weight: 700;
-            color: #fff;
-            margin: 0;
-            letter-spacing: -0.01em;
-        }
-        .eq-chain-node p {
-            font-size: 0.8rem;
-            color: rgba(234,234,234,0.4);
-            margin: 0;
-            line-height: 1.4;
-        }
-
-        /* ── FEATURE SECTIONS ─────────────────────────────────────── */
-        .eq-feature {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5rem;
-            align-items: center;
-        }
-        .eq-feature.reversed { direction: rtl; }
-        .eq-feature.reversed > * { direction: ltr; }
-
-        /* No border — images already have their own plugin frame */
-        .eq-feature-img {
-            border-radius: 0.6rem;
-            overflow: hidden;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.65);
-        }
-        .eq-feature-img img,
-        .eq-feature-img video {
-            width: 100%;
-            display: block;
-        }
-        /* Hero: echtes Bildschirmvideo statt Standbild. Stark abgedunkelt,
-           damit die Typografie darueber lesbar bleibt. */
-        .eq-hero-video {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center 40%;
-            filter: brightness(0.20) saturate(0.65);
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .eq-hero-video { display: none; }
-        }
-        .eq-version-badge {
-            display: inline-block;
-            margin-left: 0.5rem;
-            padding: 0.1rem 0.5rem;
-            border-radius: 999px;
-            background: rgba(74,144,217,0.16);
-            border: 1px solid rgba(74,144,217,0.35);
-            color: var(--eq-blue);
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            vertical-align: middle;
-        }
-
-        .eq-feature-list {
-            list-style: none;
-            padding: 0;
-            margin: 1.8rem 0 0;
-            display: flex;
-            flex-direction: column;
-            gap: 1.1rem;
-        }
-        .eq-feature-list li {
-            font-size: 0.97rem;
-            color: rgba(234,234,234,0.68);
-            line-height: 1.6;
-            padding-left: 1.1rem;
-            position: relative;
-        }
-        .eq-feature-list li::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0.62rem;
-            width: 5px; height: 5px;
-            border-radius: 50%;
-            background: var(--eq-red);
-        }
-        .eq-feature-list li strong {
-            color: #fff;
-            font-weight: 600;
-            display: block;
-            margin-bottom: 0.15rem;
-        }
-
-        /* ── VIDEO ────────────────────────────────────────────────── */
-        .eq-video-wrap {
-            width: 100%;
-            max-width: 820px;
-            margin: 2.5rem auto 0;
-            aspect-ratio: 16 / 9;
-            border-radius: 0.7rem;
-            overflow: hidden;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.65);
-            background: #000;
-        }
-        .eq-video-wrap iframe {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            border: 0;
-        }
-        .eq-video-wrap { position: relative; }
-
-        /* ── SPECS ────────────────────────────────────────────────── */
-        .eq-specs-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0;
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 1rem;
-            overflow: hidden;
-            margin-top: 2.5rem;
-        }
-        .eq-spec {
-            padding: 1.4rem 1.6rem;
-            border-right: 1px solid rgba(255,255,255,0.06);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        .eq-spec:nth-child(4n) { border-right: none; }
-        .eq-spec:nth-last-child(-n+4) { border-bottom: none; }
-        .eq-spec-label {
-            font-size: 0.68rem;
-            font-weight: 700;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            color: rgba(233,69,96,0.55);
-            margin-bottom: 0.3rem;
-        }
-        .eq-spec-value {
-            font-size: 0.98rem;
-            font-weight: 600;
-            color: #fff;
-        }
-        .eq-spec-sub {
-            font-size: 0.78rem;
-            color: rgba(234,234,234,0.35);
-            margin-top: 0.1rem;
-        }
-
-        /* ── BUY CTA ──────────────────────────────────────────────── */
-        .eq-price-block {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.3rem;
-            margin-bottom: 2rem;
-        }
-        .eq-price-tag {
-            font-size: clamp(3.5rem, 7vw, 5.2rem);
-            font-weight: 800;
-            color: #fff;
-            letter-spacing: -0.05em;
-            line-height: 1;
-        }
-        .eq-price-sub {
-            font-size: 0.87rem;
-            color: rgba(234,234,234,0.38);
-            letter-spacing: 0.04em;
-        }
-        .eq-buy-formats {
-            display: flex;
-            gap: 0.6rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 1.8rem;
-        }
-        .eq-buy-format {
-            padding: 0.38rem 0.9rem;
-            border: 1px solid rgba(234,234,234,0.09);
-            border-radius: 0.5rem;
-            font-size: 0.79rem;
-            color: rgba(234,234,234,0.4);
-        }
-
-        /* ── RESPONSIVE ───────────────────────────────────────────── */
-        @media (max-width: 860px) {
-            .eq-feature { grid-template-columns: 1fr; gap: 2.5rem; }
-            .eq-feature.reversed { direction: ltr; }
-            .eq-chain { gap: 0.5rem; }
-            .eq-chain-node { border-radius: 0.7rem !important; border: 1px solid rgba(255,255,255,0.06) !important; flex: none; min-width: 140px; }
-            .eq-specs-grid { grid-template-columns: 1fr 1fr; }
-            .eq-spec:nth-child(4n) { border-right: 1px solid rgba(255,255,255,0.06); }
-            .eq-spec:nth-child(2n) { border-right: none; }
-            .eq-spec:nth-last-child(-n+4) { border-bottom: 1px solid rgba(255,255,255,0.06); }
-            .eq-spec:nth-last-child(-n+2) { border-bottom: none; }
-        }
-        @media (max-width: 540px) {
-            .eq-section { padding: 4rem 1.2rem; }
-            .eq-specs-grid { grid-template-columns: 1fr; }
-            .eq-spec { border-right: none !important; }
-            .eq-spec:last-child { border-bottom: none !important; }
-        }
-    </style>
+    <title>Steinbach EQ | Multiband EQ, Saturation &amp; Transient Plugin (AU, VST3)</title>
     <meta name="description" content="EQ, multiband saturation and multiband transient shaping in one macOS plugin. Analogue character with precise control. AU and VST3 for Apple Silicon and Intel.">
     <link rel="canonical" href="https://haukesteinbach.de/steinbach-eq.html">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Steinbach">
     <meta property="og:locale" content="en_GB">
-    <meta property="og:title" content="Steinbach EQ | Multiband EQ, Saturation & Transient Plugin (AU, VST3)">
+    <meta property="og:title" content="Steinbach EQ | Multiband EQ, Saturation &amp; Transient Plugin (AU, VST3)">
     <meta property="og:description" content="EQ, multiband saturation and multiband transient shaping in one macOS plugin. Analogue character with precise control. AU and VST3 for Apple Silicon and Intel.">
     <meta property="og:url" content="https://haukesteinbach.de/steinbach-eq.html">
     <meta property="og:image" content="https://haukesteinbach.de/assets/images/og-steinbach-eq.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="Hauke Steinbach, audio engineer and producer from Hamburg">
+    <meta property="og:image:alt" content="Steinbach EQ, multiband EQ, saturation and transient plugin">
     <meta name="twitter:image" content="https://haukesteinbach.de/assets/images/og-steinbach-eq.jpg">
     <meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Steinbach EQ",
+"applicationCategory":"MultimediaApplication","operatingSystem":"macOS 11 or newer",
+"softwareVersion":"1.3","url":"https://haukesteinbach.de/steinbach-eq.html",
+"description":"EQ, multiband saturation and multiband transient shaping in one macOS plugin. Analogue character with precise control. AU and VST3 for Apple Silicon and Intel.",
+"offers":{"@type":"Offer","price":"29","priceCurrency":"EUR",
+"url":"https://www.patreon.com/Steinbach/posts/steinbach-eq-vst-162986878"},
+"author":{"@id":"https://haukesteinbach.de/#studio"}}
+</script>
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <link rel="stylesheet" href="assets/css/steinbach.css">
+    <link rel="preload" href="assets/fonts/archivo-black-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/jetbrains-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="index.html" class="logo">Steinbach</a>
-            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Toggle navigation">
-                <span class="nav-toggle-bar"></span>
-                <span class="nav-toggle-bar"></span>
-                <span class="nav-toggle-bar"></span>
-            </button>
-            <ul class="nav-menu" id="primary-navigation">
-                <li><a href="index.html" class="nav-link">Home</a></li>
-                <li><a href="mixing.html" class="nav-link">Mixing</a></li>
-                <li><a href="mastering.html" class="nav-link">Mastering</a></li>
-                <li class="nav-item-dropdown">
-                    <button class="nav-dropdown-trigger" aria-expanded="false" aria-haspopup="true">
-                        More <span class="nav-dropdown-caret"></span>
-                    </button>
-                    <ul class="nav-dropdown-menu">
-                        <li><a href="https://steinbach-instruments.de" target="_blank" rel="noopener noreferrer"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="9" width="20" height="10" rx="1.5"/><line x1="7" y1="9" x2="7" y2="19"/><line x1="12" y1="9" x2="12" y2="19"/><line x1="17" y1="9" x2="17" y2="19"/><rect x="4.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/><rect x="9.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/><rect x="14.5" y="9" width="2" height="6" rx="0.5" fill="currentColor" stroke="none"/></svg></span><span><span>Multisampler</span><span class="nav-dropdown-sub">Interactive sample instruments</span></span></a></li>
-                        <li class="dropdown-divider"></li>
-                        <li><a href="recordings.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg></span><span><span>Recording Studio</span><span class="nav-dropdown-sub">Hamburg &middot; Band &amp; vocal sessions</span></span></a></li>
-                        <li><a href="steinbach-eq.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><path d="M2 14 L5 10 L8 14 L12 6 L16 14 L19 11 L22 14"/></svg></span><span><span>Steinbach EQ</span><span class="nav-dropdown-sub">AU &middot; VST3 &middot; macOS</span></span></a></li>
-                        <li><a href="steinbach-head-tracker.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="9" r="4"/><path d="M4 12a8 8 0 0 0 16 0"/><line x1="12" y1="13" x2="12" y2="20"/></svg></span><span><span>Head Tracker</span><span class="nav-dropdown-sub">Binaural head tracking &middot; AU &middot; VST3</span></span></a></li>
-                        <li class="dropdown-divider"></li>
-                        <li><a href="reclight.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9.5"/></svg></span><span><span>RecLight</span><span class="nav-dropdown-sub">Studio Status LED &middot; Pre-order</span></span></a></li>
-                        <li class="dropdown-divider"></li>
-                        <li><a href="ir-maker.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M2 20 L7 20 L9 4 L11 20 L13 13 L15 20 L17 16 L19 20 L22 18"/></svg></span><span><span>IR Maker</span><span class="nav-dropdown-sub">Impulse response generator</span></span></a></li>
-                        <li class="dropdown-divider"></li>
-                        <li><a href="scores-archive.html"><span class="nav-dropdown-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><line x1="4" y1="10" x2="4" y2="14"/><line x1="8" y1="6" x2="8" y2="18"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="16" y1="7" x2="16" y2="17"/><line x1="20" y1="9" x2="20" y2="15"/></svg></span><span><span>Scores &amp; Sketches</span><span class="nav-dropdown-sub">Non-exclusive score archive</span></span></a></li>
-                    </ul>
+<!-- amplitude tick rail, filled by assets/js/steinbach-ui.js -->
+<div class="rail" aria-hidden="true"></div>
+
+<div class="wrap">
+
+    <header class="bar">
+        <a class="mark" href="index.html">Steinbach</a>
+
+        <button class="burger" type="button" aria-expanded="false" aria-controls="nav" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+
+        <nav class="nav" id="nav">
+            <a class="nav-item" href="index.html">Home</a>
+            <a class="nav-item" href="mixing.html">Mixing</a>
+            <a class="nav-item" href="mastering.html">Mastering</a>
+            <a class="nav-item" href="recordings.html">Studio</a>
+
+            <div class="nav-group">
+                <a class="nav-item" href="#more" aria-haspopup="true">More <i class="caret" aria-hidden="true"></i></a>
+                <div class="drop">
+                    <a href="https://steinbach-instruments.de" target="_blank" rel="noopener noreferrer">
+                        <span class="drop-t">Multisampler <i class="ext" aria-hidden="true">&#8599;</i></span>
+                        <span class="drop-s">Interactive sample instruments</span>
+                    </a>
+                    <a href="steinbach-eq.html">
+                        <span class="drop-t">Steinbach EQ</span>
+                        <span class="drop-s">AU &middot; VST3 &middot; macOS</span>
+                    </a>
+                    <a href="steinbach-head-tracker.html">
+                        <span class="drop-t">Head Tracker</span>
+                        <span class="drop-s">Binaural head tracking &middot; AU &middot; VST3</span>
+                    </a>
+                    <a href="reclight.html">
+                        <span class="drop-t">RecLight</span>
+                        <span class="drop-s">Studio Status LED &middot; Pre-order</span>
+                    </a>
+                    <a href="ir-maker.html">
+                        <span class="drop-t">IR Maker</span>
+                        <span class="drop-s">Impulse response generator</span>
+                    </a>
+                    <a href="scores-archive.html">
+                        <span class="drop-t">Scores &amp; Sketches</span>
+                        <span class="drop-s">Non-exclusive score archive</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <header class="page-head">
+        <p class="kicker">Plugin for macOS</p>
+        <h1>Steinbach <br class="br-lg">EQ</h1>
+        <p class="page-lede">EQ, multiband saturation and multiband transient shaping in one plugin</p>
+        <p class="page-deck">Shape your sound with precision, add analogue character, and control transients per frequency band. All three modules run at once, on every sample, with zero added latency.</p>
+        <div class="badges">
+            <span>Version 1.3</span><span>AU</span><span>VST3</span><span>macOS</span><span>Zero latency</span>
+        </div>
+        <div class="btn-row">
+            <a class="btn fill" href="#buy">Get it for 29 &euro;</a>
+            <a class="btn" href="#video">Watch the mix demo</a>
+        </div>
+        <div class="page-head-rule" aria-hidden="true"></div>
+    </header>
+
+    <main>
+
+        <!-- ================= SIGNAL CHAIN ================= -->
+        <section class="sec" aria-labelledby="chain-title">
+            <p class="kicker">Signal chain</p>
+            <h2 class="fat sec-h2" id="chain-title">Three processors, <br class="br-lg">one plugin</h2>
+            <p class="copy">All three modules run simultaneously at all times. The panel switcher changes only what is displayed, not what is processing. Every session uses all three.</p>
+
+            <div class="cards four">
+                <div class="card">
+                    <h3>EQ</h3>
+                    <p class="card-role">8-band parametric</p>
+                    <p>Sculpt tone and frequency balance.</p>
+                </div>
+                <div class="card">
+                    <h3>SAT</h3>
+                    <p class="card-role">4-band saturator</p>
+                    <p>Add analogue harmonic character.</p>
+                </div>
+                <div class="card">
+                    <h3>TR</h3>
+                    <p class="card-role">4-band transient shaper</p>
+                    <p>Control attack and sustain, per band.</p>
+                </div>
+                <div class="card">
+                    <h3>CLIP</h3>
+                    <p class="card-role">Output clipper</p>
+                    <p>Soft or hard limiter at &minus;1 dBFS.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= EQ MODULE ================= -->
+        <section class="sec" aria-labelledby="eq-title">
+            <p class="kicker">EQ module</p>
+            <h2 class="fat sec-h2" id="eq-title">Eight bands that never <br class="br-lg">flatter themselves</h2>
+            <p class="copy">Make bold cuts and boosts without losing your loudness reference. Auto Gain compensates the output automatically, so what you hear is the actual tonal change, not a louder version convincing you it sounds better.</p>
+
+            <figure class="figure">
+                <div class="shot ui" style="aspect-ratio:1440 / 676">
+                    <video src="assets/Video/steinbach-eq/clip_eq.mp4"
+                           poster="assets/Video/steinbach-eq/poster_eq.jpg"
+                           autoplay loop muted playsinline preload="none"
+                           width="1440" height="676"
+                           aria-label="Screen recording: EQ bands being shaped while the analyser runs"></video>
+                </div>
+                <figcaption>Eight bands, the analyser and auto gain, live.</figcaption>
+            </figure>
+
+            <dl class="factrow detail four">
+                <div class="fact">
+                    <dt>7 filter types</dt>
+                    <dd>Low Cut, Low Shelf, Bell, Notch, High Shelf, High Cut, Band Pass. Right-click any handle to switch type and slope.</dd>
+                </div>
+                <div class="fact">
+                    <dt>Up to 48 dB/oct</dt>
+                    <dd>Butterworth cascade up to 8th order. Removes problem frequencies without phase smearing the rest of the signal.</dd>
+                </div>
+                <div class="fact">
+                    <dt>Click-free at any speed</dt>
+                    <dd>Per-block coefficient interpolation and 15 ms pre-smoothing eliminate zipper noise, even under fast automation.</dd>
+                </div>
+                <div class="fact">
+                    <dt>64-bit filter states</dt>
+                    <dd>TDF-II biquad processing stays stable at extreme Q values, very low frequencies and high sample rates.</dd>
+                </div>
+            </dl>
+        </section>
+
+        <!-- ================= SAT MODULE ================= -->
+        <section class="sec" aria-labelledby="sat-title">
+            <p class="kicker">SAT module</p>
+            <h2 class="fat sec-h2" id="sat-title">Analogue character, <br class="br-lg">per frequency band</h2>
+            <p class="copy">Saturate the low-mids for warmth without muddying the highs. Drive the presence range for bite without touching the bass. Independent saturation per band means you only add harmonic content exactly where you want it.</p>
+
+            <figure class="figure">
+                <div class="shot ui" style="aspect-ratio:1440 / 676">
+                    <video src="assets/Video/steinbach-eq/clip_sat.mp4"
+                           poster="assets/Video/steinbach-eq/poster_sat.jpg"
+                           autoplay loop muted playsinline preload="none"
+                           width="1440" height="676"
+                           aria-label="Screen recording: per-band saturation drive being raised"></video>
+                </div>
+                <figcaption>Drive raised on one band at a time.</figcaption>
+            </figure>
+
+            <dl class="factrow detail">
+                <div class="fact">
+                    <dt>Iron waveshaper</dt>
+                    <dd>Models transformer-core saturation with asymmetric drive, generating even harmonics for a musical, analogue sound. Harder on positive peaks, softer on negative, creating the push and pull of a real analogue circuit.</dd>
+                </div>
+                <div class="fact">
+                    <dt>Linkwitz-Riley crossover</dt>
+                    <dd>Three adjustable crossover points split the signal at 4th order with flat power reconstruction. Saturate each band without frequency-range bleed.</dd>
+                </div>
+                <div class="fact">
+                    <dt>Console stereo simulation</dt>
+                    <dd>Unlink left and right for independent per-band drive amounts, widening the stereo image through asymmetric harmonic content on each side.</dd>
+                </div>
+            </dl>
+        </section>
+
+        <!-- ================= TR MODULE ================= -->
+        <section class="sec" aria-labelledby="tr-title">
+            <p class="kicker">TR module</p>
+            <h2 class="fat sec-h2" id="tr-title">Sharper kick, tighter snare, <br class="br-lg">more room</h2>
+            <p class="copy">A dual-envelope follower detects attack and sustain phases in real time. Boost the attack to add punch or reduce it to tame harshness. Extend the sustain for presence or cut it to tighten a mix. All of this per band, without touching the EQ.</p>
+
+            <figure class="figure">
+                <div class="shot ui" style="aspect-ratio:1440 / 676">
+                    <video src="assets/Video/steinbach-eq/clip_tr.mp4"
+                           poster="assets/Video/steinbach-eq/poster_tr.jpg"
+                           autoplay loop muted playsinline preload="none"
+                           width="1440" height="676"
+                           aria-label="Screen recording: transient attack and sustain being adjusted"></video>
+                </div>
+                <figcaption>Attack and sustain, shaped per band.</figcaption>
+            </figure>
+
+            <dl class="factrow detail">
+                <div class="fact">
+                    <dt>Dual-envelope detection</dt>
+                    <dd>Fast and slow IIR followers separate transient peaks from sustained tails. The ratio between them identifies exactly when attack starts and ends.</dd>
+                </div>
+                <div class="fact">
+                    <dt>Attack and sustain, independent</dt>
+                    <dd>Set different gains for each phase, from &minus;24 to +24 dB. Add snap to a kick without making the room ring, or open up a room mic without making it punchy.</dd>
+                </div>
+                <div class="fact">
+                    <dt>Speed control</dt>
+                    <dd>Adjusts detection from 0.5 ms for sharp clicks and snare hits to 200 ms for room ambience and bass sustain. Dial it to match any source.</dd>
+                </div>
+            </dl>
+        </section>
+
+        <!-- ================= NEW IN 1.3 ================= -->
+        <section class="sec" aria-labelledby="new-title">
+            <p class="kicker">New in 1.3</p>
+            <h2 class="fat sec-h2" id="new-title">Dynamic bands, a chain <br class="br-lg">you can rearrange</h2>
+            <p class="copy">Version 1.3 is the largest update so far. Every band can now work dynamically, the three modules can be dragged into any order, and presets live in the plugin window instead of a system menu.</p>
+
+            <figure class="figure">
+                <div class="shot ui" style="aspect-ratio:1440 / 676">
+                    <video src="assets/Video/steinbach-eq/clip_presets.mp4"
+                           poster="assets/Video/steinbach-eq/poster_presets.jpg"
+                           autoplay loop muted playsinline preload="none"
+                           width="1440" height="676"
+                           aria-label="Screen recording: the preset browser opening over a blurred plugin window"></video>
+                </div>
+                <figcaption>The preset browser, new in 1.3.</figcaption>
+            </figure>
+
+            <ul class="speclist">
+                <li>
+                    <strong>Dynamic EQ</strong>
+                    <span>Right-click a band and make it dynamic. A bipolar ratio compresses or expands, and the ghost band shows the movement live.</span>
+                </li>
+                <li>
+                    <strong>Reorderable chain</strong>
+                    <span>Drag EQ, SAT and TR into whichever order the material needs. The modules animate into place.</span>
+                </li>
+                <li>
+                    <strong>Preset browser</strong>
+                    <span>An in-window overlay over a blurred backdrop, with 17 presets. Cmd+click auditions one without closing it.</span>
+                </li>
+                <li>
+                    <strong>Gain-matched A/B</strong>
+                    <span>On Cmd+B, without the shortcut leaking through to your DAW.</span>
+                </li>
+                <li>
+                    <strong>Quieter CLIP stage</strong>
+                    <span>A numerical fault in the DC blocker was producing audible crackle on bass-heavy material. Its noise floor is now 87&nbsp;dB lower.</span>
                 </li>
             </ul>
-        </div>
-    </nav>
+        </section>
 
-    <!-- ══════════ HERO ══ -->
-    <section class="eq-hero">
-        <div class="eq-hero-bg" aria-hidden="true"></div>
-        <video class="eq-hero-video" autoplay muted loop playsinline preload="metadata"
-               poster="assets/Video/steinbach-eq/poster_eq.jpg" aria-hidden="true">
-            <source src="assets/Video/steinbach-eq/clip_eq.webm" type="video/webm">
-            <source src="assets/Video/steinbach-eq/clip_eq.mp4"  type="video/mp4">
-        </video>
-        <div class="eq-hero-vignette" aria-hidden="true"></div>
-        <div class="eq-hero-inner">
-            <span class="eq-hero-eyebrow">Steinbach Audio &middot; Plugin <span class="eq-version-badge">v1.3</span></span>
-            <h1><em>Steinbach</em> EQ</h1>
-            <p class="eq-hero-tagline">EQ, multiband saturation, and multiband transient shaping in one plugin. Shape your sound with precision, add analogue character, and control transients per frequency band.</p>
-            <div class="eq-hero-actions">
-                <a href="https://www.patreon.com/Steinbach/posts/steinbach-eq-vst-162986878"
-                   target="_blank" rel="noopener noreferrer" class="btn-buy">Get Steinbach EQ</a>
-                <a href="#video" class="btn-outline-eq">Watch Mix Demo</a>
+        <!-- ================= MIX DEMO ================= -->
+        <section class="sec" id="video" aria-labelledby="demo-title">
+            <p class="kicker">Mix demo</p>
+            <h2 class="fat sec-h2" id="demo-title">Hear it on <br class="br-lg">a real mix</h2>
+            <p class="copy">From raw tracks to finished result, Steinbach EQ on a full mix session.</p>
+
+            <div class="slot embed">
+                <iframe data-consent-category="external-media"
+                        data-consent-src="https://www.youtube.com/embed/qGw49MycNhM?start=12&amp;rel=0&amp;playsinline=1"
+                        title="Steinbach EQ mix demo" loading="lazy"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen></iframe>
             </div>
-            <p class="eq-hero-footnote">AU &middot; VST3 &middot; macOS &middot; One-time payment &middot; Free updates</p>
-        </div>
-        <div class="eq-hero-scroll" onclick="document.getElementById('chain').scrollIntoView({behavior:'smooth'})">
-            <div class="eq-hero-scroll-line"></div>
-            <span>Explore</span>
-        </div>
-    </section>
+        </section>
 
-    <!-- ══════════ CHAIN ══ -->
-    <section class="eq-section" id="chain" style="background:var(--eq-panel);">
-        <div class="eq-section-inner">
-            <span class="eq-kicker">Signal Chain</span>
-            <h2>Three processors. One plugin.</h2>
-            <p class="eq-lead">All three modules run simultaneously at all times. The panel switcher changes only what is displayed, not what is processing. Every session uses all three.</p>
-            <div class="eq-chain">
-                <div class="eq-chain-node">
-                    <span class="eq-chain-badge badge-eq">EQ</span>
-                    <h3>8-Band Parametric EQ</h3>
-                    <p>Sculpt tone &amp; frequency balance</p>
+        <!-- ================= SPECS ================= -->
+        <section class="sec" aria-labelledby="specs-title">
+            <p class="kicker">Specifications</p>
+            <h2 class="fat sec-h2" id="specs-title">What you get</h2>
+
+            <dl class="factrow four">
+                <div class="fact">
+                    <dt>Formats</dt>
+                    <dd>AU &middot; VST3<span class="fact-sub">Logic, Ableton, Reaper and more</span></dd>
                 </div>
-                <div class="eq-chain-node">
-                    <span class="eq-chain-badge badge-sat">SAT</span>
-                    <h3>4-Band Saturator</h3>
-                    <p>Add analogue harmonic character</p>
+                <div class="fact">
+                    <dt>Platform</dt>
+                    <dd>macOS 11+<span class="fact-sub">Apple Silicon and Intel</span></dd>
                 </div>
-                <div class="eq-chain-node">
-                    <span class="eq-chain-badge badge-tr">TR</span>
-                    <h3>4-Band Transient Shaper</h3>
-                    <p>Control attack and sustain, per band</p>
+                <div class="fact">
+                    <dt>Sample rates</dt>
+                    <dd>44.1 &ndash; 192 kHz<span class="fact-sub">All standard rates</span></dd>
                 </div>
-                <div class="eq-chain-node">
-                    <span class="eq-chain-badge badge-clip">CLIP</span>
-                    <h3>Output Clipper</h3>
-                    <p>Soft or hard limiter at &minus;1 dBFS</p>
+                <div class="fact">
+                    <dt>Latency</dt>
+                    <dd>Zero samples<span class="fact-sub">No look-ahead processing</span></dd>
                 </div>
+                <div class="fact">
+                    <dt>EQ bands</dt>
+                    <dd>8<span class="fact-sub">7 types &middot; 6&ndash;48 dB/oct</span></dd>
+                </div>
+                <div class="fact">
+                    <dt>SAT bands</dt>
+                    <dd>4<span class="fact-sub">0&ndash;24 dB drive per band</span></dd>
+                </div>
+                <div class="fact">
+                    <dt>TR bands</dt>
+                    <dd>4<span class="fact-sub">&plusmn;24 dB attack and sustain</span></dd>
+                </div>
+                <div class="fact">
+                    <dt>Output clip</dt>
+                    <dd>&minus;1 dBFS<span class="fact-sub">Soft (tanh) or hard mode</span></dd>
+                </div>
+            </dl>
+        </section>
+
+        <!-- ================= BUY ================= -->
+        <section class="sec" id="buy" aria-labelledby="buy-title">
+            <p class="kicker">Get it</p>
+            <h2 class="fat sec-h2" id="buy-title">Get <br class="br-lg">Steinbach EQ</h2>
+
+            <p class="price">
+                <span class="price-value">29 &euro;</span>
+                <span class="price-sub">One-time payment &middot; Free updates &middot; via Patreon</span>
+            </p>
+
+            <p class="copy">Available through Patreon. You get the AU and VST3 versions for Apple Silicon and Intel, DAW preset support, and every update that follows.</p>
+
+            <div class="btn-row">
+                <a class="btn fill" href="https://www.patreon.com/Steinbach/posts/steinbach-eq-vst-162986878" target="_blank" rel="noopener noreferrer">Buy on Patreon <i class="ext" aria-hidden="true">&#8599;</i></a>
+                <a class="btn" href="contact.html">Questions first? Get in touch</a>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- ══════════ EQ ══ -->
-    <section class="eq-section" id="eq-module" style="background:var(--eq-dark);">
-        <div class="eq-section-inner">
-            <div class="eq-feature">
-                <div class="eq-feature-img">
-                    <video autoplay muted loop playsinline preload="none"
-                           poster="assets/Video/steinbach-eq/poster_eq.jpg" aria-label="Screen recording: EQ bands being shaped while the analyser runs">
-                        <source src="assets/Video/steinbach-eq/clip_eq.webm" type="video/webm">
-                        <source src="assets/Video/steinbach-eq/clip_eq.mp4"  type="video/mp4">
-                    </video>
-                </div>
-                <div>
-                    <span class="eq-kicker">EQ Module</span>
-                    <h2>8-band parametric EQ with auto-gain compensation.</h2>
-                    <p class="eq-lead">Make bold cuts and boosts without losing your loudness reference. Auto Gain compensates the output automatically, so what you hear is the actual tonal change, not a louder version convincing you it sounds better.</p>
-                    <ul class="eq-feature-list">
-                        <li>
-                            <strong>7 filter types</strong>
-                            Low Cut, Low Shelf, Bell, Notch, High Shelf, High Cut, Band Pass. Right-click any handle to switch type and slope.
-                        </li>
-                        <li>
-                            <strong>Up to 48 dB/oct cut filters</strong>
-                            Butterworth cascade up to 8th order. Precisely remove problem frequencies without phase smearing the rest of the signal.
-                        </li>
-                        <li>
-                            <strong>Click-free at any speed</strong>
-                            Per-block coefficient interpolation and 15 ms pre-smoothing eliminate zipper noise, even under fast automation.
-                        </li>
-                        <li>
-                            <strong>64-bit filter states</strong>
-                            TDF-II biquad processing stays stable at extreme Q values, very low frequencies, and high sample rates.
-                        </li>
-                    </ul>
-                </div>
+    </main>
+
+    <footer class="foot">
+        <div class="foot-top">
+            <div>
+                <p class="foot-mark">Steinbach</p>
+                <p class="mono foot-note">Production &middot; Mixing &middot; Mastering<br>Hamburg, Germany</p>
             </div>
-        </div>
-    </section>
-
-    <!-- ══════════ SAT ══ -->
-    <section class="eq-section" id="sat-module" style="background:var(--eq-panel);">
-        <div class="eq-section-inner">
-            <div class="eq-feature reversed">
-                <div class="eq-feature-img">
-                    <video autoplay muted loop playsinline preload="none"
-                           poster="assets/Video/steinbach-eq/poster_sat.jpg" aria-label="Screen recording: per-band saturation drive being raised">
-                        <source src="assets/Video/steinbach-eq/clip_sat.webm" type="video/webm">
-                        <source src="assets/Video/steinbach-eq/clip_sat.mp4"  type="video/mp4">
-                    </video>
-                </div>
-                <div>
-                    <span class="eq-kicker">SAT Module</span>
-                    <h2>Analogue character. Per frequency band.</h2>
-                    <p class="eq-lead">Saturate the low-mids for warmth without muddying the highs. Drive the presence range for bite without touching the bass. Independent saturation per band means you only add harmonic content exactly where you want it.</p>
-                    <ul class="eq-feature-list">
-                        <li>
-                            <strong>Iron waveshaper</strong>
-                            Models transformer-core saturation with asymmetric drive, generating even harmonics for a musical, analogue sound. Harder on positive peaks, softer on negative, creating the push and pull of a real analogue circuit.
-                        </li>
-                        <li>
-                            <strong>Linkwitz-Riley 4th-order crossover</strong>
-                            Three adjustable crossover points split the signal with flat power reconstruction. Saturate each band without frequency-range bleed.
-                        </li>
-                        <li>
-                            <strong>Console stereo simulation</strong>
-                            Unlink left and right for independent per-band drive amounts, widening the stereo image through asymmetric harmonic content on each side.
-                        </li>
-                    </ul>
-                </div>
+            <div>
+                <h4>Support my work</h4>
+                <ul>
+                    <li><a href="https://patreon.com/Steinbach" target="_blank" rel="noopener noreferrer">Patreon <i class="ext" aria-hidden="true">&#8599;</i></a></li>
+                    <li><a href="https://www.instagram.com/steinbach.wctw/" target="_blank" rel="noopener noreferrer">Instagram <i class="ext" aria-hidden="true">&#8599;</i></a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="impressum.html">Legal notice</a></li>
+                    <li><a href="datenschutz.html">Privacy policy</a></li>
+                </ul>
             </div>
         </div>
-    </section>
 
-    <!-- ══════════ TR ══ -->
-    <section class="eq-section" id="tr-module" style="background:var(--eq-dark);">
-        <div class="eq-section-inner">
-            <div class="eq-feature">
-                <div class="eq-feature-img">
-                    <video autoplay muted loop playsinline preload="none"
-                           poster="assets/Video/steinbach-eq/poster_tr.jpg" aria-label="Screen recording: transient attack and sustain being adjusted">
-                        <source src="assets/Video/steinbach-eq/clip_tr.webm" type="video/webm">
-                        <source src="assets/Video/steinbach-eq/clip_tr.mp4"  type="video/mp4">
-                    </video>
-                </div>
-                <div>
-                    <span class="eq-kicker">TR Module</span>
-                    <h2>Sharper kick. Tighter snare. More room. Per frequency band.</h2>
-                    <p class="eq-lead">A dual-envelope follower detects attack and sustain phases in real time. Boost the attack to add punch or reduce it to tame harshness. Extend the sustain for presence or cut it to tighten a mix. All of this per band, without touching the EQ.</p>
-                    <ul class="eq-feature-list">
-                        <li>
-                            <strong>Dual-envelope detection</strong>
-                            Fast and slow IIR followers separate transient peaks from sustained tails. The ratio between them identifies exactly when attack starts and ends.
-                        </li>
-                        <li>
-                            <strong>Attack and sustain, independent</strong>
-                            Set different gains for each phase, from &minus;24 to +24 dB. Add snap to a kick without making the room ring, or open up a room mic without making it punchy.
-                        </li>
-                        <li>
-                            <strong>Speed control</strong>
-                            Adjusts detection from 0.5 ms (sharp clicks and snare hits) to 200 ms (room ambience and bass sustain). Dial it to match any source.
-                        </li>
-                    </ul>
-                </div>
-            </div>
+        <div class="foot-base mono">
+            <span>&copy; 2025 Steinbach. All rights reserved.</span>
+            <span>Hamburg</span>
         </div>
-    </section>
+    </footer>
 
-    <!-- ══════════ VIDEO ══ -->
-    <!-- ── Neu in 1.3 ─────────────────────────────────────────────────── -->
-    <section class="eq-section" id="whats-new" style="background:var(--eq-panel);">
-        <div class="eq-section-inner">
-            <div class="eq-feature reversed">
-                <div class="eq-feature-img">
-                    <video autoplay muted loop playsinline preload="none"
-                           poster="assets/Video/steinbach-eq/poster_presets.jpg"
-                           aria-label="Screen recording: the preset browser opening over a blurred plugin window">
-                        <source src="assets/Video/steinbach-eq/clip_presets.webm" type="video/webm">
-                        <source src="assets/Video/steinbach-eq/clip_presets.mp4"  type="video/mp4">
-                    </video>
-                </div>
-                <div>
-                    <span class="eq-kicker">New in 1.3</span>
-                    <h2>Dynamic bands, a chain you can rearrange, and 17 presets.</h2>
-                    <p class="eq-lead">Version 1.3 is the largest update so far. Every band can now work dynamically, the three modules can be dragged into any order, and presets live in the plugin window instead of a system menu.</p>
-                    <ul class="eq-feature-list">
-                        <li><strong>Dynamic EQ</strong> &ndash; right-click a band and make it dynamic. Bipolar ratio compresses or expands, and the ghost band shows the movement live.</li>
-                        <li><strong>Reorderable chain</strong> &ndash; drag EQ, SAT and TR into whichever order the material needs. The modules animate into place.</li>
-                        <li><strong>Preset browser</strong> &ndash; an in-window overlay over a blurred backdrop. Cmd+click auditions a preset without closing it.</li>
-                        <li><strong>Gain-matched A/B</strong> on Cmd+B, without the shortcut leaking through to your DAW.</li>
-                        <li><strong>Quieter CLIP stage</strong> &ndash; a numerical fault in the DC blocker was producing audible crackle on bass-heavy material. Its noise floor is now 87&nbsp;dB lower.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
+</div>
 
-    <section class="eq-section" id="video" style="background:var(--eq-panel);">
-        <div class="eq-section-inner" style="text-align:center;">
-            <span class="eq-kicker">Mix Demo</span>
-            <h2>Hear it on a real mix.</h2>
-            <p class="eq-lead" style="margin:0 auto;">From raw tracks to finished result, Steinbach EQ on a full mix session.</p>
-            <div class="eq-video-wrap">
-                <iframe
-                    data-consent-category="external-media"
-                    data-consent-src="https://www.youtube.com/embed/qGw49MycNhM?start=12&rel=0&playsinline=1"
-                    title="Steinbach EQ Mix Demo"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen></iframe>
-            </div>
-        </div>
-    </section>
-
-    <!-- ══════════ SPECS ══ -->
-    <section class="eq-section" id="specs" style="background:var(--eq-dark);">
-        <div class="eq-section-inner">
-            <span class="eq-kicker">Specifications</span>
-            <h2>What you get.</h2>
-            <div class="eq-specs-grid">
-                <div class="eq-spec"><div class="eq-spec-label">Formats</div><div class="eq-spec-value">AU &middot; VST3</div><div class="eq-spec-sub">Logic, Ableton, Reaper &amp; more</div></div>
-                <div class="eq-spec"><div class="eq-spec-label">Platform</div><div class="eq-spec-value">macOS 11+</div><div class="eq-spec-sub">Apple Silicon &amp; Intel</div></div>
-                <div class="eq-spec"><div class="eq-spec-label">Sample Rates</div><div class="eq-spec-value">44.1 &ndash; 192 kHz</div><div class="eq-spec-sub">All standard rates</div></div>
-                <div class="eq-spec"><div class="eq-spec-label">Latency</div><div class="eq-spec-value">Zero samples</div><div class="eq-spec-sub">No look-ahead processing</div></div>
-                <div class="eq-spec"><div class="eq-spec-label">EQ Bands</div><div class="eq-spec-value">8</div><div class="eq-spec-sub">7 types &middot; 6&ndash;48 dB/oct</div></div>
-                <div class="eq-spec"><div class="eq-spec-label">SAT Bands</div><div class="eq-spec-value">4</div><div class="eq-spec-sub">0&ndash;24 dB drive per band</div></div>
-                <div class="eq-spec"><div class="eq-spec-label">TR Bands</div><div class="eq-spec-value">4</div><div class="eq-spec-sub">&plusmn;24 dB attack &amp; sustain</div></div>
-                <div class="eq-spec"><div class="eq-spec-label">Output Clip</div><div class="eq-spec-value">&minus;1 dBFS</div><div class="eq-spec-sub">Soft (tanh) or Hard mode</div></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ══════════ BUY ══ -->
-    <section class="eq-section" id="buy" style="background:var(--eq-panel);text-align:center;">
-        <div class="eq-section-inner">
-            <span class="eq-kicker">Get it</span>
-            <div class="eq-price-block">
-                <p class="eq-price-tag">29 &euro;</p>
-                <p class="eq-price-sub">One-time payment &middot; Free updates &middot; via Patreon</p>
-            </div>
-            <a href="https://www.patreon.com/Steinbach/posts/steinbach-eq-vst-162986878"
-               target="_blank" rel="noopener noreferrer" class="btn-buy" style="font-size:1.08rem;padding:1rem 2.8rem;">
-                Get Steinbach EQ on Patreon
-            </a>
-            <div class="eq-buy-formats">
-                <span class="eq-buy-format">AU &middot; VST3</span>
-                <span class="eq-buy-format">macOS 11+</span>
-                <span class="eq-buy-format">Apple Silicon + Intel</span>
-                <span class="eq-buy-format">Zero latency</span>
-                <span class="eq-buy-format">DAW preset support</span>
-            </div>
-        </div>
-    </section>
-
-    <script src="assets/js/navbar.js"></script>
-    <script src="assets/js/cookie-consent.js"></script>
+<script src="assets/js/cookie-consent.js"></script>
+<script src="assets/js/steinbach-ui.js"></script>
 </body>
 </html>

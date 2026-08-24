@@ -649,6 +649,14 @@
     /* ============================================================
        Waveform rendering
        ============================================================ */
+    /* Pull a colour from the stylesheet so the waveform follows the design tokens
+   instead of a literal from the previous palette. */
+    function irColour(token, fallback) {
+        var value = getComputedStyle(document.documentElement)
+            .getPropertyValue(token).trim();
+        return value || fallback;
+    }
+
     function drawWave(canvas, data) {
         var dpr = window.devicePixelRatio || 1;
         var rect = canvas.getBoundingClientRect();
@@ -660,7 +668,7 @@
         ctx.scale(dpr, dpr);
         ctx.clearRect(0, 0, w, h);
         var mid = h / 2;
-        ctx.strokeStyle = 'rgba(233,69,96,0.75)';
+        ctx.strokeStyle = irColour('--accent', 'rgba(233,69,96,0.75)');
         ctx.lineWidth = 1;
         ctx.beginPath();
         var step = Math.max(1, Math.floor(data.length / w));
@@ -676,7 +684,7 @@
             ctx.lineTo(x + 0.5, mid - min * mid * 0.95);
         }
         ctx.stroke();
-        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.strokeStyle = irColour('--wave-placeholder', 'rgba(255,255,255,0.12)');
         ctx.beginPath();
         ctx.moveTo(0, mid);
         ctx.lineTo(w, mid);

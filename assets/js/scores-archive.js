@@ -388,8 +388,8 @@
             state.duration = audioBuffer.duration;
             state.peaks = computePeaks(audioBuffer, BAR_COUNT);
 
-            drawWaveform(state.baseCanvas, state.peaks, 'rgba(234, 234, 234, 0.28)');
-            drawWaveform(state.progressCanvas, state.peaks, '#e94560');
+            drawWaveform(state.baseCanvas, state.peaks, waveColour('--wave-idle', 'rgba(234, 234, 234, 0.28)'));
+            drawWaveform(state.progressCanvas, state.peaks, waveColour('--accent', '#e94560'));
 
             state.label.hidden = true;
             state.timeLabel.textContent = formatTime(0);
@@ -637,7 +637,15 @@
         for (let i = 0; i < BAR_COUNT; i += 1) {
             peaks.push(0.15 + random() * 0.55);
         }
-        drawWaveform(canvas, peaks, 'rgba(234, 234, 234, 0.16)');
+        drawWaveform(canvas, peaks, waveColour('--wave-placeholder', 'rgba(234, 234, 234, 0.16)'));
+    }
+
+    /* Pull a colour from the stylesheet so the waveform tracks the design
+       tokens; falls back to the previous literal if the token is absent. */
+    function waveColour(token, fallback) {
+        var value = getComputedStyle(document.documentElement)
+            .getPropertyValue(token).trim();
+        return value || fallback;
     }
 
     function hashString(value) {

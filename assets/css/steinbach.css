@@ -1,0 +1,2989 @@
+/* ==========================================================================
+   STEINBACH — DESIGN SYSTEM
+   ==========================================================================
+   Shared stylesheet for the reworked pages (index, mixing, mastering).
+
+   The older pages under "More" still use assets/css/styles.css and are not
+   touched by this file. A page loads EITHER styles.css OR this one, never
+   both — several class names (.btn, .tag, .container) exist in both and would
+   fight each other.
+
+   Direction: pure black ground, heavy grotesque at poster scale, one flat
+   accent used as a solid block, hard-cut greyscale photography, an amplitude
+   tick rail down the right edge.
+
+   Contents
+     1  Fonts
+     2  Tokens
+     3  Base + primitives
+     4  Tick rail
+     5  Top bar + navigation
+     6  Hero (index)
+     7  Page header (subpages)
+     8  Sections, about, featured work
+     9  Closing call to action
+    10  Footer
+    11  Portfolio cards (built by assets/js/portfolio.js)
+    12  Contact form
+    13  Cookie consent (built by assets/js/cookie-consent.js)
+    14  Studio page
+    15  Prose and legal pages
+    16  Scores archive
+    17  Product pages
+    18  IR Maker tool
+    19  Responsive
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1  FONTS
+   --------------------------------------------------------------------------
+   Self-hosted on purpose: loading these from fonts.googleapis.com would send
+   every visitor's IP address to Google on every page view, which LG München I
+   ruled a GDPR breach in 2022 (Az. 3 O 17493/20). Served from our own domain
+   there is no transfer, no consent needed, and one less round trip.
+   Only latin + latin-ext are shipped. See assets/fonts/README.txt.
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Archivo Black';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/archivo-black-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Archivo Black';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/archivo-black-400-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/poppins-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/poppins-400-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/poppins-500-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/poppins-500-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/jetbrains-mono-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/jetbrains-mono-400-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/jetbrains-mono-500-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/jetbrains-mono-500-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+
+/* ==========================================================================
+   2  TOKENS
+   ========================================================================== */
+
+:root {
+  --black:  #000000;
+  --grey:   #D6D6D6;   /* headline grey — deliberately not white */
+  --grey-2: #8C8C8C;
+  --grey-3: #4A4A4A;
+  --hair:   #232323;
+  --panel:  #0B0B0B;   /* dropdown / card ground, a hair off the page black */
+
+  /* The single accent. --on-accent is whatever reads on top of it, so the two
+     always change together: for a dark accent it must go to #FFFFFF.
+     Here black stays the better pick (5.48:1 against the accent, versus 3.83:1
+     for white). Earlier alternatives: #D7FF3E neon yellow, #8F5FE8 violet. */
+  --accent:    #E94560;
+  --on-accent: #000000;
+
+  /* status colours, separate from the accent */
+  --ok:   #7BE38B;
+  --bad:  #FF6B5A;
+
+  /* read by assets/js/scores-archive.js when it draws the waveforms */
+  --wave-idle: rgba(214, 214, 214, 0.26);
+  --wave-placeholder: rgba(214, 214, 214, 0.12);
+
+  --fat: 'Archivo Black', 'Arial Black', Impact, sans-serif;
+  --geo: 'Poppins', 'Century Gothic', 'Avenir Next', sans-serif;
+  --mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, ui-monospace, monospace;
+
+  --rail: 74px;
+  /* Height of the top bar. Kept as a token because scroll-padding needs it as
+     a number; it has to track .bar's rendered height if that padding changes. */
+  --bar-h: 99px;
+  --tick: 1;
+  --edge: clamp(1.5rem, 5vw, 5rem);
+}
+
+
+/* ==========================================================================
+   3  BASE + PRIMITIVES
+   ========================================================================== */
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--black);
+  color: var(--grey);
+  font-family: var(--geo);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+::selection { background: var(--accent); color: var(--on-accent); }
+
+/* An in-page link would otherwise drop its target underneath the sticky bar. */
+html { scroll-padding-top: calc(var(--bar-h) + 1.25rem); }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* the measure. Right padding leaves room for the fixed tick rail. */
+.wrap {
+  max-width: 1520px;
+  margin-inline: auto;
+  padding-inline: var(--edge);
+  padding-right: calc(var(--edge) + var(--rail));
+}
+
+.fat {
+  font-family: var(--fat);
+  font-weight: 400;          /* Archivo Black ships one weight and it is heavy */
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  line-height: 0.85;
+  color: var(--grey);
+}
+
+.mono {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* solid accent block behind a line of text */
+.barline {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--geo);
+  font-size: clamp(0.95rem, 1.5vw, 1.4rem);
+  line-height: 1.35;
+  padding: 0.5em 0.85em 0.55em;
+}
+
+.kicker {
+  display: inline-block;
+  /* inside a grid parent (.page-head) a stretched item would ignore
+     inline-block and run the bar across the whole measure */
+  justify-self: start;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.65rem;
+}
+
+/* Buttons. Also used by the contact form's submit and by the cookie banner,
+   so the hover state must not depend on --on-accent: that token is a text
+   colour, and using it as a background broke on light accents. */
+.btn {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 1.05rem 1.6rem;
+  border: 2px solid var(--grey);
+  background: none;
+  color: var(--grey);
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.btn:hover,
+.btn:focus-visible { background: var(--grey); color: var(--black); }
+
+.btn.fill,
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.btn.fill:hover,
+.btn-primary:hover { background: var(--grey); border-color: var(--grey); color: var(--black); }
+
+.btn-secondary { border-color: var(--grey-3); color: var(--grey-2); }
+.btn-secondary:hover { background: var(--grey); border-color: var(--grey); color: var(--black); }
+
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+.btn-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2.1rem; }
+
+/* hard-cut greyscale photography */
+.shot {
+  overflow: hidden;
+  background: #111;
+}
+.shot img,
+.shot video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.14) brightness(1.02);
+}
+/* screen recordings of the plugin UI are already monochrome and must stay
+   legible, so they keep their own tone */
+.shot.ui video,
+.shot.ui img { filter: none; object-fit: contain; background: var(--panel); }
+
+/* The source recording carries a black margin on the right with a stray mouse
+   cursor in it. The frame is narrowed to the window edge and the overflow is
+   clipped from that side, so the cursor never shows. */
+.shot.trim-right video,
+.shot.trim-right img { object-fit: cover; object-position: left center; }
+
+
+/* ==========================================================================
+   4  TICK RAIL
+   --------------------------------------------------------------------------
+   An amplitude hint down the right edge, not a drawn waveform. Lengths come
+   from the markup as --w; --tick scales the whole set down on small screens.
+   ========================================================================== */
+
+.rail {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: var(--rail);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 30px calc(var(--edge) * 0.5) 30px 0;
+  pointer-events: none;
+}
+.rail i {
+  display: block;
+  width: calc(var(--w, 26) * 1px * var(--tick));
+  height: 3px;
+  background: var(--grey);
+  transition: background-color 0.2s ease;
+}
+.rail i.on { background: var(--accent); }
+
+
+/* ==========================================================================
+   5  TOP BAR + NAVIGATION
+   ========================================================================== */
+
+/* Sticky, but only on the way back up: scrolling down takes the bar with it
+   so nothing overlays the layout while reading, and any upward scroll — which
+   is when someone wants to navigate — brings it straight back. The class is
+   set by assets/js/steinbach-ui.js.
+
+   The negative inline margins with matching padding widen the black backdrop
+   to the full width of .wrap without moving the logo or the nav: the fact
+   bands reach 1.2rem into the left page padding, and would otherwise show a
+   sliver beside the bar as they pass under it. */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  padding-block: 1.9rem;
+  margin-left: calc(var(--edge) * -1);
+  margin-right: calc((var(--edge) + var(--rail)) * -1);
+  padding-left: var(--edge);
+  padding-right: calc(var(--edge) + var(--rail));
+  background: var(--black);
+  transition: transform 0.28s ease;
+}
+.bar.bar-hidden { transform: translateY(-100%); }
+
+/* The hairline only appears once there is content passing underneath. It is
+   drawn as a pseudo-element rather than a shadow on the bar, because the bar's
+   black backdrop deliberately spans the full width of .wrap while the rule has
+   to stop at the content edge — the same span as the footer rule, so the two
+   dividers line up instead of the top one running into the tick rail. */
+.bar.bar-stuck::after {
+  content: '';
+  position: absolute;
+  left: var(--edge);
+  right: calc(var(--edge) + var(--rail));
+  bottom: 0;
+  height: 1px;
+  background: var(--hair);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar { transition: none; }
+}
+
+.mark {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 1.15rem;
+  letter-spacing: -0.015em;
+  color: var(--grey);
+}
+
+/* shown only once the nav collapses */
+.burger {
+  display: none;
+  margin-left: auto;
+  width: 44px;
+  height: 40px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  position: relative;
+}
+.burger span {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  background: var(--grey);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.burger span:nth-child(1) { top: 13px; }
+.burger span:nth-child(2) { top: 19px; }
+.burger span:nth-child(3) { top: 25px; }
+.burger[aria-expanded='true'] span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.burger[aria-expanded='true'] span:nth-child(2) { opacity: 0; }
+.burger[aria-expanded='true'] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+.nav { display: flex; gap: 0.35rem; margin-left: auto; align-items: center; }
+
+.nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--grey-2);
+  padding: 0.65rem 0.9rem;
+  white-space: nowrap;
+  transition: color 0.18s ease;
+}
+.nav-item:hover { color: var(--grey); }
+.nav-item.on { background: var(--accent); color: var(--on-accent); }
+
+.caret {
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: rotate(45deg) translateY(-1px);
+}
+
+/* "More" carries seven entries, so each row gets a sub-label */
+.nav-group { position: relative; display: flex; }
+
+.drop {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 300px;
+  background: var(--panel);
+  border: 2px solid var(--grey-3);
+  z-index: 70;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+.nav-group:hover .drop,
+.nav-group:focus-within .drop { opacity: 1; visibility: visible; transform: none; }
+
+.drop a {
+  display: block;
+  padding: 0.8rem 1rem 0.85rem;
+  border-bottom: 1px solid var(--hair);
+}
+.drop a:last-child { border-bottom: 0; }
+.drop a:hover { background: rgba(255, 255, 255, 0.045); }
+
+.drop-t {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+.drop a:hover .drop-t { color: var(--accent); }
+
+.drop-s {
+  display: block;
+  margin-top: 0.28rem;
+  font-family: var(--geo);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--grey-3);
+}
+
+.ext { font-style: normal; color: var(--grey-3); }
+
+
+/* ==========================================================================
+   6  HERO (index)
+   ========================================================================== */
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr);
+  grid-template-areas:
+    'head art'
+    'copy art';
+  gap: 0 clamp(2rem, 4vw, 4rem);
+  align-items: center;
+  padding-top: clamp(3rem, 10vh, 8rem);
+  padding-bottom: clamp(3.5rem, 11vh, 8rem);
+}
+
+.hero-h1   { grid-area: head; }
+.hero-copy { grid-area: copy; }
+.hero-art  { grid-area: art; }
+
+h1.hero-h1 {
+  --h1: clamp(2.4rem, 7.1vw, 6.75rem);
+  font-size: var(--h1);
+  margin: 0;
+}
+
+/* Fanned stack: every line carries the page's own black as its background and
+   is pulled up over the line above, so the repeats show only their upper part
+   and the last Steinbach is the one that reads in full. */
+.hero-h1 > span {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  background: var(--black);
+  position: relative;
+}
+.hero-h1 > .ghost + .ghost,
+.hero-h1 > .ghost + .solid { margin-top: -0.33em; }
+
+.hero-sub { margin: 2.1rem 0 0; }
+
+.hero-body {
+  margin: 1.6rem 0 0;
+  max-width: 46ch;
+  color: var(--grey-2);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.hero-art { position: relative; display: flex; justify-content: flex-end; }
+
+.hero .shot { width: min(100%, 460px); aspect-ratio: 3 / 4; }
+/* the club shot is dark, so it needs far more lifting than the portrait */
+.hero .shot img { filter: grayscale(1) contrast(1.22) brightness(1.4); }
+
+/* rotating badge, overlapping the photo's left edge */
+.badge {
+  position: absolute;
+  left: -15%;
+  top: 6%;
+  width: clamp(150px, 17vw, 216px);
+  aspect-ratio: 1;
+  z-index: 2;
+}
+.badge svg { width: 100%; height: 100%; display: block; animation: spin 22s linear infinite; }
+.badge text {
+  fill: var(--accent);
+  font-family: var(--fat);
+  font-size: 8.4px;
+  /* The ring is 232.5 units around. At the default tracking the string only
+     covered 200.6, leaving a 14% hole between "Hamburg" and "Steinbach".
+     0.1em stretches it to 228.2 and leaves 4.3 units — the same width as the
+     separators between the words. Being in em, it holds at every badge size. */
+  letter-spacing: 0.1em;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* waveform glyph at the badge centre */
+.glyph { position: absolute; inset: 0; display: grid; place-items: center; }
+.glyph span { display: flex; align-items: center; gap: 3px; height: 30px; }
+.glyph i { width: 3px; background: var(--grey); display: block; }
+
+
+/* ==========================================================================
+   7  PAGE HEADER (subpages)
+   ========================================================================== */
+
+.page-head {
+  display: grid;
+  gap: 0;
+  padding-top: clamp(2rem, 7vh, 5rem);
+  padding-bottom: clamp(2.5rem, 7vh, 4.5rem);
+}
+
+.page-head h1 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(2.75rem, 11vw, 9rem);
+  letter-spacing: -0.03em;
+  line-height: 0.85;
+  margin: 0.9rem 0 0;
+  color: var(--grey);
+}
+
+.page-lede {
+  max-width: 34ch;
+  margin: 1.5rem 0 0;
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(1.25rem, 2.6vw, 2.1rem);
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  color: var(--grey);
+  text-wrap: balance;
+}
+
+.page-deck {
+  max-width: 52ch;
+  margin: 1.5rem 0 0;
+  color: var(--grey-2);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/* thin measure line closing the header */
+.page-head-rule {
+  height: 2px;
+  background: var(--grey-3);
+  margin-top: clamp(2rem, 5vh, 3rem);
+  position: relative;
+}
+.page-head-rule::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 84px;
+  background: var(--accent);
+}
+
+
+/* ==========================================================================
+   8  SECTIONS, ABOUT, FEATURED WORK
+   ========================================================================== */
+
+/* Slightly wider than before: with the stray margins below now reset, the
+   boundaries all collapse to one value, and this keeps that value mid-range
+   rather than at the old floor. */
+.sec { padding-block: clamp(3rem, 9vh, 6.5rem); }
+
+/* A block that opens a section must not add its own top margin on top of the
+   section padding — that doubling is what made some boundaries wider. */
+.sec > :first-child { margin-top: 0; }
+
+.sec-h2 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(2rem, 6.6vw, 6rem);
+  letter-spacing: -0.025em;
+  line-height: 0.85;
+  margin: 0;
+  color: var(--grey);
+  text-wrap: balance;
+}
+
+/* --- about --- */
+
+.about {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  gap: clamp(2rem, 4.5vw, 4rem);
+  align-items: start;
+  margin-top: clamp(1.75rem, 4.5vh, 3rem);
+}
+.about .shot { width: 100%; aspect-ratio: 1; }
+
+.quote {
+  margin: 0;
+  font-family: var(--geo);
+  /* Sized for reading, not for matching the portrait's height: at 28px the
+     measure dropped to 37 characters a line, which reads as large print over a
+     paragraph this long. ~24px keeps it at 42 characters and 7 lines — the same
+     rhythm as 22px but a step more present. The picture running deeper than the
+     text is normal editorial behaviour, not a fault to design around. */
+  font-size: clamp(1.05rem, 1.9vw, 1.75rem);
+  line-height: 1.55;
+  color: var(--grey);
+}
+.quote p { margin: 0; }
+
+/* Every cell carries the same inset, and the band is pulled left by exactly
+   that inset so the first cell's text still lines up with the heading above.
+   Giving only the first cell padding-left: 0 aligned it outwardly but left it
+   standing further left than the rhythm of all the others. */
+.factrow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-left: -1.2rem;
+  width: calc(100% + 1.2rem);
+  /* a <dl> carries margin: 1em 0 from the browser. Only the top was ever set,
+     so 16px of stray margin leaked past the section padding and made every
+     boundary that followed a fact band wider than the others. */
+  margin-block: 2.6rem 0;
+  background: var(--hair);
+}
+.fact { background: var(--black); padding: 1.2rem 1.2rem 1.3rem; }
+.fact dt {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+.fact dd {
+  margin: 0;
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  color: var(--grey);
+  overflow-wrap: break-word;
+}
+
+/* --- featured work --- */
+
+.work {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.75rem, 3.5vw, 3.25rem) clamp(1.75rem, 3vw, 3rem);
+  margin-top: 3.5rem;
+}
+
+.item { display: grid; gap: 1.1rem; align-content: start; }
+
+.slot {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #0C0C0C;
+  border: 2px solid var(--grey-3);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+.item:hover .slot { border-color: var(--grey); }
+
+.slot iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+/* before consent the iframe has no src; keep it out of the way */
+.slot iframe[data-consent-src]:not([src]) { opacity: 0; pointer-events: none; }
+
+.item h3 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(1.3rem, 2.5vw, 2.1rem);
+  letter-spacing: -0.025em;
+  line-height: 0.9;
+  margin: 0;
+  color: var(--grey);
+}
+.item p {
+  margin: 0;
+  color: var(--grey-2);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 44ch;
+}
+
+.tagrow { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+.tagrow .mono { color: var(--grey-3); }
+
+
+/* ==========================================================================
+   9  BODY COPY
+   ========================================================================== */
+
+.copy {
+  max-width: 54ch;
+  margin: 1.4rem 0 0;
+  color: var(--grey-2);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+
+/* ==========================================================================
+   10  FOOTER
+   ========================================================================== */
+
+.foot {
+  border-top: 2px solid var(--grey);
+  padding-block: clamp(2.5rem, 7vh, 4.5rem) 1.5rem;
+}
+
+.foot-top {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+/* margin reset matters: a <p> at 4rem inherits a 4rem UA margin and drops
+   out of line with the h4s in the sibling columns */
+.foot-mark {
+  margin: 0;
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(2rem, 5vw, 4rem);
+  letter-spacing: -0.03em;
+  line-height: 0.85;
+  color: var(--grey);
+}
+.foot-note { margin: 1rem 0 0; color: var(--grey-3); }
+
+.foot h4 {
+  margin: 0 0 1rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.foot ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+.foot ul a {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-2);
+  transition: color 0.18s ease;
+}
+.foot ul a:hover { color: var(--accent); }
+
+.foot-base {
+  margin-top: 3rem;
+  color: var(--grey-3);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+
+/* ==========================================================================
+   11  PORTFOLIO CARDS
+   --------------------------------------------------------------------------
+   This markup is generated by assets/js/portfolio.js and wired up by
+   assets/js/audio-comparison.js. Both scripts are shared with productions.html,
+   which still runs the old stylesheet — so the class names are restyled here
+   rather than changed in the JS.
+   ========================================================================== */
+
+.grid-note {
+  margin: 0 0 1.75rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+
+.mastering-grid {
+  display: grid;
+  /* Fixed at two up rather than auto-fill: there are four items per page, and
+     auto-fill fitted three on a wide screen leaving one stranded on its own
+     row. Two by two also matches the four videos on the index page. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  padding-bottom: clamp(2rem, 6vh, 4rem);
+}
+
+.mastering-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.4rem 1.4rem 1.6rem;
+  background: var(--panel);
+  border: 2px solid var(--hair);
+  transition: border-color 0.2s ease;
+}
+.mastering-card:hover { border-color: var(--grey-3); }
+
+.mastering-card h3 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(1.15rem, 2vw, 1.6rem);
+  letter-spacing: -0.02em;
+  line-height: 0.92;
+  margin: 0.4rem 0 0;
+  color: var(--grey);
+}
+
+.card-meta {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+
+.mastering-card p {
+  margin: 0;
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+/* --- the A/B switch --- */
+
+.card-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 0 1.6rem;
+  border-bottom: 1px solid var(--hair);
+}
+
+.mix-master-toggle { width: 100%; }
+
+/* the checkbox is the state; the label is the control */
+.toggle-checkbox {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.toggle-label {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.9rem;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.toggle-mix    { text-align: right; color: var(--accent); transition: color 0.2s ease; }
+.toggle-master { text-align: left;  color: var(--grey-3); transition: color 0.2s ease; }
+
+.toggle-checkbox:checked + .toggle-label .toggle-mix    { color: var(--grey-3); }
+.toggle-checkbox:checked + .toggle-label .toggle-master { color: var(--accent); }
+
+/* square track, square knob — no pills anywhere in this design */
+.toggle-slider {
+  position: relative;
+  width: 58px;
+  height: 26px;
+  border: 2px solid var(--grey-3);
+  background: var(--black);
+  flex: none;
+  transition: border-color 0.2s ease;
+}
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 16px;
+  background: var(--accent);
+  transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.toggle-checkbox:checked + .toggle-label .toggle-slider::after { transform: translateX(26px); }
+.toggle-label:hover .toggle-slider,
+.toggle-checkbox:focus-visible + .toggle-label .toggle-slider { border-color: var(--grey); }
+
+/* --- transport --- */
+
+/* pushed to the foot of the card so the transport lines up across the row
+   regardless of how long each description runs */
+.audio-player-simple { margin-top: auto; padding-top: 0.35rem; }
+
+.btn-play-pause {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.9rem 1.2rem;
+  border: 2px solid var(--grey);
+  background: none;
+  color: var(--grey);
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+.btn-play-pause:hover { background: var(--grey); color: var(--black); }
+/* audio-comparison.js swaps the label to "Pause" while playing */
+.btn-play-pause.playing,
+.btn-play-pause[data-playing='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.card-tags { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+
+
+/* ==========================================================================
+   12  CONTACT FORM
+   --------------------------------------------------------------------------
+   Toggled by assets/js/contact.js, which flips .expanded on
+   .contact-form-wrapper and writes .success / .error onto .form-status.
+   ========================================================================== */
+
+.contact-section { padding-block: clamp(3rem, 8vh, 6rem); border-top: 2px solid var(--hair); }
+
+.contact-form-wrapper { max-width: 720px; }
+
+.contact-form-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  color: var(--grey);
+}
+.contact-form-toggle h2 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(1.75rem, 5vw, 3.25rem);
+  letter-spacing: -0.025em;
+  line-height: 0.9;
+  margin: 0;
+}
+.contact-form-toggle .toggle-icon {
+  font-family: var(--mono);
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--accent);
+  transition: transform 0.24s ease;
+}
+.contact-form-wrapper.expanded .contact-form-toggle .toggle-icon { transform: rotate(45deg); }
+
+/* collapsed by default; contact.js adds .expanded to the wrapper */
+.contact-form-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  transition: grid-template-rows 0.32s ease;
+}
+.contact-form-wrapper.expanded .contact-form-content { grid-template-rows: 1fr; }
+.contact-form-content > * { min-height: 0; }
+
+.contact-form-content > p {
+  margin: 1.4rem 0 0;
+  color: var(--grey-2);
+}
+
+.contact-form { display: grid; gap: 1.1rem; margin-top: 1.6rem; }
+
+.form-group { display: grid; gap: 0.45rem; }
+
+.form-group label {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  font-family: var(--geo);
+  font-size: 0.9375rem;
+  color: var(--grey);
+  background: var(--panel);
+  border: 2px solid var(--hair);
+  padding: 0.85rem 1rem;
+  width: 100%;
+  transition: border-color 0.18s ease;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.form-group textarea { resize: vertical; min-height: 8rem; }
+
+/* the native arrow is drawn light-on-light in some browsers */
+.form-group select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--grey-2) 50%),
+                    linear-gradient(135deg, var(--grey-2) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 55%, calc(100% - 12px) 55%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 2.5rem;
+}
+.form-group select option { background: var(--panel); color: var(--grey); }
+
+.contact-form .btn { justify-self: start; }
+
+/* spam trap, must stay reachable for bots but invisible to people */
+.contact-honeypot {
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+}
+
+.form-status {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  min-height: 1.2em;
+}
+.form-status.success { color: var(--ok); }
+.form-status.error { color: var(--bad); }
+
+
+
+/* A form standing directly in a section would otherwise run the full measure,
+   and a 1200px text input looks broken. The tally inherits this width so its
+   amounts line up with the right edge of the fields above. */
+.form-col { max-width: 42rem; }
+
+/* two fields that belong together on one line */
+.form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; }
+
+/* A group of related controls is a fieldset for screen readers, but the
+   browser default border and padding would draw a box the design does not
+   have. The legend is styled to match .form-group label exactly. */
+fieldset.form-group { border: 0; padding: 0; margin: 0; min-width: 0; }
+fieldset.form-group > legend {
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+
+/* --- radio pills -----------------------------------------------------------
+   The native radio is kept in the DOM and visually hidden rather than removed,
+   so arrow-key navigation inside the group keeps working. */
+.pill-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.2rem; }
+.pill { position: relative; display: inline-flex; cursor: pointer; }
+.pill input {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px;
+  clip-path: inset(50%);
+}
+.pill > span {
+  display: inline-block;
+  padding: 0.7rem 1rem;
+  border: 2px solid var(--hair);
+  background: var(--panel);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--grey-2);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.pill:hover > span { border-color: var(--grey-3); color: var(--grey); }
+.pill input:checked + span { border-color: var(--accent); color: var(--accent); }
+.pill input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+
+/* ==========================================================================
+   13  COOKIE CONSENT
+   --------------------------------------------------------------------------
+   Markup is injected by assets/js/cookie-consent.js.
+   ========================================================================== */
+
+.cookie-banner {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 250;
+  width: min(30rem, calc(100vw - 2.5rem));
+  /* if the settings panel opens on a short screen the card scrolls itself
+     rather than locking the page */
+  max-height: calc(100vh - 2.5rem);
+  overflow-y: auto;
+  background: var(--panel);
+  border: 2px solid var(--grey-3);
+  border-top: 2px solid var(--accent);
+  padding: 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+.cookie-banner[hidden] { display: none; }
+
+.cookie-banner-title {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--grey);
+}
+.cookie-banner-copy {
+  margin: 0;
+  color: var(--grey-2);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.cookie-banner-copy a { color: var(--accent); text-decoration: underline; }
+
+.cookie-banner-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cookie-banner-actions .btn { padding: 0.75rem 1rem; font-size: 0.625rem; letter-spacing: 0.14em; }
+
+.cookie-settings { display: grid; gap: 0.75rem; border-top: 1px solid var(--hair); padding-top: 1.1rem; }
+.cookie-settings[hidden] { display: none; }
+
+.cookie-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: var(--grey-2);
+}
+.cookie-setting-row strong { color: var(--grey); font-weight: 500; }
+
+/* square switch, matching the A/B control */
+.cookie-switch { position: relative; display: inline-block; flex: none; }
+.cookie-switch input {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px;
+  clip-path: inset(50%);
+}
+.cookie-switch-slider {
+  display: block;
+  position: relative;
+  width: 52px;
+  height: 24px;
+  border: 2px solid var(--grey-3);
+  background: var(--black);
+  cursor: pointer;
+}
+.cookie-switch-slider::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 20px; height: 14px;
+  background: var(--grey-3);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.cookie-switch input:checked + .cookie-switch-slider::after {
+  transform: translateX(22px);
+  background: var(--accent);
+}
+.cookie-switch input:disabled + .cookie-switch-slider { opacity: 0.5; cursor: not-allowed; }
+.cookie-switch input:focus-visible + .cookie-switch-slider { border-color: var(--accent); }
+
+.cookie-reopen {
+  position: fixed;
+  left: 0; bottom: 0;
+  z-index: 90;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.6rem 0.85rem;
+  background: var(--panel);
+  border: 0;
+  border-top: 1px solid var(--hair);
+  border-right: 1px solid var(--hair);
+  color: var(--grey-3);
+  cursor: pointer;
+}
+.cookie-reopen:hover { color: var(--accent); }
+.cookie-reopen[hidden] { display: none; }
+
+/* placeholder that replaces a blocked embed */
+.consent-embed-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 1rem;
+  padding: clamp(1rem, 4%, 1.75rem);
+  background: #0C0C0C;
+}
+.consent-embed-copy strong {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+.consent-embed-copy p {
+  margin: 0;
+  color: var(--grey-2);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  max-width: 40ch;
+}
+.consent-embed-actions .btn { padding: 0.7rem 1rem; font-size: 0.625rem; }
+
+
+/* ==========================================================================
+   14  STUDIO PAGE
+   --------------------------------------------------------------------------
+   Replaces the inline .st-* block that used to live in recordings.html.
+   ========================================================================== */
+
+/* hard-cut photograph with a mono plate underneath */
+.figure { margin: 0; }
+/* a picture opening a section sits on the section padding; one that follows
+   copy needs its own air above */
+.sec > .figure:not(:first-child) { margin-top: clamp(1.75rem, 4vh, 2.75rem); }
+.figure .shot { width: 100%; aspect-ratio: 16 / 9; }
+.figure figcaption {
+  margin-top: 0.7rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+
+/* A free-standing product render beside copy. Three things differ from a
+   framed photograph, and they belong together:
+   - centred, because a cut-out has no top edge for the first line to meet, so
+     top alignment reads as accidental;
+   - a wider gutter, so the object has air around it instead of butting into
+     the text;
+   - a capped measure on the copy, because the wide column would otherwise run
+     to well over 100 characters a line. The slack lands at the page margin,
+     the same way .split.flip.compact handles it. */
+.split.showcase {
+  align-items: center;
+  gap: clamp(3rem, 8vw, 7rem);
+}
+.split.showcase > *:not(.figure) { max-width: 54ch; }
+/* Its own column split rather than .tight, so the wider gutter comes out of
+   the copy's slack instead of shrinking the render. */
+.split.flip.showcase { grid-template-columns: minmax(0, 0.73fr) minmax(0, 1.27fr); }
+
+/* copy beside a picture; .split.flip puts the picture first */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(2rem, 4.5vw, 4rem);
+  align-items: start;
+  margin-top: clamp(1.75rem, 4.5vh, 3rem);
+}
+/* Mirror of .split: picture first, copy second. Alignment stays at the
+   inherited start, so the top edge of the picture and the first line of the
+   heading share a shoulder — the same rule the about block on the index page
+   follows. Centring instead would only redistribute the empty space below the
+   text and make two structurally identical blocks behave differently. */
+.split.flip { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+
+/* Narrow variant: whichever column holds the picture becomes the small one.
+   Used where a tall image would otherwise tower over a few lines of copy. */
+.split.tight { grid-template-columns: minmax(0, 1.38fr) minmax(0, 0.62fr); }
+.split.flip.tight { grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr); }
+/* Flipped, the copy sits in the wide column and would otherwise run to well
+   over 90 characters a line. Capped to the same measure as .flip.compact; the
+   slack falls at the page margin rather than between the text and the photo. */
+.split.flip.tight > *:not(.figure) { max-width: 60ch; justify-self: start; }
+/* square crop, opt-in — product screen recordings set their own ratio */
+.shot.square { aspect-ratio: 1; }
+/* Mid-size heading, a step below .sec-h2. For headings that are a full
+   sentence and would shout at poster scale. */
+.split h2,
+.sub-h {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(1.35rem, 3vw, 2.25rem);
+  letter-spacing: -0.02em;
+  line-height: 0.92;
+  margin: 0 0 1.1rem;
+  color: var(--grey);
+  text-wrap: balance;
+}
+/* Compact variant for a tall portrait recording that would otherwise tower
+   over the copy beside it. The copy keeps a readable measure and the leftover
+   is pushed to the outer edge of the page — with the picture on the left, that
+   slack lands at the page margin instead of opening a gap in the middle. */
+.split.flip.compact { grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr); }
+.split.flip.compact > *:not(.figure) { max-width: 60ch; justify-self: start; }
+
+.split p { margin: 0; color: var(--grey-2); line-height: 1.7; }
+
+/* a text block standing on its own rather than beside a picture */
+.block { margin-top: clamp(1.75rem, 4.5vh, 3rem); }
+
+/* equipment list: hairline rows, no bullets */
+/* the three service cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: clamp(1.75rem, 4vh, 2.75rem);
+  background: var(--hair);
+}
+.card {
+  background: var(--panel);
+  padding: 1.4rem 1.4rem 1.6rem;
+}
+.card h3 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 1.15rem;
+  letter-spacing: -0.015em;
+  margin: 0 0 0.6rem;
+  color: var(--grey);
+}
+.card p { margin: 0; color: var(--grey-2); font-size: 0.9375rem; line-height: 1.6; }
+
+/* the practical details — same three-up frame as the about facts, but the
+   value is a sentence rather than a headline, so it stays in body type */
+.factrow.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.factrow.detail .fact dd {
+  font-family: var(--geo);
+  font-weight: 400;
+  text-transform: none;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  letter-spacing: 0;
+  color: var(--grey-2);
+}
+
+/* a heading that follows a figure needs air the figcaption does not give it.
+   Deliberately not tied to a heading class — that coupling already broke once. */
+.after-figure { margin-top: clamp(2.5rem, 6vh, 4rem); }
+
+.note {
+  margin: clamp(2rem, 5vh, 3rem) 0 0;
+  padding-left: 1.25rem;
+  border-left: 2px solid var(--accent);
+  max-width: 58ch;
+  color: var(--grey-2);
+  line-height: 1.7;
+}
+
+
+/* ==========================================================================
+   15  PROSE AND LEGAL PAGES
+   --------------------------------------------------------------------------
+   Longform text: legal notice, privacy policy, and any page that is mostly
+   running copy. Narrow measure, hairline-separated blocks, no card chrome.
+   ========================================================================== */
+
+/* The reading column, deliberately far narrower than the layout measure.
+   Named for the page type rather than "prose" — the fact bands use a .detail
+   modifier and a bare .prose class collided with them, capping every fact band
+   at 68ch. */
+.reading { max-width: 68ch; }
+
+.prose-block {
+  padding-block: clamp(1.75rem, 4vh, 2.5rem);
+  border-top: 1px solid var(--hair);
+}
+.prose-block:first-of-type { border-top: 0; padding-top: 0; }
+
+.prose-block h2 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(1.05rem, 2vw, 1.45rem);
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+  margin: 0 0 0.9rem;
+  color: var(--grey);
+}
+
+.prose-block h3 {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 1.6rem 0 0.6rem;
+}
+
+.prose-block p,
+.prose-block address,
+.prose-block li {
+  margin: 0 0 0.9rem;
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  font-style: normal;
+}
+.prose-block > :last-child { margin-bottom: 0; }
+
+.prose-block ul,
+.prose-block ol { margin: 0 0 0.9rem; padding-left: 1.1rem; }
+.prose-block li { margin-bottom: 0.4rem; }
+
+.prose-block a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.prose-block a:hover { color: var(--grey); }
+
+/* address block gets the mono treatment — it is data, not prose */
+.prose-block address {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  line-height: 1.9;
+  color: var(--grey);
+}
+
+/* jump between the two legal documents */
+.prose-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.6rem;
+}
+.prose-nav a {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0.7rem 1rem;
+  border: 2px solid var(--grey-3);
+  color: var(--grey-2);
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+.prose-nav a:hover { border-color: var(--grey); color: var(--grey); }
+
+/* last-updated / reference line under a legal document */
+.prose-meta {
+  margin-top: clamp(2rem, 5vh, 3rem);
+  padding-top: 1.25rem;
+  border-top: 2px solid var(--grey-3);
+  color: var(--grey-3);
+}
+
+
+/* --- callout: a bordered aside that offers a second route --- */
+
+.callout {
+  border: 2px solid var(--grey-3);
+  padding: 1.4rem 1.4rem 1.6rem;
+  align-content: start;
+}
+.callout h2,
+.callout h3 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+  margin: 0 0 0.7rem;
+  color: var(--grey);
+}
+.callout p {
+  margin: 0;
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+.callout .btn-row { margin-top: 1.25rem; }
+.callout .btn { padding: 0.85rem 1.15rem; }
+
+/* --- contact page: form beside the alternative route --- */
+
+.contact-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
+  gap: clamp(2rem, 4vw, 3.5rem);
+  align-items: start;
+  margin-top: clamp(1.75rem, 4.5vh, 3rem);
+}
+
+/* On the contact page the form is the whole point, so it is always open —
+   assets/js/contact.js only binds the collapse when the toggle exists, and
+   here it does not. The grid-rows animation lives on the collapsible variant. */
+.contact-open .contact-form-content { display: block; }
+.contact-open .contact-form { margin-top: 0; }
+
+
+/* ==========================================================================
+   16  SCORES ARCHIVE
+   --------------------------------------------------------------------------
+   The gate and the table shell are in the markup; every row, waveform and
+   download control is built by assets/js/scores-archive.js, so those class
+   names are restyled here rather than changed in the script.
+   ========================================================================== */
+
+/* --- the password gate --- */
+
+.scores-gate,
+.scores-archive-content { padding-bottom: clamp(3rem, 9vh, 6.5rem); }
+.scores-gate { margin-top: clamp(1.75rem, 4.5vh, 3rem); }
+
+.scores-gate-card {
+  max-width: 30rem;
+  border: 2px solid var(--grey-3);
+  padding: 1.6rem 1.6rem 1.8rem;
+}
+.scores-gate-card h2 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.7rem;
+  color: var(--grey);
+}
+.scores-gate-card > p {
+  margin: 0;
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+.scores-gate-form { display: grid; gap: 1.1rem; margin-top: 1.5rem; }
+.scores-gate-form .btn { justify-self: start; }
+
+/* --- signed-in shell --- */
+
+.scores-archive-content { margin-top: clamp(1.75rem, 4.5vh, 3rem); }
+
+.scores-archive-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 1.1rem;
+  border-bottom: 2px solid var(--grey-3);
+}
+.scores-signed-in {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.scores-signed-in strong { color: var(--accent); font-weight: 400; }
+
+.scores-archive-intro {
+  margin: 1.5rem 0 0;
+  max-width: 62ch;
+  color: var(--grey-2);
+  line-height: 1.7;
+}
+
+/* --- the table --- */
+
+.scores-table-wrap {
+  margin-top: clamp(1.5rem, 4vh, 2.25rem);
+  overflow-x: auto;                 /* the page itself must never scroll sideways */
+  -webkit-overflow-scrolling: touch;
+}
+
+.scores-table {
+  width: 100%;
+  min-width: 46rem;                 /* below this the columns stop being readable */
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+.scores-table th {
+  text-align: left;
+  padding: 0 0.9rem 0.8rem 0;
+  border-bottom: 1px solid var(--grey-3);
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+  white-space: nowrap;
+}
+.scores-table td {
+  padding: 1rem 0.9rem 1rem 0;
+  border-bottom: 1px solid var(--hair);
+  vertical-align: middle;
+  color: var(--grey-2);
+}
+.scores-row:hover td { background: rgba(255, 255, 255, 0.02); }
+
+.scores-title-cell {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+  color: var(--grey);
+  min-width: 12rem;
+}
+.scores-owner-cell { white-space: nowrap; }
+.scores-contact-link { color: var(--accent); text-decoration: underline; text-underline-offset: 0.2em; }
+.scores-contact-link:hover { color: var(--grey); }
+
+/* --- transport + waveform --- */
+
+.scores-waveform {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 16rem;
+}
+
+.scores-play-btn {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid var(--grey-3);
+  background: none;
+  color: var(--grey);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+.scores-play-btn:hover { border-color: var(--grey); }
+.scores-play-btn.playing {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.scores-play-btn svg { display: block; }
+
+.scores-waveform-canvas-wrap {
+  position: relative;
+  flex: 1;
+  height: 38px;
+  min-width: 8rem;
+}
+.scores-waveform-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* the progress layer is revealed by a clip the script animates */
+.scores-waveform-progress { pointer-events: none; }
+
+.scores-time {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--grey-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- download --- */
+
+.scores-download-cell { white-space: nowrap; }
+.scores-download-wrap { display: grid; gap: 0.4rem; justify-items: start; }
+.scores-download-btn { padding: 0.6rem 0.9rem; font-size: 0.625rem; }
+.scores-download-status {
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.scores-download-status.is-loading { color: var(--grey-2); }
+.scores-download-status.is-success { color: var(--ok); }
+.scores-download-status.is-error { color: var(--bad); }
+
+/* the script also puts these states on .form-status inside the gate */
+.form-status.is-loading { color: var(--grey-2); }
+.form-status.is-success { color: var(--ok); }
+.form-status.is-error { color: var(--bad); }
+
+.scores-archive-note {
+  margin: clamp(2rem, 5vh, 3rem) 0 0;
+  padding-left: 1.25rem;
+  border-left: 2px solid var(--accent);
+  max-width: 68ch;
+  color: var(--grey-2);
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+
+/* ==========================================================================
+   17  PRODUCT PAGES
+   --------------------------------------------------------------------------
+   Shared furniture for the plugin and hardware pages under More.
+   ========================================================================== */
+
+/* feature list: no bullets, an accent rule per item */
+.checklist { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: 0.7rem; }
+.checklist li {
+  position: relative;
+  padding-left: 1.4rem;
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.checklist li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 12px;
+  height: 2px;
+  background: var(--accent);
+}
+
+/* short capability pills under a product title */
+.badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1.5rem; }
+.badges span {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--grey-3);
+  color: var(--grey-2);
+}
+
+/* price block in the closing call to action */
+.price { margin: 1.5rem 0 0; display: flex; align-items: baseline; gap: 0.9rem; flex-wrap: wrap; }
+.price-value {
+  font-family: var(--fat);
+  font-weight: 400;
+  font-size: clamp(2.25rem, 6vw, 3.75rem);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--accent);
+}
+.price-sub {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+
+/* two-up variant of the card row */
+.cards.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.card-role {
+  margin: 0 0 0.7rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+
+
+/* --- a four-up card row, for a signal chain with four stages --- */
+.cards.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* --- a secondary line inside a fact cell -----------------------------------
+   The fact value stays in the fat display face; the qualifier under it drops
+   back to body type, so a spec reads as "44.1 - 192 kHz" first and "all
+   standard rates" second rather than as two competing headlines. */
+.fact-sub {
+  display: block;
+  margin-top: 0.35rem;
+  font-family: var(--geo);
+  font-weight: 400;
+  text-transform: none;
+  font-size: 0.8125rem;
+  letter-spacing: 0;
+  line-height: 1.55;
+  color: var(--grey-3);
+}
+
+/* --- hairline spec list ----------------------------------------------------
+   The fact band is a grid, so it only looks right when the item count divides
+   into the column count. A changelog has however many entries it has, so it
+   gets a row list instead: label left, description right, one hairline per
+   entry. */
+.speclist {
+  list-style: none;
+  margin: clamp(1.75rem, 4vh, 2.6rem) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--hair);
+}
+.speclist li {
+  display: grid;
+  grid-template-columns: minmax(0, 0.32fr) minmax(0, 0.68fr);
+  gap: 0.4rem 2rem;
+  padding: 1.15rem 0 1.25rem;
+  border-bottom: 1px solid var(--hair);
+}
+.speclist strong {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding-top: 0.25rem;
+}
+.speclist span {
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+/* --- a consented embed standing on its own, not inside a work item --------
+   The video is 16/9 in a page whose other media is 2.13:1, so it is capped
+   rather than run full width; at full width it would tower over every other
+   frame on the page. */
+.embed {
+  max-width: 900px;
+  margin-top: clamp(1.75rem, 4vh, 2.75rem);
+}
+
+
+/* ==========================================================================
+   18  IR MAKER TOOL
+   --------------------------------------------------------------------------
+   A working tool rather than a page to read, so the priorities shift: state
+   has to be legible at a glance, controls have to look operable, and the
+   accent marks what is active. Mic rows, results and log lines are built by
+   assets/js/ir-maker.js, so those class names are restyled here rather than
+   changed in the script.
+   ========================================================================== */
+
+.ir-intro { max-width: 68ch; margin: 0; color: var(--grey-2); line-height: 1.75; }
+
+/* --- Numbered step. The numbers are a real sequence here: you cannot pick
+       microphones before loading the sweep they were recorded against. --- */
+
+.ir-step {
+  padding-block: clamp(2rem, 5vh, 3.25rem);
+  border-top: 1px solid var(--hair);
+}
+.ir-step:first-of-type { border-top: 0; }
+
+.ir-step-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1.6rem;
+}
+.ir-step-num,
+.ir-step-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.ir-step-icon svg { display: block; }
+.ir-step-head h2 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(1.15rem, 2.2vw, 1.6rem);
+  letter-spacing: -0.015em;
+  line-height: 1;
+  margin: 0.35rem 0 0.5rem;
+  color: var(--grey);
+}
+.ir-step-head p {
+  margin: 0;
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  max-width: 62ch;
+}
+.ir-step-head a { color: var(--accent); text-decoration: underline; text-underline-offset: 0.2em; }
+
+/* --- file drop target --- */
+
+.ir-dropzone {
+  border: 2px dashed var(--grey-3);
+  background: var(--panel);
+  padding: 1.75rem 1.5rem;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.ir-dropzone:hover,
+.ir-dropzone:focus-visible { border-color: var(--grey-2); }
+.ir-dropzone.ir-dragover {
+  border-color: var(--accent);
+  border-style: solid;
+  background: rgba(215, 255, 62, 0.06);
+}
+
+.ir-dropzone-empty { display: grid; gap: 0.35rem; justify-items: center; text-align: center; }
+.ir-dropzone-empty span { color: var(--grey-2); font-size: 0.9375rem; }
+.ir-dropzone-empty strong { color: var(--grey); font-weight: 500; }
+.ir-dropzone-empty small {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+
+.ir-file-loaded {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.ir-file-meta { display: grid; gap: 0.25rem; min-width: 0; }
+.ir-file-name { color: var(--grey); font-size: 0.9375rem; word-break: break-all; }
+.ir-file-info,
+.ir-mic-info {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.ir-file-clear {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.6rem 0.9rem;
+  border: 2px solid var(--grey-3);
+  background: none;
+  color: var(--grey-2);
+  cursor: pointer;
+}
+.ir-file-clear:hover { border-color: var(--bad); color: var(--bad); }
+
+/* --- waveform with trim handles --- */
+
+.ir-waveform-block { margin-top: 1.25rem; }
+.ir-waveform,
+.ir-mic-wave {
+  position: relative;
+  height: 96px;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  overflow: hidden;
+}
+.ir-mic-wave { height: 64px; margin-top: 0.75rem; }
+.ir-wave-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.ir-trim-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 9px;
+  margin-left: -4px;
+  cursor: ew-resize;
+  z-index: 3;
+  touch-action: none;
+}
+.ir-trim-handle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  background: var(--accent);
+}
+.ir-trim-handle:hover::after { box-shadow: 0 0 0 1px var(--accent); }
+
+.ir-trim-shade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.62);
+  z-index: 2;
+  pointer-events: none;
+}
+.ir-shade-left { left: 0; }
+.ir-shade-right { right: 0; }
+
+.ir-waveform-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-top: 0.85rem;
+}
+.ir-waveform-hint {
+  margin: 0;
+  color: var(--grey-3);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  max-width: 58ch;
+}
+
+/* --- checkbox, square like every other control in this design --- */
+
+.ir-check {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+  cursor: pointer;
+}
+.ir-check input { position: absolute; width: 1px; height: 1px; margin: -1px; clip-path: inset(50%); }
+.ir-check > span { display: grid; gap: 0.3rem; min-width: 0; }
+.ir-check strong { color: var(--grey); font-weight: 500; font-size: 0.9375rem; }
+.ir-check small { color: var(--grey-3); font-size: 0.8125rem; line-height: 1.55; }
+
+.ir-check::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  border: 2px solid var(--grey-3);
+  background: var(--black);
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+.ir-check:has(input:checked)::before { background: var(--accent); border-color: var(--accent); }
+.ir-check:has(input:focus-visible)::before { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ir-check-inline { grid-template-columns: auto auto; align-items: center; }
+
+/* --- microphone rows, built by the script --- */
+
+.ir-mic-list { display: grid; gap: 0.75rem; }
+.ir-mic-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.9rem;
+  padding: 0.9rem;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+}
+.ir-mic-index {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--grey-3);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--grey-3);
+}
+.ir-mic-body { min-width: 0; }
+.ir-mic-top { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+
+.ir-mic-name {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font-family: var(--geo);
+  font-size: 0.9375rem;
+  color: var(--grey);
+  background: var(--black);
+  border: 1px solid var(--hair);
+  padding: 0.55rem 0.7rem;
+}
+.ir-mic-name:focus { outline: none; border-color: var(--accent); }
+
+.ir-mic-file-btn,
+.ir-mic-link-btn {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--grey-3);
+  background: none;
+  color: var(--grey-2);
+  cursor: pointer;
+}
+.ir-mic-file-btn:hover,
+.ir-mic-link-btn:hover { border-color: var(--grey); color: var(--grey); }
+/* the link button only appears once a stereo partner is detected */
+.ir-mic-link-btn { border-color: var(--accent); color: var(--accent); }
+
+.ir-mic-remove {
+  flex: none;
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--hair);
+  background: none;
+  color: var(--grey-3);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.ir-mic-remove:hover { border-color: var(--bad); color: var(--bad); }
+
+.ir-mic-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.1rem; }
+.ir-add-mic { padding: 0.85rem 1.2rem; }
+
+/* --- options --- */
+
+.ir-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.4rem clamp(1.5rem, 3vw, 2.5rem);
+}
+.ir-field { display: grid; gap: 0.45rem; align-content: start; }
+.ir-field label {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.ir-field select,
+.ir-field input {
+  font-family: var(--geo);
+  font-size: 0.9375rem;
+  color: var(--grey);
+  background: var(--panel);
+  border: 2px solid var(--hair);
+  padding: 0.7rem 0.85rem;
+  width: 100%;
+}
+.ir-field select:focus,
+.ir-field input:focus { outline: none; border-color: var(--accent); }
+.ir-field select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--grey-2) 50%),
+                    linear-gradient(135deg, var(--grey-2) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 55%, calc(100% - 12px) 55%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 2.5rem;
+}
+.ir-field option { background: var(--panel); color: var(--grey); }
+
+/* --- run and report --- */
+
+.ir-process-row { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.75rem; }
+.ir-process-btn { padding: 1.05rem 1.75rem; }
+
+.ir-progress-block { margin-top: 1.75rem; }
+.ir-progress-track { height: 6px; background: var(--hair); overflow: hidden; }
+.ir-progress-bar { height: 100%; width: 0; background: var(--accent); transition: width 0.25s ease; }
+.ir-progress-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.ir-log {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  line-height: 1.9;
+  color: var(--grey-3);
+}
+.ir-log li::before { content: "> "; color: var(--accent); }
+
+.ir-results { margin-top: 1.75rem; padding-top: 1.5rem; border-top: 2px solid var(--accent); }
+.ir-results h3 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 1rem;
+  color: var(--grey);
+}
+.ir-results-list { display: grid; gap: 0.6rem; }
+.ir-result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+}
+.ir-result-meta {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.ir-result-download { padding: 0.6rem 0.95rem; font-size: 0.625rem; }
+
+/* --- generator note and explainer --- */
+
+.ir-gen-note,
+.ir-info-privacy {
+  margin: 1.5rem 0 0;
+  padding-left: 1.25rem;
+  border-left: 2px solid var(--accent);
+  max-width: 66ch;
+  color: var(--grey-2);
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+.ir-info-privacy strong { color: var(--grey); font-weight: 500; }
+
+.ir-info { padding-block: clamp(2rem, 5vh, 3.25rem); border-top: 1px solid var(--hair); }
+.ir-info h2 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(1.15rem, 2.2vw, 1.6rem);
+  letter-spacing: -0.015em;
+  margin: 0 0 1rem;
+  color: var(--grey);
+}
+.ir-info p {
+  margin: 0 0 1rem;
+  max-width: 68ch;
+  color: var(--grey-2);
+  line-height: 1.75;
+  font-size: 0.9375rem;
+}
+.ir-info strong { color: var(--grey); font-weight: 500; }
+
+
+
+/* --- a cut-out product render ----------------------------------------------
+   Not a .shot: there is no plate and no frame. The render has a transparent
+   background and its own rim light, so it stands directly on the page black
+   and the grayscale filter every photograph gets would kill the red LED that
+   is the whole point of the product. */
+.render {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+}
+
+/* --- download pair ---------------------------------------------------------
+   A card whose last child is a button needs the button pinned to the bottom,
+   or two cards with different amounts of copy end up with buttons at
+   different heights. */
+.dl-card { display: flex; flex-direction: column; }
+.dl-card .btn { margin-top: auto; align-self: start; }
+.dl-card p { margin-bottom: 1.4rem; }
+
+/* --- price tally -----------------------------------------------------------
+   Rows of label and amount, the total set off by a rule. */
+.tally {
+  margin: 2rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+}
+.tally-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.45rem 0;
+  color: var(--grey-2);
+}
+.tally-row.total {
+  margin-top: 0.4rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--grey-3);
+  color: var(--grey);
+}
+.tally-row.total span:last-child { color: var(--accent); }
+
+/* --- the reservation notice, set apart from the fields above it --- */
+.reserve-note {
+  margin: 2rem 0 0;
+  padding: 1.2rem 1.3rem;
+  border: 1px solid var(--hair);
+  background: var(--panel);
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+.reserve-note > :first-child { margin-top: 0; }
+.reserve-note > :last-child { margin-bottom: 0; }
+
+
+/* ==========================================================================
+   20  FAQ ACCORDION
+   --------------------------------------------------------------------------
+   Native <details>, so it works with the keyboard, with search-in-page and
+   without JavaScript. Only the marker and the rules are styled.
+   ========================================================================== */
+
+.faq { margin-top: clamp(1.75rem, 4vh, 2.75rem); border-top: 1px solid var(--hair); }
+
+.faq details { border-bottom: 1px solid var(--hair); }
+
+.faq summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1.5rem;
+  padding: 1.15rem 0;
+  cursor: pointer;
+  list-style: none;
+  color: var(--grey);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  transition: color 0.15s ease;
+}
+/* Safari still needs the vendor pseudo-element to drop the disclosure arrow */
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary:hover { color: var(--accent); }
+.faq summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* the marker is drawn rather than typed, so it stays a true plus and minus */
+.faq summary::after {
+  content: '';
+  flex: none;
+  width: 11px;
+  height: 11px;
+  margin-top: 0.35rem;
+  background:
+    linear-gradient(var(--grey-3), var(--grey-3)) center / 11px 1px no-repeat,
+    linear-gradient(var(--grey-3), var(--grey-3)) center / 1px 11px no-repeat;
+  transition: background-size 0.18s ease;
+}
+.faq details[open] summary { color: var(--accent); }
+.faq details[open] summary::after {
+  background:
+    linear-gradient(var(--accent), var(--accent)) center / 11px 1px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) center / 1px 0 no-repeat;
+}
+
+.faq .answer {
+  margin: 0;
+  padding: 0 0 1.4rem;
+  max-width: 62ch;
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+.faq .answer a { color: var(--accent); text-decoration: underline; text-underline-offset: 0.2em; }
+.faq .answer a:hover { color: var(--grey); }
+
+
+
+/* ==========================================================================
+   21  HANDOFF PAGES
+   --------------------------------------------------------------------------
+   delivery.html, send-files.html and upload.html. These replace the .handoff-*
+   rules that used to live in styles.css. The class names are fixed by the
+   markup and by the flow scripts, so they are kept exactly and only restyled.
+   ========================================================================== */
+
+/* The cards are bordered panels, so unlike a .sec their padding sits inside
+   the frame and gives nothing to the outside. Without this the last card's
+   border landed flat on the footer rule. Matches the .sec bottom padding. */
+.handoff-layout {
+  display: grid;
+  gap: clamp(1.5rem, 3.5vh, 2.5rem);
+  padding-bottom: clamp(3rem, 9vh, 6.5rem);
+}
+
+/* a panel, the same frame the cards and the scores gate use */
+.handoff-card {
+  border: 1px solid var(--hair);
+  background: var(--panel);
+  padding: clamp(1.4rem, 3vw, 2.1rem);
+}
+.handoff-card > :first-child { margin-top: 0; }
+.handoff-card > :last-child { margin-bottom: 0; }
+
+.handoff-card h2 {
+  font-family: var(--fat);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 1.15rem;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  margin: 0 0 1.2rem;
+  color: var(--grey);
+}
+.handoff-card p { color: var(--grey-2); line-height: 1.7; margin: 0 0 1rem; }
+
+.handoff-lead { font-size: 1.0625rem; color: var(--grey-2); line-height: 1.7; }
+
+/* --- the numbered stepper --- */
+.handoff-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.4rem;
+}
+.handoff-step {
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--hair);
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.handoff-step.active { border-color: var(--accent); color: var(--accent); }
+
+/* --- summary rows ----------------------------------------------------------
+   The cells are bare <div>s written by the flow scripts, so they cannot carry
+   a class of their own and are addressed as direct children. */
+/* One row on desktop. Column flow rather than a fixed track count because the
+   scripts write a varying number of cells — four on upload, six on send-files —
+   and a fixed count would leave the last row ragged. */
+.handoff-summary-list {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 1px;
+  margin: 0;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+}
+.handoff-summary-list > div { background: var(--panel); padding: 1rem 1.1rem 1.1rem; }
+.handoff-summary-list dt {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.45rem;
+}
+.handoff-summary-list dd {
+  margin: 0;
+  color: var(--grey);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  overflow-wrap: break-word;
+}
+.handoff-summary-list dd a { color: var(--accent); text-decoration: underline; text-underline-offset: 0.2em; }
+.handoff-summary-list dd a:hover { color: var(--grey); }
+
+/* --- form blocks --- */
+.handoff-form { display: grid; gap: clamp(1.5rem, 3vh, 2.1rem); }
+.handoff-fieldset { display: grid; gap: 1.1rem; }
+.handoff-fieldset h2 { margin-bottom: 0; }
+
+.handoff-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.handoff-grid-span-two { grid-column: 1 / -1; }
+
+.handoff-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+/* Inside a form the row is a grid item and gets its spacing from the form gap;
+   standing directly in a card it has to bring its own. */
+.handoff-card > .handoff-actions { margin-top: 1.6rem; }
+
+/* --- status line -----------------------------------------------------------
+   The scripts set the whole className, so the base class must stay silent
+   until `is-visible` is added alongside it. */
+.handoff-status { display: none; }
+.handoff-status.is-visible {
+  display: block;
+  padding: 0.9rem 1.1rem;
+  border-left: 2px solid var(--grey-3);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.handoff-status.is-visible.success { border-left-color: var(--ok); color: var(--ok); }
+.handoff-status.is-visible.error { border-left-color: var(--bad); color: var(--bad); }
+/* revision-flow.js toggles the hidden attribute and the class independently on
+   the reference banner, so the attribute has to keep the last word. */
+.handoff-status[hidden] { display: none; }
+
+/* --- native file input: only the picker button is redrawn ------------------
+   The revision form posts the file with the form, so the input has to stay a
+   real visible <input type="file"> rather than the scripted dropzone the
+   upload pages use. */
+.form-group input[type="file"] {
+  padding: 0.55rem 0.6rem;
+  color: var(--grey-2);
+  font-size: 0.875rem;
+}
+.form-group input[type="file"]::file-selector-button {
+  margin-right: 0.9rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--grey-3);
+  background: transparent;
+  color: var(--grey);
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.form-group input[type="file"]::file-selector-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* --- drop target --- */
+.upload-dropzone {
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+  padding: clamp(1.4rem, 3vw, 2rem);
+  border: 2px dashed var(--hair);
+  background: var(--black);
+  transition: border-color 0.18s ease;
+}
+.upload-dropzone:hover { border-color: var(--grey-3); }
+.upload-dropzone > p { margin: 0; color: var(--grey); font-size: 1rem; }
+.upload-dropzone-meta { color: var(--grey-3) !important; font-size: 0.8125rem !important; line-height: 1.6; max-width: 60ch; }
+.upload-dropzone .btn { margin-top: 0.6rem; }
+
+/* --- file lists ------------------------------------------------------------
+   Two lists with the same shape: a name on the left, a size on the right.
+   .upload-file-row is written by the scripts; the static delivery list has no
+   class on its items, so both are covered. */
+.upload-file-list,
+.delivery-file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+.upload-file-list:empty { display: none; }
+.upload-file-list > li,
+.delivery-file-list > li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1.5rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--hair);
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+}
+.upload-file-list > li:first-child,
+.delivery-file-list > li:first-child { border-top: 1px solid var(--hair); }
+.upload-file-list > li > span:first-child,
+.delivery-file-list > li > span:first-child { color: var(--grey); overflow-wrap: anywhere; }
+.upload-file-list > li > span:last-child,
+.delivery-file-list > li > span:last-child {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  color: var(--grey-3);
+}
+
+/* --- service picker: the radio stays in the DOM for keyboard groups --- */
+.service-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.service-card { position: relative; display: block; cursor: pointer; }
+.service-card input {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px;
+  clip-path: inset(50%);
+}
+.service-card > span {
+  display: block;
+  padding: 0.95rem 1rem;
+  border: 2px solid var(--hair);
+  background: var(--black);
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-2);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.service-card:hover > span { border-color: var(--grey-3); color: var(--grey); }
+.service-card input:checked + span { border-color: var(--accent); color: var(--accent); }
+.service-card input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- consent checkbox, drawn square like every other control --- */
+.consent-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  cursor: pointer;
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  max-width: 70ch;
+}
+.consent-row input {
+  appearance: none;
+  width: 18px; height: 18px;
+  margin: 0.15rem 0 0;
+  border: 2px solid var(--grey-3);
+  background: transparent;
+  cursor: pointer;
+  flex: none;
+}
+.consent-row input:checked { background: var(--accent); border-color: var(--accent); }
+.consent-row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- the revision offer sits apart from the delivery itself --- */
+.revision-callout { border-left: 2px solid var(--accent); }
+
+
+/* ==========================================================================
+   19  RESPONSIVE
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .badge svg { animation: none; }
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; }
+}
+
+/* Four cards need roughly 250px each before the role line starts wrapping
+   awkwardly; between the tablet break and this width they go two-up. */
+@media (max-width: 1100px) {
+  .cards.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* The two-column hero only has room for the wordmark once the viewport is
+   wide enough; below this the headline falls back to the base scale. */
+@media (min-width: 901px) {
+  h1.hero-h1 { --h1: clamp(2.9rem, 6.2vw, 6.5rem); }
+}
+
+/* ---------- one column, collapsed nav ---------- */
+@media (max-width: 900px) {
+  .hero, .about, .work, .foot-top { grid-template-columns: minmax(0, 1fr); }
+  /* Every variant has to be named. .split.flip.tight is three classes and so
+     outranks a plain .split.flip listed here, which left it two-up on phones:
+     the picture came out 83px wide next to 186px of text. */
+  .split, .split.flip, .split.tight, .split.flip.tight,
+  .split.flip.showcase, .split.flip.compact { grid-template-columns: minmax(0, 1fr); }
+  .split.flip.compact > *:not(.figure) { max-width: none; justify-self: stretch; }
+  .cards,
+  .cards.two,
+  .cards.four { grid-template-columns: minmax(0, 1fr); }
+  .form-row { grid-template-columns: minmax(0, 1fr); }
+  .speclist li { grid-template-columns: minmax(0, 1fr); }
+  .handoff-grid-two { grid-template-columns: minmax(0, 1fr); }
+  /* two up once a single row would squeeze the values */
+  .handoff-summary-list {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .service-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .contact-layout { grid-template-columns: minmax(0, 1fr); }
+  .ir-options-grid { grid-template-columns: minmax(0, 1fr); }
+
+  /* Both fact bands become a stacked single-column list from tablet down — a
+     multi-column band gets cramped below the desktop measure. The .fact padding
+     drops its left inset since every item now spans the full width. */
+  .factrow,
+  .factrow.four {
+    grid-template-columns: minmax(0, 1fr);
+    margin-left: 0;
+    width: 100%;
+  }
+  .fact { padding: 1rem 0 1.1rem; }
+
+  /* the photo moves up between the wordmark and the copy, so it is on screen
+     with the title instead of below a block of text and buttons */
+  .hero {
+    grid-template-areas: 'head' 'art' 'copy';
+    gap: clamp(1.25rem, 3vh, 1.75rem) 0;
+  }
+  .hero-art { justify-content: flex-start; width: min(100%, 460px); }
+  .badge { left: auto; right: -10%; top: 4%; }
+
+  .foot-top { gap: 2.25rem; }
+
+  .burger { display: block; }
+
+  :root { --bar-h: 80px; }
+
+  .nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 70;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin: 0;
+    background: var(--panel);
+    border: 2px solid var(--grey-3);
+    max-height: 72vh;
+    overflow-y: auto;
+  }
+  .nav.open { display: flex; }
+
+  .nav-item { padding: 1rem 1.1rem; border-bottom: 1px solid var(--hair); }
+  .nav-group { display: block; }
+  /* the More trigger has no destination of its own, so on touch it is only a
+     group label rather than a dead tap target */
+  .nav-group > .nav-item { color: var(--grey-3); pointer-events: none; }
+  .caret { display: none; }
+
+  .drop {
+    position: static;
+    width: auto;
+    border: 0;
+    background: transparent;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: none;
+  }
+  .drop a { padding: 0.85rem 1.1rem 0.9rem 1.9rem; }
+}
+
+/* ---------- phone ---------- */
+@media (max-width: 640px) {
+  :root {
+    --rail: 26px;
+    --tick: 0.45;   /* keeps the rail as a hint without eating the measure */
+  }
+
+  .bar { gap: 1rem; padding-block: 1.25rem; }
+
+  .hero { padding-top: 2rem; padding-bottom: 2.5rem; gap: 1.25rem 0; }
+  /* 3:4 is 100px taller than the page can spare here */
+  .hero .shot { aspect-ratio: 1; }
+
+  /* Lift the copy so the accent bar straddles the bottom of the photo — it
+     then reads as a plate on the image rather than another stacked line. The
+     pull has to clear the row gap as well as the overlap itself. */
+  .hero-art { margin-bottom: -3rem; }
+  .hero-copy { position: relative; z-index: 3; }
+  .hero-sub { margin-top: 0; }
+  .hero-body { margin-top: 1.35rem; }
+
+  /* Too narrow to hang the badge off the photo edge, so it sits inside the top
+     corner instead. Without this it stays at the 150px floor and reaches past
+     the photo into the tick rail. */
+  .badge { right: 8px; top: 10px; width: 112px; }
+
+  /* One line, or the bar turns into a thick half-empty block. Fitting the full
+     string would need ~10px type — smaller than the mono labels — so the city
+     drops instead: it is in the badge on the photo above and in the "Hamburg
+     based" kicker in the next section. */
+  .bar-city { display: none; }
+  .barline { font-size: clamp(0.78rem, 3.9vw, 0.98rem); }
+
+  /* manual line breaks are tuned for wide measures; let phones wrap naturally */
+  .br-lg { display: none; }
+
+  /* full-width taps */
+  .btn-row { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
+  .btn { display: block; padding: 1.05rem 1rem; }
+
+  .figure .shot { aspect-ratio: 4 / 3; }
+
+  /* ---- vertical rhythm ----
+     The block spacing is set in vh, which barely moves on a phone: a handset
+     viewport is ~812px tall against a desktop window's ~900px, so 8vh gives 65px
+     instead of 72px. Meanwhile the measure collapses from ~1075px to ~286px, so
+     the same gaps read as holes. These bring the rhythm back to roughly 55-60%
+     of the desktop values, keeping the hierarchy — section gaps stay the widest. */
+  .sec { padding-block: 2.75rem; }
+  .page-head { padding-top: 1.75rem; padding-bottom: 2rem; }
+  .page-head-rule { margin-top: 2rem; }
+  .block { margin-top: 1.9rem; }
+  .after-figure { margin-top: 2.3rem; }
+  .handoff-summary-list { grid-template-columns: minmax(0, 1fr); }
+  .split { margin-top: 1.9rem; }
+  .factrow { margin-top: 2rem; }
+  .cards { margin-top: 1.9rem; }
+  .note { margin-top: 2.2rem; }
+  .copy { margin-top: 1.65rem; }
+  .kicker { margin-bottom: 1.25rem; }
+
+  /* the picture is full width when stacked, so a square crop would dominate */
+  .shot.square { aspect-ratio: 4 / 3; }
+
+  .quote { font-size: 1.05rem; }
+
+  .mastering-grid { grid-template-columns: minmax(0, 1fr); }
+  .mastering-card { padding: 1.1rem 1.1rem 1.3rem; }
+
+  .foot-base { flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-top: 2.25rem; }
+
+  .cookie-setting-row { align-items: flex-start; }
+}
+
+/* ---------- very narrow phones ---------- */
+/* The clamp() floors that keep display type readable at 375px are wider than
+   the measure below roughly 360px: a single word like EVERYTHING or STEINBACH
+   needs more room than the column has, and the page scrolls sideways. Only the
+   floors move here, so nothing changes at 375 and up. */
+@media (max-width: 360px) {
+  h1.hero-h1 { --h1: clamp(1.85rem, 7.1vw, 6.75rem); }
+  .sec-h2 { font-size: clamp(1.65rem, 6.6vw, 6rem); }
+  .page-head h1 { font-size: clamp(1.85rem, 11vw, 9rem); }
+  .foot-mark { font-size: clamp(1.8rem, 5vw, 4rem); }
+
+  .cookie-banner {
+    right: 0.75rem;
+    left: 0.75rem;
+    bottom: 0.75rem;
+    width: auto;
+    padding: 1.1rem;
+  }
+}
