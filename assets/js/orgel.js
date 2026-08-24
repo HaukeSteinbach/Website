@@ -255,11 +255,11 @@
         var active  = document.querySelectorAll('.organ-stop-btn.active').length;
         var text    = document.getElementById('organ-status-text');
         var counter = document.getElementById('organ-active-count');
-        if (counter) counter.textContent = active + ' Register aktiv';
+        if (counter) counter.textContent = active + ' register' + (active !== 1 ? 's' : '') + ' active';
         if (text) {
             text.textContent = isPlaying && active > 0
-                ? active + ' Stop' + (active !== 1 ? 's' : '') + ' aktiv'
-                : active + ' Stop' + (active !== 1 ? 's' : '') + ' bereit';
+                ? active + ' stop' + (active !== 1 ? 's' : '') + ' playing'
+                : active + ' stop' + (active !== 1 ? 's' : '') + ' ready';
         }
     }
 
@@ -288,8 +288,22 @@
             if (f && allFiles.indexOf(f) === -1) allFiles.push(f);
         });
 
+        /* Scale straight away rather than only inside an animation frame: a
+           page opened in a background tab gets no frame, and the console then
+           stays at its authored 1000px — wide enough that the right-hand
+           stops fall outside the visible area and cannot be clicked. The
+           script runs at the end of the body with the stylesheet already
+           applied, so the measurement here is sound.
+           The frame and the observer stay as follow-ups, for the case where a
+           late web font or the backdrop image shifts the width afterwards. */
+        scaleCanvas();
         requestAnimationFrame(scaleCanvas);
         window.addEventListener('resize', scaleCanvas);
+
+        if (window.ResizeObserver) {
+            var scalerEl = document.getElementById('organ-canvas-scaler');
+            if (scalerEl) new ResizeObserver(scaleCanvas).observe(scalerEl);
+        }
 
         // Wire stop knobs
         document.querySelectorAll('.organ-stop-btn').forEach(function (btn) {

@@ -1,12 +1,8 @@
 /* ==========================================================================
    STEINBACH — DESIGN SYSTEM
    ==========================================================================
-   Shared stylesheet for the reworked pages (index, mixing, mastering).
-
-   The older pages under "More" still use assets/css/styles.css and are not
-   touched by this file. A page loads EITHER styles.css OR this one, never
-   both — several class names (.btn, .tag, .container) exist in both and would
-   fight each other.
+   The stylesheet for the whole site. Every page loads this one and nothing
+   else; the older assets/css/styles.css it replaced is gone.
 
    Direction: pure black ground, heavy grotesque at poster scale, one flat
    accent used as a solid block, hard-cut greyscale photography, an amplitude
@@ -31,6 +27,7 @@
     16  Scores archive
     17  Product pages
     18  IR Maker tool
+    22  Historic organ
     19  Responsive
    ========================================================================== */
 
@@ -800,6 +797,18 @@ h1.hero-h1 {
 /* before consent the iframe has no src; keep it out of the way */
 .slot iframe[data-consent-src]:not([src]) { opacity: 0; pointer-events: none; }
 
+/* Cover art in a slot (productions page). Contained, not cropped: sleeves are
+   square and cropping one to 16:9 cuts the artwork in half. The letterboxing
+   sits on the slot's own ground, so it reads as a frame, not as a gap. */
+.slot img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 .item h3 {
   font-family: var(--fat);
   font-weight: 400;
@@ -1054,6 +1063,14 @@ h1.hero-h1 {
 }
 
 .card-tags { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+
+/* Where a release can be heard (productions page). These are .btn as well, so
+   they inherit the outline treatment; only the scale comes down, because a
+   card carries two of them and the full button padding would outweigh the
+   text above it. */
+.card-links { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.card-link { padding: 0.75rem 1.1rem; font-size: 0.625rem; }
+.card-link .ext { font-style: normal; color: inherit; margin-left: 0.35em; }
 
 
 /* ==========================================================================
@@ -2528,7 +2545,7 @@ fieldset.form-group > legend {
    21  HANDOFF PAGES
    --------------------------------------------------------------------------
    delivery.html, send-files.html and upload.html. These replace the .handoff-*
-   rules that used to live in styles.css. The class names are fixed by the
+   rules that used to live in the old stylesheet. The class names are fixed by the
    markup and by the flow scripts, so they are kept exactly and only restyled.
    ========================================================================== */
 
@@ -2563,6 +2580,40 @@ fieldset.form-group > legend {
 .handoff-card p { color: var(--grey-2); line-height: 1.7; margin: 0 0 1rem; }
 
 .handoff-lead { font-size: 1.0625rem; color: var(--grey-2); line-height: 1.7; }
+
+/* --- release link builder ---------------------------------------------------
+   Two additions the other handoff pages have no use for: the pattern the built
+   URL follows, and a note under a field that explains what an entry does to
+   that pattern. The URL is set in mono at the size of the surrounding copy so
+   it reads as a specimen, not as a heading. */
+.release-builder-preview {
+  margin-top: 1.4rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--hair);
+  background: var(--black);
+  display: grid;
+  gap: 0.45rem;
+}
+.release-builder-preview-label {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.release-builder-preview strong {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 0.9375rem;
+  color: var(--accent);
+  word-break: break-all;
+}
+.release-builder-help {
+  margin: 0.6rem 0 0 !important;
+  font-size: 0.8125rem;
+  color: var(--grey-3) !important;
+  max-width: 60ch;
+}
 
 /* --- the numbered stepper --- */
 .handoff-stepper {
@@ -2785,6 +2836,195 @@ fieldset.form-group > legend {
 
 
 /* ==========================================================================
+   22  HISTORIC ORGAN
+   --------------------------------------------------------------------------
+   The playable console on orgel.html, driven by assets/js/orgel.js.
+
+   Two things here are photographs of the real instrument and cannot be
+   restyled: the console backdrop and the seventeen stop knobs, which are
+   vertical sprite strips. Their geometry — 43x55 per frame, 330 tall, the
+   active frame at -275 — is fixed by the image files and must not be touched.
+   Everything around them is on the site tokens like any other page.
+   ========================================================================== */
+
+.organ-demo-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1.6rem 0 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.organ-demo-hint::before { content: '\2192'; }
+
+/* the console reads as one instrument: loading bar, face and controls share
+   a single frame rather than floating separately on the page */
+.organ-console {
+  max-width: 840px;
+  margin: 0 auto;
+  border: 2px solid var(--hair);
+  background: var(--panel);
+}
+
+.organ-loading-bar { height: 2px; background: var(--hair); overflow: hidden; }
+.organ-loading-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.3s ease, opacity 0.5s ease;
+}
+
+.organ-canvas-wrapper { width: 100%; }
+
+/* orgel.js measures the scaler and scales the canvas to fit, so the canvas
+   keeps its authored 1000x566 pixel grid whatever the viewport does */
+.organ-canvas-scaler { width: 100%; overflow: hidden; position: relative; }
+.organ-canvas {
+  width: 1000px;
+  height: 566px;
+  position: relative;
+  overflow: hidden;
+  transform-origin: top left;
+}
+.organ-bg {
+  position: absolute;
+  width: 1000px;
+  height: 1906px;
+  top: -95px;
+  left: 0;
+  pointer-events: none;
+  user-select: none;
+  display: block;
+}
+
+/* stop knobs — sprite geometry, do not change */
+.organ-stop-btn {
+  position: absolute;
+  width: 43px;
+  height: 55px;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-size: 43px 330px;
+  background-position: 0 0;
+  cursor: pointer;
+  /* an idle knob is dimmed rather than greyed: the photograph keeps its own
+     colour, it just sits back until it is pulled */
+  filter: brightness(0.5) saturate(0.35);
+  transition: filter 0.13s ease;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.organ-stop-btn:hover { filter: brightness(0.8) saturate(0.65); }
+.organ-stop-btn.active {
+  background-position: 0 -275px;   /* frame 5 — the pulled knob */
+  filter: brightness(1) saturate(1);
+}
+.organ-stop-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.organ-stop-btn::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--black);
+  border: 1px solid var(--hair);
+  color: var(--grey);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  padding: 3px 7px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+  z-index: 20;
+}
+.organ-stop-btn:hover::after { opacity: 1; }
+
+.organ-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.1rem;
+  border-top: 2px solid var(--hair);
+}
+/* the two console buttons run at the compact scale the bar needs */
+.organ-play-btn,
+.organ-clear-btn { padding: 0.7rem 1.3rem; }
+.organ-play-btn { display: inline-flex; align-items: center; gap: 0.5rem; }
+/* playing state: the button stops inviting a press and reads as a stop */
+.organ-play-btn.is-playing {
+  background: none;
+  border-color: var(--grey);
+  color: var(--grey);
+}
+
+.organ-vol-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.organ-vol-group input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 84px;
+  height: 2px;
+  background: var(--grey-3);
+  outline: none;
+  cursor: pointer;
+}
+.organ-vol-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  cursor: pointer;
+}
+.organ-vol-group input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+.organ-vol-group input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+.organ-status-text {
+  margin-left: auto;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+
+/* five features in a three-up grid: the last one takes the empty cell as well,
+   otherwise the row ends on a bare patch of the grid's own hairline ground */
+.organ-features .card:last-child { grid-column: span 2; }
+
+.organ-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: clamp(1.75rem, 4vh, 2.75rem);
+  background: var(--hair);
+}
+.organ-gallery .shot { aspect-ratio: 4 / 3; }
+
+
+/* ==========================================================================
    19  RESPONSIVE
    ========================================================================== */
 
@@ -2818,6 +3058,10 @@ fieldset.form-group > legend {
   .cards,
   .cards.two,
   .cards.four { grid-template-columns: minmax(0, 1fr); }
+  /* one column: the spanning fifth organ feature would otherwise create a
+     second, implicit column and break the stack */
+  .organ-features .card:last-child { grid-column: auto; }
+  .organ-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .form-row { grid-template-columns: minmax(0, 1fr); }
   .speclist li { grid-template-columns: minmax(0, 1fr); }
   .handoff-grid-two { grid-template-columns: minmax(0, 1fr); }
@@ -2961,6 +3205,10 @@ fieldset.form-group > legend {
   .quote { font-size: 1.05rem; }
 
   .mastering-grid { grid-template-columns: minmax(0, 1fr); }
+  .organ-gallery { grid-template-columns: minmax(0, 1fr); }
+  /* the console bar wraps to two rows on a phone; the status line then reads
+     better under the controls than pushed to a ragged right edge */
+  .organ-status-text { margin-left: 0; width: 100%; }
   .mastering-card { padding: 1.1rem 1.1rem 1.3rem; }
 
   .foot-base { flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-top: 2.25rem; }

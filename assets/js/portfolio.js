@@ -222,20 +222,23 @@ function loadPortfolioItems(category) {
 }
 
 /**
- * Create a portfolio card element
+ * Create a portfolio card element.
+ *
+ * Uses the same .item structure as the featured work on the index page, so a
+ * production reads identically wherever it appears.
  */
 function createPortfolioCard(item) {
     const card = document.createElement('article');
-    card.className = 'portfolio-card';
+    card.className = 'item';
     card.innerHTML = `
-        <div class="card-cover">${item.id.split('-')[0].toUpperCase()}</div>
-        <div class="card-meta">${item.date}</div>
-        <div class="card-title">${item.title}</div>
-        <div class="card-meta">${item.artist}</div>
-        <div class="card-description">${item.description}</div>
-        <div class="card-tags">
+        <div class="slot">${createPortfolioMedia(item)}</div>
+        <div class="tagrow">
             ${item.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+            <span class="mono">${item.date}</span>
         </div>
+        <h3>${item.title}</h3>
+        <p class="card-meta">${item.artist}</p>
+        <p>${item.description}</p>
         <div class="card-links">
             ${createLinks(item.links)}
         </div>
@@ -244,13 +247,50 @@ function createPortfolioCard(item) {
 }
 
 /**
+ * Fill a card's 16:9 slot. The video comes first: every release has one, so
+ * the grid stays uniform, and it is the same treatment the featured work on
+ * the index page gets. Cover art is the fallback for an entry without a
+ * video. Either way the embed sits behind the consent gate, so nothing
+ * reaches Google before the visitor agrees.
+ */
+function createPortfolioMedia(item) {
+    const videoId = youtubeId(item.links && item.links.youtube);
+
+    if (!videoId) {
+        return item.image
+            ? `<img src="${item.image}" alt="Cover artwork for ${item.title}" loading="lazy">`
+            : '';
+    }
+
+    return `<iframe data-consent-category="external-media"`
+        + ` data-consent-src="https://www.youtube.com/embed/${videoId}?enablejsapi=1&amp;playsinline=1&amp;rel=0"`
+        + ` title="${item.title}" loading="lazy"`
+        + ` allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"`
+        + ` allowfullscreen></iframe>`;
+}
+
+/**
+ * Pull the video id out of a watch link. Returns an empty string for anything
+ * that is not a YouTube URL, which leaves the slot empty rather than building
+ * a broken embed.
+ */
+function youtubeId(url) {
+    if (!url) {
+        return '';
+    }
+
+    const match = String(url).match(/[?&]v=([A-Za-z0-9_-]{11})/);
+    return match ? match[1] : '';
+}
+
+/**
  * Create links for portfolio entries
  */
 function createLinks(links) {
     return Object.entries(links)
         .map(([platform, url]) => {
-            const label = platform.charAt(0).toUpperCase() + platform.slice(1);
-            return `<a href="${url}" class="card-link" target="_blank" rel="noopener noreferrer">${label}</a>`;
+            const label = platform === 'apple' ? 'Apple Music' : platform.charAt(0).toUpperCase() + platform.slice(1);
+            return `<a href="${url}" class="btn card-link" target="_blank" rel="noopener noreferrer">${label} <i class="ext" aria-hidden="true">&#8599;</i></a>`;
         })
         .join('');
 }
@@ -323,21 +363,6 @@ function createMasteringCard(item) {
     return card;
 }
 
-/**
- * Update active navigation link based on current page
- */
-function updateActiveNav() {
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    const navLinks = document.querySelectorAll('.nav-link');
-    
-    navLinks.forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === currentPage) {
-            link.classList.add('active');
-        }
-    });
-}
-
 function initializePortfolioPage() {
     const portfolioContainer = document.getElementById('portfolio');
     const mixingContainer = document.getElementById('mixing');
@@ -358,7 +383,8 @@ function initializePortfolioPage() {
     document.dispatchEvent(new CustomEvent('steinbach:portfolio-ready'));
 }
 
+/* Marking the current page in the navigation is steinbach-ui.js's job now;
+   the .nav-link markup this file used to look for no longer exists. */
 document.addEventListener('DOMContentLoaded', function() {
-    updateActiveNav();
     initializePortfolioPage();
 });

@@ -1,9 +1,9 @@
 /**
- * Shared chrome for the reworked pages (index, mixing, mastering):
- * the collapsed navigation and the amplitude tick rail.
+ * Shared chrome for every page: the collapsed navigation, the sticky top
+ * bar and the amplitude tick rail.
  *
- * Loaded instead of the older navbar.js, which drives a different markup
- * (.nav-toggle / .nav-menu) still used by the pages under "More".
+ * Replaces the older navbar.js, which drove a different markup
+ * (.nav-toggle / .nav-menu) and is gone.
  */
 (function () {
   'use strict';
@@ -144,8 +144,8 @@
   /* ----------------------------------------------------------------------
      Current page marker
      ----------------------------------------------------------------------
-     portfolio.js does this for the old .nav-link markup; this covers the new
-     .nav-item markup so the pages do not each need a hand-set class.
+     Marks the .nav-item for the page you are on, so no page needs to carry
+     a hand-set class of its own.
      ---------------------------------------------------------------------- */
   function markCurrent() {
     var here = window.location.pathname.split('/').pop() || 'index.html';
