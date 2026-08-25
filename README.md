@@ -19,9 +19,13 @@ In production, both are bundled into one Docker image so the server only has to 
 - **Fender Rhodes** – Coming soon
 
 ### File Handoff Workflow
-- **Upload** (`upload.html`) – Client file submission
-- **Delivery** (`delivery.html`) – Engineer delivery to client
-- **Revision** (`revision.html`) – Revision request flow
+- **Upload** (`upload.html`) – client sends their files in
+- **Projects** (`admin.html`) – the studio's own list: every project, its
+  version, and whether a change is waiting. Password protected.
+- **Delivery** (`/d/<token>`) – rendered per delivery; the client downloads
+  there and asks for a change on the same page
+
+See `backend/README.md` for how it works and what has to be configured.
 
 ## Multisampler – Technical Overview
 
@@ -65,9 +69,8 @@ For production, the Docker image copies both parts into one Node runtime:
 ├── multisampler.html          # Instrument overview
 ├── orgel.html                 # Historic Organ showcase + interactive console
 ├── release-links.html         # Short branded release page generator
-├── upload.html                # Upload workflow
-├── delivery.html              # Delivery workflow
-├── revision.html              # Revision workflow
+├── upload.html                # Client file submission
+├── admin.html                 # Studio project list (password protected)
 ├── assets/
 │   ├── css/styles.css         # Global styling
 │   ├── js/
@@ -243,9 +246,8 @@ For production, the Docker image copies both parts into one Node runtime:
 ├── mixing.html                # Mixing portfolio
 ├── mastering.html             # Mastering with audio comparison
 ├── release-links.html         # Short branded release page generator
-├── upload.html                # Upload workflow page
-├── delivery.html              # Delivery workflow page
-├── revision.html              # Revision workflow page
+├── upload.html                # Client file submission
+├── admin.html                 # Studio project list (password protected)
 ├── assets/
 │   ├── css/styles.css         # Main styling
 │   ├── js/                    # Frontend behavior
@@ -586,18 +588,15 @@ docker compose -f docker-compose.runtime.yml pull
 docker compose -f docker-compose.runtime.yml up -d
 ```
 
-## Workflow Specs
+## File handoff
 
-Technical planning documents for the file handoff workflow live in:
-- `docs/openapi.yaml`
-- `docs/frontend-file-handoff-pages.md`
+Built and running. `backend/README.md` documents the flow, the routes and the
+environment it needs — Cloudflare R2 for storage, an admin password, and SMTP
+to reach clients.
 
-Implementation scaffolding now exists in:
-- `backend/migrations/001_init_file_handoff.sql`
-- `backend/`
-- `upload.html`
-- `delivery.html`
-- `revision.html`
+The planning documents that used to sit in `docs/` described a different
+design (a Postgres schema, an Uppy uploader, separate delivery and revision
+pages) and were removed rather than left to contradict the code.
 
 ## Static Contact Form Setup
 

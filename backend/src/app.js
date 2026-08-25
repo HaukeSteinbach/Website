@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
@@ -5,9 +6,11 @@ import morgan from 'morgan';
 import path from 'path';
 
 import { config } from './lib/config.js';
+import { checkStorage, isStorageConfigured } from './lib/storage.js';
 import { errorHandler, notFoundHandler } from './middleware/errors.js';
+import { isAdminConfigured } from './middleware/auth.js';
 import adminRoutes from './routes/admin.js';
-import publicRoutes from './routes/public.js';
+import publicRoutes, { deliveryPageHandler } from './routes/public.js';
 import releasePageRoutes from './routes/release-pages.js';
 
 const app = express();
@@ -18,6 +21,8 @@ const localPreviewOrigins = new Set([
   `http://localhost:${config.port}`,
   `http://127.0.0.1:${config.port}`
 ]);
+
+app.set('trust proxy', 1);
 
 app.use(helmet({
   referrerPolicy: {
@@ -49,10 +54,14 @@ app.use(helmet({
         'https://i.ytimg.com',
         'https://*.ytimg.com'
       ],
-      'media-src': ["'self'", 'blob:']
+      'media-src': ["'self'", 'blob:'],
+      /* Downloads are 302s to a signed R2 URL, so the browser has to be
+         allowed to follow them. */
+      'form-action': ["'self'"]
     }
   }
 }));
+
 app.use((request, response, next) => {
   const forwardedProtocol = request.get('x-forwarded-proto');
   const forwardedHost = request.get('x-forwarded-host');
@@ -79,16 +88,48 @@ app.use((request, response, next) => {
     credentials: true
   })(request, response, next);
 });
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 
-app.get('/health', (_request, response) => {
-  response.json({ ok: true, service: 'steinbach-file-handoff-backend' });
+/**
+ * Reports what is actually wired up, not just that the process is alive.
+ * A server with no bucket or no admin password still answers requests but
+ * cannot do its job, and that should be visible without reading logs.
+ */
+app.get('/health', async (_request, response) => {
+  const storage = await checkStorage();
+
+  response.status(storage.ok ? 200 : 503).json({
+    ok: storage.ok,
+    service: 'steinbach-file-handoff-backend',
+    storage,
+    admin: isAdminConfigured() ? 'configured' : 'not_configured'
+  });
 });
 
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/admin', adminRoutes);
+
+/* The customer-facing delivery page, kept short because it is pasted into
+   emails and read aloud on the phone. */
+app.get('/d/:token', ...deliveryPageHandler);
+
+/* Retired pages. Sending files is a step inside a project now, and a revision
+   is asked for on the delivery page itself, so these three have no content of
+   their own left. They stay as redirects because they were bookmarked. */
+const RETIRED = {
+  '/send-files.html': '/admin.html',
+  '/delivery.html': '/admin.html',
+  '/revision.html': '/contact.html'
+};
+
+Object.entries(RETIRED).forEach(([from, to]) => {
+  app.get(from, (_request, response) => response.redirect(301, to));
+});
+
 app.use(releasePageRoutes);
 app.use(express.static(config.publicDir, { index: 'index.html' }));
 
@@ -98,5 +139,15 @@ app.get('/', (_request, response) => {
 
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+/* One line at boot beats discovering a missing bucket when the first customer
+   upload fails halfway through. */
+if (!isStorageConfigured()) {
+  console.warn('[storage] No bucket configured — file transfer is disabled. Set S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_KEY.');
+}
+
+if (!isAdminConfigured()) {
+  console.warn('[admin] No admin password configured — the admin area is locked. Set ADMIN_PASSWORD_HASH and SESSION_SECRET.');
+}
 
 export default app;

@@ -1,243 +1,169 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('upload-job-form');
-    const fileInput = document.getElementById('project-files');
-    const selectFilesButton = document.getElementById('select-files-button');
-    const fileList = document.getElementById('upload-file-list');
-    const status = document.getElementById('upload-status');
-    const successPanel = document.getElementById('upload-success-panel');
-    const summaryList = document.getElementById('upload-summary-list');
-    const submitButton = form ? form.querySelector('button[type="submit"]') : null;
-    const originalButtonText = submitButton ? submitButton.textContent : '';
+/**
+ * The customer upload on upload.html.
+ *
+ * One request now: details and files go together, and the server answers with
+ * the reference. The old flow needed three — create a job, upload to a second
+ * endpoint, then call a third to finalise — and a connection that dropped
+ * between any two of them left a half-made job nobody ever saw.
+ */
+(function () {
+  'use strict';
 
-    if (!form || !fileInput || !selectFilesButton || !fileList || !status || !successPanel || !summaryList) {
-        return;
+  var form = document.getElementById('upload-job-form');
+  if (!form) return;
+
+  var status = document.getElementById('upload-status');
+  var successPanel = document.getElementById('upload-success-panel');
+  var summaryList = document.getElementById('upload-summary-list');
+  var fileInput = document.getElementById('project-files');
+  var fileList = document.getElementById('upload-file-list');
+  var dropzone = document.getElementById('upload-dropzone');
+  var selectButton = document.getElementById('select-files-button');
+  var submitButton = form.querySelector('button[type="submit"]');
+
+  /* Held here rather than read off the input, so drag-and-drop and the file
+     picker can both add to the same set. */
+  var selected = [];
+
+  /* ---------------------------------------------------------------- files */
+
+  function refreshFileList() {
+    if (!fileList) return;
+
+    if (!selected.length) {
+      fileList.innerHTML = '';
+      return;
     }
 
-    selectFilesButton.addEventListener('click', function() {
-        fileInput.click();
+    fileList.innerHTML = selected.map(function (file, index) {
+      return '<li><div><span class="delivery-file-name">' + escapeHtml(file.name) + '</span>' +
+        '<span class="delivery-file-size mono">' + formatBytes(file.size) + '</span></div>' +
+        '<button type="button" class="btn btn-secondary upload-remove" data-index="' + index + '">Remove</button></li>';
+    }).join('');
+
+    Array.prototype.forEach.call(fileList.querySelectorAll('.upload-remove'), function (button) {
+      button.addEventListener('click', function () {
+        selected.splice(Number(button.dataset.index), 1);
+        refreshFileList();
+      });
+    });
+  }
+
+  function addFiles(files) {
+    Array.prototype.forEach.call(files, function (file) {
+      var duplicate = selected.some(function (entry) {
+        return entry.name === file.name && entry.size === file.size;
+      });
+
+      if (!duplicate) selected.push(file);
     });
 
-    fileInput.addEventListener('change', function() {
-        renderFiles(fileInput.files, fileList);
-    });
+    refreshFileList();
+  }
 
-    form.addEventListener('submit', async function(event) {
+  if (selectButton && fileInput) {
+    selectButton.addEventListener('click', function () { fileInput.click(); });
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', function () {
+      addFiles(fileInput.files);
+      fileInput.value = '';
+    });
+  }
+
+  if (dropzone) {
+    ['dragenter', 'dragover'].forEach(function (name) {
+      dropzone.addEventListener(name, function (event) {
         event.preventDefault();
-
-        if (!fileInput.files || fileInput.files.length === 0) {
-            status.textContent = 'Select at least one file before creating an upload job.';
-            status.className = 'handoff-status is-visible error';
-            return;
-        }
-
-        const formData = new FormData(form);
-        const payload = {
-            firstName: formData.get('firstName'),
-            lastName: formData.get('lastName'),
-            email: formData.get('email'),
-            address: {
-                street1: formData.get('street1'),
-                street2: formData.get('street2'),
-                postalCode: formData.get('postalCode'),
-                city: formData.get('city'),
-                region: formData.get('region'),
-                country: String(formData.get('country') || '').toUpperCase()
-            },
-            service: formData.get('service'),
-            projectNotes: formData.get('projectNotes'),
-            privacyConsent: formData.get('privacyConsent') === 'on',
-            policyVersion: '2026-03-26',
-            captchaToken: 'demo-turnstile-token'
-        };
-
-        status.textContent = 'Preparing your upload...';
-        status.className = 'handoff-status is-visible';
-
-        if (submitButton) {
-            submitButton.disabled = true;
-            submitButton.textContent = 'Uploading...';
-        }
-
-        try {
-            const response = await fetch(buildApiUrl('/api/v1/public/jobs'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                throw new Error(await getApiErrorMessage(response, 'Unable to create upload job.'));
-            }
-
-            const result = await response.json();
-
-            if (!hasConfiguredUploadEndpoint(result)) {
-                throw new Error('Your upload could not be prepared correctly. Please try again.');
-            }
-
-            status.textContent = 'Uploading files...';
-
-            const uploadResponse = await uploadSelectedFiles(resolveUploadUrl(result.upload.endpoint), fileInput.files);
-
-            status.textContent = 'Finishing up...';
-
-            const completionResponse = await finalizeUpload(result.jobId, uploadResponse.uploadedFiles);
-
-            status.textContent = buildUploadSuccessMessage(completionResponse);
-            status.className = 'handoff-status is-visible success';
-
-            successPanel.hidden = false;
-            summaryList.innerHTML = [
-                `<div><dt>Reference</dt><dd>${completionResponse.reference}</dd></div>`,
-                `<div><dt>Files</dt><dd>${uploadResponse.uploadedFiles.length}</dd></div>`,
-                `<div><dt>Service</dt><dd>${capitalizeLabel(payload.service)}</dd></div>`,
-                `<div><dt>Status</dt><dd>Received</dd></div>`
-            ].join('');
-        } catch (error) {
-            status.textContent = getUploadErrorMessage(error);
-            status.className = 'handoff-status is-visible error';
-        } finally {
-            if (submitButton) {
-                submitButton.disabled = false;
-                submitButton.textContent = originalButtonText;
-            }
-        }
-    });
-});
-
-function renderFiles(files, container) {
-    container.innerHTML = '';
-
-    Array.from(files).forEach(function(file) {
-        const item = document.createElement('li');
-        item.className = 'upload-file-row';
-        item.innerHTML = `<span>${file.name}</span><span>${formatBytes(file.size)}</span>`;
-        container.appendChild(item);
-    });
-}
-
-function formatBytes(size) {
-    if (size < 1024) {
-        return `${size} B`;
-    }
-
-    const units = ['KB', 'MB', 'GB', 'TB'];
-    let value = size / 1024;
-    let unitIndex = 0;
-
-    while (value >= 1024 && unitIndex < units.length - 1) {
-        value /= 1024;
-        unitIndex += 1;
-    }
-
-    return `${value.toFixed(1)} ${units[unitIndex]}`;
-}
-
-function buildApiUrl(path) {
-    const base = getApiBaseUrl();
-
-    return `${base}${path}`;
-}
-
-function getApiBaseUrl() {
-    const configuredBase = document.body.dataset.apiBase;
-
-    if (configuredBase) {
-        return configuredBase.replace(/\/$/, '');
-    }
-
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return 'http://localhost:3000';
-    }
-
-    return window.location.origin;
-}
-
-function hasConfiguredUploadEndpoint(result) {
-    const endpoint = result?.upload?.endpoint;
-
-    return Boolean(endpoint) && !String(endpoint).includes('yourdomain.com');
-}
-
-function resolveUploadUrl(endpoint) {
-    if (/^https?:\/\//i.test(endpoint)) {
-        return endpoint;
-    }
-
-    return buildApiUrl(endpoint.startsWith('/') ? endpoint : `/${endpoint}`);
-}
-
-async function uploadSelectedFiles(endpoint, files) {
-    const payload = new FormData();
-
-    Array.from(files).forEach(function(file) {
-        payload.append('files', file);
+        dropzone.classList.add('is-dragover');
+      });
     });
 
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        body: payload,
-        headers: {
-            'Accept': 'application/json'
-        }
+    ['dragleave', 'drop'].forEach(function (name) {
+      dropzone.addEventListener(name, function (event) {
+        event.preventDefault();
+        dropzone.classList.remove('is-dragover');
+      });
     });
 
-    if (!response.ok) {
-        throw new Error(await getApiErrorMessage(response, 'Unable to upload files.'));
-    }
-
-    return response.json();
-}
-
-async function finalizeUpload(jobId, uploadedFiles) {
-    const response = await fetch(buildApiUrl(`/api/v1/public/jobs/${jobId}/uploads/complete`), {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({ uploadedFiles: uploadedFiles })
+    dropzone.addEventListener('drop', function (event) {
+      if (event.dataTransfer && event.dataTransfer.files) addFiles(event.dataTransfer.files);
     });
+  }
 
-    if (!response.ok) {
-        throw new Error(await getApiErrorMessage(response, 'Unable to finalize the upload.'));
+  /* --------------------------------------------------------------- submit */
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    if (!selected.length) {
+      setStatus('Add at least one file before sending.', 'error');
+      return;
     }
 
-    return response.json();
-}
+    var payload = new FormData(form);
+    payload.delete('files');
+    selected.forEach(function (file) { payload.append('files', file); });
 
-async function getApiErrorMessage(response, fallbackMessage) {
-    const contentType = response.headers.get('content-type') || '';
+    submitButton.disabled = true;
+    setStatus('Uploading ' + selected.length + ' file' + (selected.length === 1 ? '' : 's') +
+      '. Keep this tab open — large files take a while.');
 
-    if (!contentType.includes('application/json')) {
-        return fallbackMessage;
+    fetch('/api/v1/public/projects', { method: 'POST', body: payload })
+      .then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (data) {
+          if (!response.ok) throw new Error(data.message || 'The upload did not go through.');
+          return data;
+        });
+      })
+      .then(function (data) {
+        setStatus('');
+        showSuccess(data);
+      })
+      .catch(function (error) {
+        submitButton.disabled = false;
+        setStatus(error.message + ' Nothing was saved — you can try again.', 'error');
+      });
+  });
+
+  function showSuccess(data) {
+    form.hidden = true;
+
+    if (summaryList) {
+      summaryList.innerHTML =
+        '<div><dt>Reference</dt><dd>' + escapeHtml(data.reference) + '</dd></div>' +
+        '<div><dt>Files</dt><dd>' + (data.files || []).length + '</dd></div>' +
+        '<div><dt>Total size</dt><dd>' + formatBytes(data.totalSize) + '</dd></div>';
     }
 
-    const result = await response.json();
-    return result.message || fallbackMessage;
-}
-
-function getUploadErrorMessage(error) {
-    if (error && error.message === 'Failed to fetch') {
-        return 'The upload is not available right now. Please try again in a moment.';
+    if (successPanel) {
+      successPanel.hidden = false;
+      successPanel.scrollIntoView({ block: 'start' });
     }
+  }
 
-    return error && error.message ? error.message : 'Upload failed. Please try again.';
-}
+  /* --------------------------------------------------------------- helpers */
 
-function buildUploadSuccessMessage(completionResponse) {
-    return `Files uploaded successfully. Reference ${completionResponse.reference}.`;
-}
+  function setStatus(text, kind) {
+    if (!status) return;
+    status.textContent = text || '';
+    status.className = 'handoff-status' + (text ? ' is-visible' : '') + (kind ? ' ' + kind : '');
+  }
 
-function capitalizeLabel(value) {
-    const label = String(value || '');
+  function formatBytes(size) {
+    if (!size) return '0 B';
+    if (size < 1024) return size + ' B';
+    var units = ['KB', 'MB', 'GB', 'TB'];
+    var value = size / 1024;
+    var unit = 0;
+    while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit += 1; }
+    return value.toFixed(1) + ' ' + units[unit];
+  }
 
-    if (!label) {
-        return 'Not specified';
-    }
-
-    return label.charAt(0).toUpperCase() + label.slice(1);
-}
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+})();

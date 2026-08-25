@@ -1,168 +1,401 @@
+/**
+ * Admin API.
+ *
+ * Every route here used to answer with the same invented record — "Anna Meyer",
+ * SB-2026-000123 — behind a header check anyone could pass. It is now the real
+ * thing, over the project store, behind a real password.
+ */
+
 import { randomUUID } from 'node:crypto';
+
 import express from 'express';
 
-import { requireAdmin } from '../middleware/auth.js';
-import { ok } from '../lib/http.js';
+import { config } from '../lib/config.js';
+import { fail, ok } from '../lib/http.js';
+import {
+  sendDeliveryEmail,
+  sendRevisionAcknowledgementEmail
+} from '../lib/mail.js';
+import {
+  addEvent,
+  createProject,
+  getProject,
+  listProjects,
+  ProjectError,
+  SERVICES,
+  updateProject
+} from '../lib/projects.js';
+import { getDownloadUrl, isStorageConfigured } from '../lib/storage.js';
+import {
+  deliveryUpload,
+  describeUploadError,
+  discardFiles,
+  toStoredFiles
+} from '../lib/upload.js';
+import {
+  clearFailedLogins,
+  clearSession,
+  isAdminConfigured,
+  issueSession,
+  loginBlocked,
+  noteFailedLogin,
+  requireAdmin,
+  verifyPassword
+} from '../middleware/auth.js';
 
 const router = express.Router();
 
+function clientIp(request) {
+  const forwarded = request.get('x-forwarded-for');
+  return forwarded ? forwarded.split(',')[0].trim() : request.ip;
+}
+
+function isSecureRequest(request) {
+  const proto = request.get('x-forwarded-proto');
+  return proto ? proto.split(',')[0].trim() === 'https' : request.secure;
+}
+
+/* --------------------------------------------------------------------------
+   Session
+   -------------------------------------------------------------------------- */
+
 router.post('/auth/login', (request, response) => {
-  ok(response, {
-    ok: true,
-    admin: {
-      id: randomUUID(),
-      email: request.body.email || 'admin@yourdomain.com',
-      role: 'admin'
+  if (!isAdminConfigured()) {
+    return fail(response, 503, 'admin_not_configured',
+      'The admin area is not set up on this server yet.');
+  }
+
+  const ip = clientIp(request);
+
+  if (loginBlocked(ip)) {
+    return fail(response, 429, 'too_many_attempts',
+      'Too many failed attempts. Try again in 15 minutes.');
+  }
+
+  if (!verifyPassword(request.body?.password || '', config.adminPasswordHash)) {
+    noteFailedLogin(ip);
+    return fail(response, 401, 'invalid_password', 'That password does not match.');
+  }
+
+  clearFailedLogins(ip);
+  issueSession(response, isSecureRequest(request));
+
+  return ok(response, { ok: true });
+});
+
+router.post('/auth/logout', (_request, response) => {
+  clearSession(response);
+  return ok(response, { ok: true });
+});
+
+router.get('/auth/me', requireAdmin, (_request, response) => ok(response, { ok: true }));
+
+/* --------------------------------------------------------------------------
+   Projects
+   -------------------------------------------------------------------------- */
+
+router.get('/projects', requireAdmin, async (_request, response, next) => {
+  try {
+    const projects = await listProjects();
+
+    return ok(response, {
+      projects: projects.map(toListEntry),
+      counts: {
+        total: projects.length,
+        open: projects.filter((p) => p.status !== 'done').length,
+        awaitingRevision: projects.filter((p) => p.status === 'revision_requested').length
+      }
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/projects/:id', requireAdmin, async (request, response, next) => {
+  try {
+    const project = await getProject(request.params.id);
+
+    if (!project) {
+      return fail(response, 404, 'not_found', 'Project not found.');
+    }
+
+    return ok(response, { project: toDetail(project) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/** Start a project without a customer upload — the common case for a one-off delivery. */
+router.post('/projects', requireAdmin, async (request, response, next) => {
+  try {
+    const clientEmail = String(request.body?.clientEmail || '').trim();
+
+    if (!isValidEmail(clientEmail)) {
+      return fail(response, 422, 'validation_error', 'A valid client email address is required.');
+    }
+
+    const project = await createProject({
+      title: request.body?.title,
+      service: request.body?.service,
+      clientName: request.body?.clientName,
+      clientEmail,
+      notes: request.body?.notes,
+      origin: 'admin'
+    });
+
+    await updateProject(project.id, (draft) => {
+      addEvent(draft, 'project_created', { by: 'admin' });
+    });
+
+    return ok(response, { project: toDetail(project) }, 201);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/projects/:id/close', requireAdmin, async (request, response, next) => {
+  try {
+    const closed = request.body?.closed !== false;
+    const { project } = await updateProject(request.params.id, (draft) => {
+      draft.closed = closed;
+      addEvent(draft, closed ? 'project_closed' : 'project_reopened');
+    });
+
+    return ok(response, { project: toDetail(project) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/* --------------------------------------------------------------------------
+   Deliveries
+   -------------------------------------------------------------------------- */
+
+/**
+ * Upload the finished files and send the customer their link, in one request.
+ *
+ * This is the whole of "send files" now: pick the project, drop the files,
+ * write a note, send. There is no separate step that has to be remembered
+ * afterwards, because forgetting it was how a delivery used to sit on the
+ * server with nobody told about it.
+ */
+router.post('/projects/:id/deliveries', requireAdmin, (request, response, next) => {
+  if (!isStorageConfigured()) {
+    return fail(response, 503, 'storage_not_configured', 'Object storage is not set up on this server.');
+  }
+
+  const upload = deliveryUpload(() => request.params.id).array('files');
+
+  upload(request, response, async (uploadError) => {
+    if (uploadError) {
+      const described = describeUploadError(uploadError);
+      return fail(response, described.status, described.code, described.message);
+    }
+
+    const files = Array.isArray(request.files) ? request.files : [];
+
+    try {
+      if (!files.length) {
+        return fail(response, 422, 'validation_error', 'Add at least one file to send.');
+      }
+
+      const project = await getProject(request.params.id);
+
+      if (!project) {
+        await discardFiles(files);
+        return fail(response, 404, 'not_found', 'Project not found.');
+      }
+
+      const token = randomToken();
+      const expiresAt = new Date(Date.now() + config.sourceDownloadLinkTtlHours * 3600 * 1000).toISOString();
+      const note = String(request.body?.note || '').trim();
+
+      const { project: updated, result } = await updateProject(project.id, (draft) => {
+        const version = (draft.deliveries || []).length + 1;
+        const delivery = {
+          id: randomToken(),
+          version,
+          note,
+          token,
+          files: toStoredFiles(files),
+          sentAt: new Date().toISOString(),
+          expiresAt,
+          firstDownloadedAt: null,
+          downloadCount: 0
+        };
+
+        draft.deliveries = draft.deliveries || [];
+        draft.deliveries.push(delivery);
+        addEvent(draft, 'delivered', { version, files: delivery.files.length });
+
+        return delivery;
+      });
+
+      const pageUrl = deliveryUrl(token);
+      const mail = await sendDeliveryEmail({ project: updated, delivery: result, pageUrl });
+
+      return ok(response, {
+        project: toDetail(updated),
+        delivery: { version: result.version, pageUrl, expiresAt },
+        notification: mail
+      }, 201);
+    } catch (error) {
+      await discardFiles(files);
+      return next(error);
     }
   });
 });
 
-router.get('/auth/me', requireAdmin, (_request, response) => {
-  ok(response, {
-    id: randomUUID(),
-    email: 'admin@yourdomain.com',
-    role: 'admin'
-  });
-});
+/** Send the same delivery link again, unchanged. */
+router.post('/projects/:id/deliveries/:deliveryId/resend', requireAdmin, async (request, response, next) => {
+  try {
+    const project = await getProject(request.params.id);
 
-router.post('/auth/logout', requireAdmin, (_request, response) => {
-  ok(response, { ok: true });
-});
-
-router.get('/jobs', requireAdmin, (_request, response) => {
-  ok(response, {
-    items: [
-      {
-        id: randomUUID(),
-        reference: 'SB-2026-000123',
-        clientName: 'Anna Meyer',
-        email: 'anna@example.com',
-        service: 'mastering',
-        status: 'uploaded',
-        createdAt: '2026-03-26T10:00:00Z',
-        uploadCompletedAt: '2026-03-26T10:15:00Z'
-      }
-    ],
-    page: 1,
-    pageSize: 20,
-    total: 1
-  });
-});
-
-router.get('/jobs/:jobId', requireAdmin, (request, response) => {
-  ok(response, {
-    id: request.params.jobId,
-    reference: 'SB-2026-000123',
-    status: 'uploaded',
-    service: 'mastering',
-    client: {
-      firstName: 'Anna',
-      lastName: 'Meyer',
-      email: 'anna@example.com',
-      address: {
-        street1: 'Example Street 1',
-        street2: '',
-        postalCode: '20095',
-        city: 'Hamburg',
-        region: '',
-        country: 'DE'
-      }
-    },
-    projectNotes: '2-track EP, reference included.',
-    sourceFiles: [
-      {
-        id: randomUUID(),
-        name: 'mixdown.wav',
-        sizeBytes: 812345678,
-        uploadedAt: '2026-03-26T10:10:00Z'
-      }
-    ],
-    deliveries: [],
-    revisions: [],
-    events: [
-      {
-        type: 'uploaded',
-        actorType: 'client',
-        actorId: null,
-        metadata: {},
-        createdAt: '2026-03-26T10:16:00Z'
-      }
-    ]
-  });
-});
-
-router.post('/jobs/:jobId/source-download', requireAdmin, (_request, response) => {
-  ok(response, {
-    ok: true,
-    eventsTriggered: ['admin_downloaded', 'in_progress_sent'],
-    download: {
-      mode: 'signed-url',
-      expiresInSeconds: 900,
-      urls: [
-        {
-          fileId: randomUUID(),
-          fileName: 'mixdown.wav',
-          url: 'https://storage.example.com/source-download'
-        }
-      ]
+    if (!project) {
+      return fail(response, 404, 'not_found', 'Project not found.');
     }
-  });
-});
 
-router.post('/jobs/:jobId/deliveries', requireAdmin, (_request, response) => {
-  ok(response, {
-    ok: true,
-    delivery: {
-      id: randomUUID(),
-      version: 1,
-      expiresAt: '2026-04-26T12:00:00Z',
-      event: 'delivered'
-    },
-    clientAccess: {
-      deliveryUrl: 'https://app.yourdomain.com/delivery/demo-token'
+    const delivery = (project.deliveries || []).find((entry) => entry.id === request.params.deliveryId);
+
+    if (!delivery) {
+      return fail(response, 404, 'not_found', 'Delivery not found.');
     }
-  }, 201);
+
+    const mail = await sendDeliveryEmail({
+      project,
+      delivery,
+      pageUrl: deliveryUrl(delivery.token)
+    });
+
+    await updateProject(project.id, (draft) => {
+      addEvent(draft, 'delivery_resent', { version: delivery.version });
+    });
+
+    return ok(response, { notification: mail });
+  } catch (error) {
+    return next(error);
+  }
 });
 
-router.post('/deliveries/:deliveryId/resend', requireAdmin, (_request, response) => {
-  ok(response, { ok: true });
+/* --------------------------------------------------------------------------
+   Files and revisions
+   -------------------------------------------------------------------------- */
+
+/** A short-lived direct link, so a multi-gigabyte download bypasses this server. */
+router.get('/projects/:id/files/:fileId', requireAdmin, async (request, response, next) => {
+  try {
+    const project = await getProject(request.params.id);
+
+    if (!project) {
+      return fail(response, 404, 'not_found', 'Project not found.');
+    }
+
+    const file = allFiles(project).find((entry) => entry.id === request.params.fileId);
+
+    if (!file) {
+      return fail(response, 404, 'not_found', 'File not found.');
+    }
+
+    return ok(response, { url: await getDownloadUrl(file.key, file.name), name: file.name });
+  } catch (error) {
+    return next(error);
+  }
 });
 
-router.post('/deliveries/:deliveryId/regenerate-link', requireAdmin, (_request, response) => {
-  ok(response, {
-    ok: true,
-    deliveryUrl: 'https://app.yourdomain.com/delivery/regenerated-token',
-    expiresAt: '2026-04-26T12:00:00Z'
-  });
+/** Acknowledge a revision request, so the customer knows it arrived. */
+router.post('/projects/:id/revisions/:revisionId/acknowledge', requireAdmin, async (request, response, next) => {
+  try {
+    const project = await getProject(request.params.id);
+
+    if (!project) {
+      return fail(response, 404, 'not_found', 'Project not found.');
+    }
+
+    const revision = (project.revisions || []).find((entry) => entry.id === request.params.revisionId);
+
+    if (!revision) {
+      return fail(response, 404, 'not_found', 'Revision not found.');
+    }
+
+    const mail = await sendRevisionAcknowledgementEmail({ project, revision });
+
+    await updateProject(project.id, (draft) => {
+      const target = (draft.revisions || []).find((entry) => entry.id === request.params.revisionId);
+      if (target) target.acknowledgedAt = new Date().toISOString();
+      addEvent(draft, 'revision_acknowledged');
+    });
+
+    return ok(response, { notification: mail });
+  } catch (error) {
+    return next(error);
+  }
 });
 
-router.post('/jobs/:jobId/expire', requireAdmin, (_request, response) => {
-  ok(response, {
-    ok: true,
-    status: 'expired_deleted',
-    event: 'expired_deleted'
-  });
-});
+/* --------------------------------------------------------------------------
+   Shaping
+   -------------------------------------------------------------------------- */
 
-router.get('/jobs/:jobId/events', requireAdmin, (_request, response) => {
-  ok(response, {
-    items: [
-      {
-        type: 'uploaded',
-        actorType: 'client',
-        actorId: null,
-        metadata: {},
-        createdAt: '2026-03-26T10:16:00Z'
-      },
-      {
-        type: 'admin_downloaded',
-        actorType: 'admin',
-        actorId: 'demo-admin',
-        metadata: { downloadMode: 'signed-url' },
-        createdAt: '2026-03-26T12:00:00Z'
-      }
-    ]
-  });
-});
+function toListEntry(project) {
+  return {
+    id: project.id,
+    reference: project.reference,
+    title: project.title,
+    service: project.service,
+    client: project.client,
+    status: project.status,
+    currentVersion: project.currentVersion,
+    revisionCount: project.revisionCount,
+    openRevisionCount: project.openRevisionCount,
+    downloaded: project.downloaded,
+    sourceFileCount: (project.sourceFiles || []).length,
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt,
+    lastDeliveryAt: project.lastDeliveryAt
+  };
+}
 
+function toDetail(project) {
+  return {
+    ...toListEntry(project),
+    notes: project.notes,
+    origin: project.origin,
+    closed: project.closed,
+    sourceFiles: project.sourceFiles || [],
+    deliveries: (project.deliveries || []).map((delivery) => ({
+      id: delivery.id,
+      version: delivery.version,
+      note: delivery.note,
+      files: delivery.files,
+      sentAt: delivery.sentAt,
+      expiresAt: delivery.expiresAt,
+      firstDownloadedAt: delivery.firstDownloadedAt,
+      downloadCount: delivery.downloadCount,
+      pageUrl: deliveryUrl(delivery.token)
+    })),
+    revisions: project.revisions || [],
+    events: project.events || []
+  };
+}
+
+function allFiles(project) {
+  return [
+    ...(project.sourceFiles || []),
+    ...(project.deliveries || []).flatMap((delivery) => delivery.files || []),
+    ...(project.revisions || []).flatMap((revision) => revision.files || [])
+  ];
+}
+
+export function deliveryUrl(token) {
+  return `${config.appOrigin.replace(/\/$/, '')}/d/${token}`;
+}
+
+function randomToken() {
+  return randomUUID().replace(/-/g, '');
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ''));
+}
+
+export { ProjectError, SERVICES };
 export default router;

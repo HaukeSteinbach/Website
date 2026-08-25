@@ -6,7 +6,10 @@
 !*.html
 !backend/
 !backend/package.json
+!backend/package-lock.json
 !backend/src/
 !backend/src/**
+!backend/scripts/
+!backend/scripts/**
 !robots.txt
 !sitemap.xml

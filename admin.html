@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects | Steinbach</title>
+    <meta name="robots" content="noindex,nofollow">
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <link rel="stylesheet" href="assets/css/steinbach.css">
+    <link rel="preload" href="assets/fonts/archivo-black-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/jetbrains-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body>
+
+<div class="wrap">
+
+    <header class="bar">
+        <a class="mark" href="index.html">Steinbach</a>
+        <nav class="nav" id="nav">
+            <button type="button" class="nav-item admin-signout" id="sign-out" hidden>Sign out</button>
+        </nav>
+    </header>
+
+    <!-- ===================== SIGN IN ===================== -->
+    <section id="signin-view" hidden>
+        <header class="page-head">
+            <p class="kicker">Internal</p>
+            <h1>Projects</h1>
+            <p class="page-deck">Everything that came in and everything that went out, in one list.</p>
+            <div class="page-head-rule" aria-hidden="true"></div>
+        </header>
+
+        <main class="handoff-layout">
+            <section class="handoff-card admin-signin">
+                <form class="handoff-form" id="signin-form">
+                    <div class="handoff-fieldset">
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" autocomplete="current-password" required autofocus>
+                        </div>
+                    </div>
+                    <div class="handoff-actions">
+                        <button type="submit" class="btn fill" id="signin-submit">Sign in</button>
+                    </div>
+                    <div class="handoff-status" id="signin-status" role="status" aria-live="polite"></div>
+                </form>
+            </section>
+        </main>
+    </section>
+
+    <!-- ===================== PROJECT LIST ===================== -->
+    <section id="list-view" hidden>
+        <header class="page-head admin-head">
+            <p class="kicker">Internal</p>
+            <h1>Projects</h1>
+            <dl class="admin-counts" id="counts"></dl>
+            <div class="btn-row">
+                <button type="button" class="btn fill" id="new-project">New project</button>
+                <button type="button" class="btn" id="refresh">Refresh</button>
+            </div>
+            <div class="page-head-rule" aria-hidden="true"></div>
+        </header>
+
+        <main>
+            <!-- New project, folded away until needed -->
+            <section class="handoff-card admin-new" id="new-project-card" hidden>
+                <h2>New project</h2>
+                <p>For a delivery to someone who has not uploaded anything — a one-off master, an invoice, a file for a label.</p>
+                <form class="handoff-form" id="new-project-form">
+                    <div class="handoff-fieldset handoff-grid-two">
+                        <div class="form-group">
+                            <label for="np-client">Client name</label>
+                            <input type="text" id="np-client" name="clientName">
+                        </div>
+                        <div class="form-group">
+                            <label for="np-email">Client email</label>
+                            <input type="email" id="np-email" name="clientEmail" required>
+                        </div>
+                    </div>
+                    <div class="handoff-fieldset handoff-grid-two">
+                        <div class="form-group">
+                            <label for="np-title">Project title</label>
+                            <input type="text" id="np-title" name="title" placeholder="EP masters">
+                        </div>
+                        <div class="form-group">
+                            <label for="np-service">Service</label>
+                            <select id="np-service" name="service">
+                                <option value="mastering">Mastering</option>
+                                <option value="mixing">Mixing</option>
+                                <option value="production">Production</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="handoff-actions">
+                        <button type="submit" class="btn fill">Create</button>
+                        <button type="button" class="btn btn-secondary" id="new-project-cancel">Cancel</button>
+                    </div>
+                    <div class="handoff-status" id="new-project-status" role="status" aria-live="polite"></div>
+                </form>
+            </section>
+
+            <div class="admin-table-wrap">
+                <table class="admin-table" id="projects">
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Client</th>
+                            <th>Project</th>
+                            <th>Service</th>
+                            <th class="num">Version</th>
+                            <th>Status</th>
+                            <th>Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projects-body"></tbody>
+                </table>
+            </div>
+            <p class="admin-empty" id="list-empty" hidden>Nothing here yet. A client upload appears automatically; use <strong>New project</strong> to send something out on its own.</p>
+            <div class="handoff-status" id="list-status" role="status" aria-live="polite"></div>
+        </main>
+    </section>
+
+    <!-- ===================== PROJECT DETAIL ===================== -->
+    <section id="detail-view" hidden>
+        <header class="page-head admin-head">
+            <button type="button" class="admin-back" id="back">&larr; All projects</button>
+            <p class="kicker" id="detail-reference"></p>
+            <h1 id="detail-title"></h1>
+            <p class="page-deck" id="detail-client"></p>
+            <div class="page-head-rule" aria-hidden="true"></div>
+        </header>
+
+        <main class="handoff-layout" id="detail-body"></main>
+    </section>
+
+</div>
+
+<script src="assets/js/steinbach-ui.js"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>

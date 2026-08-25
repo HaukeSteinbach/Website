@@ -28,6 +28,7 @@
     17  Product pages
     18  IR Maker tool
     22  Historic organ
+    23  Delivery page + admin
     19  Responsive
    ========================================================================== */
 
@@ -3022,6 +3023,222 @@ fieldset.form-group > legend {
   background: var(--hair);
 }
 .organ-gallery .shot { aspect-ratio: 4 / 3; }
+
+
+/* ==========================================================================
+   23  DELIVERY PAGE + ADMIN
+   --------------------------------------------------------------------------
+   Two internal surfaces. The delivery page is rendered by the backend under
+   /d/<token>; the admin area is admin.html driven by assets/js/admin.js.
+
+   These are read and operated rather than read through, so the type comes
+   down and the density goes up. The poster scale stays on the page heading
+   and nowhere else.
+   ========================================================================== */
+
+/* --- file rows, shared by the delivery page and the admin detail --- */
+.delivery-files { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: 1px; background: var(--hair); }
+.delivery-files > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.1rem;
+  background: var(--panel);
+}
+.delivery-file-name { display: block; color: var(--grey); word-break: break-word; }
+.delivery-file-size { display: block; margin-top: 0.25rem; font-size: 0.6875rem; color: var(--grey-3); }
+.delivery-hint { margin-top: 1rem; font-size: 0.6875rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey-3); }
+
+/* --- admin chrome --- */
+/* .nav-item sets display:inline-flex, which outranks the hidden attribute and
+   left "Sign out" showing on the sign-in screen. */
+.admin-signout[hidden] { display: none; }
+
+.admin-signout {
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  color: var(--grey-2);
+}
+.admin-signout:hover { color: var(--accent); }
+
+.admin-back {
+  /* a grid item stretches by default, which centred the label */
+  justify-self: start;
+  text-align: left;
+  margin-bottom: 1.5rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.admin-back:hover { color: var(--accent); }
+
+.admin-signin { max-width: 26rem; }
+
+/* A project name is someone else's text and can run long. At the poster scale
+   the page heading normally uses, "Jette Julia — Two Songs" filled three lines
+   and most of the screen before a single fact about the project appeared. This
+   view is worked in, not read into, so the name comes down to a size that
+   leaves the content above the fold. */
+#detail-view .page-head h1 {
+  font-size: clamp(1.5rem, 3.4vw, 2.6rem);
+  line-height: 1.05;
+  max-width: 24ch;
+}
+
+/* the three numbers that say whether anything needs doing */
+.admin-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  margin: 1.75rem 0 0;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+}
+.admin-counts > div { flex: 1 1 6rem; padding: 0.9rem 1.1rem; background: var(--black); }
+.admin-counts dt {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.admin-counts dd {
+  margin: 0.3rem 0 0;
+  font-family: var(--fat);
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--grey);
+  font-variant-numeric: tabular-nums;
+}
+.admin-counts dd.is-alert { color: var(--accent); }
+
+/* --- the project list --- */
+.admin-table-wrap { overflow-x: auto; margin-top: clamp(1.75rem, 4vh, 2.75rem); }
+.admin-table { width: 100%; min-width: 46rem; border-collapse: collapse; }
+.admin-table th {
+  text-align: left;
+  padding: 0 1rem 0.7rem 0;
+  border-bottom: 2px solid var(--hair);
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+  white-space: nowrap;
+}
+.admin-table td {
+  padding: 0.95rem 1rem 0.95rem 0;
+  border-bottom: 1px solid var(--hair);
+  color: var(--grey-2);
+  font-size: 0.9375rem;
+  vertical-align: middle;
+}
+.admin-table td.num, .admin-table th.num { text-align: right; padding-right: 1.5rem; font-variant-numeric: tabular-nums; }
+.admin-table tbody tr { cursor: pointer; transition: background-color 0.12s ease; }
+.admin-table tbody tr:hover td { background: var(--panel); color: var(--grey); }
+.admin-table tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.admin-chip {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--grey-3);
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-2);
+  white-space: nowrap;
+}
+.admin-chip.is-delivered { border-color: var(--ok); color: var(--ok); }
+/* the one state that needs a reply gets the accent, as a filled block */
+.admin-chip.is-revision_requested { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.admin-chip.is-done { border-color: var(--hair); color: var(--grey-3); }
+
+.admin-empty { margin-top: 2.5rem; color: var(--grey-3); max-width: 52ch; }
+.admin-new { margin-top: clamp(1.5rem, 3vh, 2rem); }
+
+/* --- detail --- */
+.admin-alert { border-left: 2px solid var(--accent); }
+.admin-alert h2 { color: var(--accent); }
+
+.admin-revision {
+  margin: 1.2rem 0 0;
+  padding: 1rem 1.1rem;
+  background: var(--black);
+  border: 1px solid var(--hair);
+}
+.admin-revision p { margin: 0; color: var(--grey); line-height: 1.7; }
+.admin-revision footer { margin-top: 0.7rem; font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey-3); }
+.admin-revision .btn { margin-top: 0.9rem; padding: 0.6rem 1rem; font-size: 0.5625rem; }
+.admin-ack { margin-top: 0.9rem !important; font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ok) !important; }
+
+.admin-file-link {
+  display: inline-block;
+  margin-top: 0.7rem;
+  margin-right: 0.9rem;
+  color: var(--grey-2);
+  border-bottom: 1px solid var(--grey-3);
+  font-size: 0.875rem;
+}
+.admin-file-link:hover { color: var(--accent); border-color: var(--accent); }
+.admin-file-btn { padding: 0.6rem 1rem; font-size: 0.5625rem; }
+
+.admin-deliveries { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--hair); }
+.admin-deliveries h3 {
+  margin: 0 0 1rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.admin-delivery {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--hair);
+}
+.admin-delivery:first-of-type { border-top: 0; }
+.admin-delivery-version { color: var(--grey); margin-right: 0.5rem; }
+.admin-delivery .mono { font-size: 0.75rem; color: var(--grey-3); }
+.admin-delivery-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.admin-delivery-actions .btn { padding: 0.55rem 0.9rem; font-size: 0.5625rem; }
+
+.admin-dot {
+  margin-left: 0.8rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.admin-dot.is-ok { color: var(--ok); }
+
+.admin-history { list-style: none; margin: 1.2rem 0 0; padding: 0; display: grid; gap: 0.6rem; }
+.admin-history li { color: var(--grey-2); font-size: 0.875rem; }
+.admin-history .mono { color: var(--grey-3); font-size: 0.6875rem; margin-right: 0.6rem; }
+
+.admin-close { display: flex; flex-direction: column; gap: 0.8rem; align-items: flex-start; }
+
+@media (max-width: 640px) {
+  .admin-counts > div { flex-basis: 100%; }
+  .admin-delivery { flex-direction: column; align-items: flex-start; }
+}
 
 
 /* ==========================================================================

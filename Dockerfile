@@ -2,10 +2,15 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-COPY backend/package.json ./package.json
-RUN npm install --omit=dev
+COPY backend/package.json backend/package-lock.json ./
+# ci rather than install: the lockfile is committed, so every build resolves to
+# exactly the versions that were tested.
+RUN npm ci --omit=dev
 
 COPY backend/src ./src
+# Needed to run `npm run admin-password` inside the running container, which is
+# where the password has to be set — the hash never lives in this repository.
+COPY backend/scripts ./scripts
 COPY assets ./public/assets
 COPY *.html ./public/
 # Search engines fetch these two by exact filename at the site root.

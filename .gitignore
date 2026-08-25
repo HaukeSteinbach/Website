@@ -16,3 +16,7 @@ secrets/
 # git. The original WAV masters stay on disk but exceed GitHub's file size
 # limit, so they must not be committed.
 assets/audio/ScoresArchive/*.wav
+
+# Created at import time by release-pages.js when UPLOAD_DIR is unset;
+# on a server this lives in the mounted volume, never in the repo.
+backend/storage/

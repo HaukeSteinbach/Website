@@ -16,6 +16,7 @@ export const config = {
   corsAllowedOrigins,
   databaseUrl: process.env.DATABASE_URL || '',
   sessionSecret: process.env.SESSION_SECRET || '',
+  adminPasswordHash: process.env.ADMIN_PASSWORD_HASH || '',
   formspreeUploadEndpoint: process.env.FORMSPREE_UPLOAD_ENDPOINT || 'https://formspree.io/f/xgopedgb',
   notificationEmail: process.env.NOTIFICATION_EMAIL || '',
   mailFromEmail: process.env.MAIL_FROM_EMAIL || '',
@@ -28,7 +29,8 @@ export const config = {
   sourceDownloadLinkTtlHours: Number(process.env.SOURCE_DOWNLOAD_LINK_TTL_HOURS || 168),
   turnstileSecret: process.env.TURNSTILE_SECRET || '',
   s3Endpoint: process.env.S3_ENDPOINT || '',
-  s3Region: process.env.S3_REGION || '',
+  /* R2 has no regions; 'auto' is what the S3 SDK wants to see. */
+  s3Region: process.env.S3_REGION || 'auto',
   s3Bucket: process.env.S3_BUCKET || '',
   s3AccessKey: process.env.S3_ACCESS_KEY || '',
   s3SecretKey: process.env.S3_SECRET_KEY || '',

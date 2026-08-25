@@ -3,9 +3,8 @@ Allow: /
 
 # Working tools and delivery pages: useful to clients, not to search engines.
 Disallow: /upload.html
-Disallow: /send-files.html
-Disallow: /delivery.html
-Disallow: /revision.html
+Disallow: /admin.html
 Disallow: /release-links.html
+Disallow: /d/
 
 Sitemap: https://haukesteinbach.de/sitemap.xml
