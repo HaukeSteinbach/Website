@@ -13,6 +13,10 @@
 set -euo pipefail
 
 IMAGE="ghcr.io/haukesteinbach/haukesteinbach"
+# Ohne Terminal (weitergegebene Konfiguration, Cron, ssh mit Befehl) wird nichts
+# gefragt: es zaehlt nur, was in der Datei steht, und am Ende wird gesagt, was
+# fehlt. Sonst haenge das Skript an einer Frage, die niemand sieht.
+if [ -t 0 ]; then INTERAKTIV=ja; else INTERAKTIV=nein; fi
 ENV_FILE="backend/.env.runtime"
 COMPOSE_FILE="docker-compose.runtime.yml"
 
@@ -58,6 +62,14 @@ frage() {                                  # frage SCHLUESSEL "Frage" [pflicht]
 
   if [ -n "$vorhanden" ]; then
     ok "$key steht schon drin"
+    return
+  fi
+
+  if [ "$INTERAKTIV" = nein ]; then
+    if [ "$pflicht" = ja ]; then
+      fehler "$key fehlt und es sitzt niemand am Terminal. Trage es in $ENV_FILE ein."
+    fi
+    ok "$key nicht gesetzt"
     return
   fi
 
@@ -139,6 +151,8 @@ schritt "2 von 5 · Passwort für die Projektübersicht"
 if [ -n "$(lies ADMIN_PASSWORD_HASH)" ]; then
   ok "Passwort ist schon gesetzt"
   hinweis "Neu setzen: Zeile ADMIN_PASSWORD_HASH= aus $ENV_FILE löschen und nochmal starten."
+elif [ "$INTERAKTIV" = nein ]; then
+  fehler "ADMIN_PASSWORD_HASH fehlt. Auf dem eigenen Rechner ./prepare.sh laufen lassen und die Datei hierher kopieren."
 else
   echo "  Damit meldest du dich später auf /admin.html an."
   echo "  Mindestens 12 Zeichen. Die Eingabe bleibt unsichtbar."
@@ -191,6 +205,8 @@ schritt "3 von 5 · Mailversand an Kunden"
 
 if [ -n "$(lies SMTP_HOST)" ]; then
   ok "SMTP ist eingetragen ($(lies SMTP_HOST))"
+elif [ "$INTERAKTIV" = nein ]; then
+  ok "kein SMTP eingetragen — wird uebersprungen"
 else
   cat <<EOF
   ${B}Ohne diesen Schritt bekommt kein Kunde eine Mail.${N}

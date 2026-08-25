@@ -34,6 +34,13 @@ Asks for whatever is missing, writes `backend/.env.runtime`, pulls the image
 and starts it. Safe to run again — it skips anything already filled in, and
 backs up the old file first. What it asks for is described below.
 
+**If someone else operates the server**, run `./prepare.sh` on your own machine
+first. It asks the same questions locally and writes one file to hand over,
+carrying the admin password only as a scrypt hash — so whoever installs it
+cannot sign in with it. The instructions for them sit in the file's header.
+`setup.sh` then asks nothing: with no terminal attached it works from the file
+alone and reports what is missing rather than waiting on a prompt nobody sees.
+
 Everything goes in `backend/.env.runtime`, which never enters this repository.
 
 ### 1. Cloudflare R2
