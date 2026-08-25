@@ -111,8 +111,18 @@ npm install
 npm run dev
 ```
 
-With no R2 credentials the file routes return 503 and say why. To exercise the
-whole flow locally, point `S3_ENDPOINT` at any S3-compatible server.
+With no R2 credentials the file routes return 503 and say why.
+
+Two scripts run the real backend against an S3 server held in memory, so the
+whole flow can be exercised without Cloudflare credentials:
+
+```
+npm run flow-test     # walks upload → deliver → download → revise → deliver v2
+npm run dev-seeded    # the same, but left running with two projects already in
+                      # it, on :8392. Sign in with dev-password-1234.
+```
+
+`flow-test` is the one to run after touching anything in the handoff.
 
 ## Notes
 
