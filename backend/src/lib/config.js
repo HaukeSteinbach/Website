@@ -14,7 +14,6 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   appOrigin: process.env.APP_ORIGIN || `https://haukesteinbach.de`,
   corsAllowedOrigins,
-  databaseUrl: process.env.DATABASE_URL || '',
   sessionSecret: process.env.SESSION_SECRET || '',
   adminPasswordHash: process.env.ADMIN_PASSWORD_HASH || '',
   formspreeUploadEndpoint: process.env.FORMSPREE_UPLOAD_ENDPOINT || 'https://formspree.io/f/xgopedgb',
@@ -27,7 +26,6 @@ export const config = {
   smtpUser: process.env.SMTP_USER || '',
   smtpPassword: process.env.SMTP_PASSWORD || '',
   sourceDownloadLinkTtlHours: Number(process.env.SOURCE_DOWNLOAD_LINK_TTL_HOURS || 168),
-  turnstileSecret: process.env.TURNSTILE_SECRET || '',
   s3Endpoint: process.env.S3_ENDPOINT || '',
   /* R2 has no regions; 'auto' is what the S3 SDK wants to see. */
   s3Region: process.env.S3_REGION || 'auto',

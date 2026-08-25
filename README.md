@@ -590,6 +590,9 @@ docker compose -f docker-compose.runtime.yml up -d
 
 ## File handoff
 
+Set it up on the server with `./setup.sh` — one command, it asks for what it
+needs and deploys at the end.
+
 Built and running. `backend/README.md` documents the flow, the routes and the
 environment it needs — Cloudflare R2 for storage, an admin password, and SMTP
 to reach clients.

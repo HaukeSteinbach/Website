@@ -26,8 +26,15 @@ by hand is whether a project is done.
 
 ## Setting it up on a server
 
-Everything below goes in `backend/.env.runtime`, which never enters this
-repository.
+```
+./setup.sh
+```
+
+Asks for whatever is missing, writes `backend/.env.runtime`, pulls the image
+and starts it. Safe to run again — it skips anything already filled in, and
+backs up the old file first. What it asks for is described below.
+
+Everything goes in `backend/.env.runtime`, which never enters this repository.
 
 ### 1. Cloudflare R2
 
