@@ -73,7 +73,14 @@
     var erlaubt = prop().audiences || [];
     return presets.audiences.filter(function (a) { return erlaubt.indexOf(a.key) >= 0; });
   }
-  var picked = [];         // ausgewählte Bilder: { key, name, width, height }
+  /* Nur die Schlüssel, nicht die Datensätze.
+  
+     Vorher lagen hier ganze Objekte, und je nach Herkunft sahen die
+     unterschiedlich aus: aus der Liste kamen sie mit Vorschau-Adresse, aus
+     der Antwort des Uploads ohne. Die Miniaturen zeichneten daraufhin aus
+     der Liste, die Vorschau aus der Auswahl — und blieb leer. Ein Schlüssel
+     ist ein Schlüssel; alles Weitere steht in bilderCache. */
+  var picked = [];
   var root = null;
   var only = null;         // auf eine Marke festgenagelt?
   var neuBenannt = null;   // zuletzt angelegte Kampagne, wird kurz hervorgehoben
@@ -357,7 +364,7 @@
       return;
     }
     box.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:12px;">' + images.map(function (i) {
-      var an = picked.some(function (p) { return p.key === i.key; });
+      var an = picked.indexOf(i.key) >= 0;
       var f = format(i);
       return '<div style="width:132px;">'
         + '<button data-img="' + esc(i.key) + '" title="' + esc(i.name) + '" '
@@ -383,14 +390,19 @@
     box.querySelectorAll('[data-img]').forEach(function (b) {
       b.addEventListener('click', function () {
         var k = b.dataset.img;
-        var at = -1;
-        picked.forEach(function (p, n) { if (p.key === k) at = n; });
-        if (at >= 0) picked.splice(at, 1);
-        else picked.push(images.filter(function (x) { return x.key === k; })[0] || { key: k });
+        var at = picked.indexOf(k);
+        if (at >= 0) picked.splice(at, 1); else picked.push(k);
         renderImages(images);
-        updatePreview();
       });
     });
+    var zb = document.getElementById('zaehl-bilder');
+    if (zb) {
+      zb.textContent = picked.length
+        ? '· ' + picked.length + ' ausgewählt (anklicken zum Abwählen)'
+        : '· keines ausgewählt';
+      zb.style.color = picked.length ? 'var(--brass)' : 'var(--parchment-faint)';
+    }
+
     box.querySelectorAll('[data-del]').forEach(function (b) {
       b.addEventListener('click', function () {
         if (!confirm('Bild löschen? Bereits angelegte Anzeigen behalten es.')) return;
@@ -412,7 +424,9 @@
     if (!box) return;
     var kopf = (document.getElementById('ad-headline') || {}).value || '';
     var text = (document.getElementById('ad-body') || {}).value || '';
-    var bild = picked.filter(function (p) { return p.url; })[0];
+    /* Immer aus der Liste auflösen — dort steht die Vorschau-Adresse. */
+    var gewaehlt = bilderCache.filter(function (b) { return picked.indexOf(b.key) >= 0; });
+    var bild = gewaehlt.filter(function (b) { return b.url; })[0];
 
     if (!kopf && !text && !bild) {
       box.innerHTML = '<p class="hint">Sobald Bild, Überschrift oder Text stehen, '
@@ -487,7 +501,7 @@
       + '<input id="ad-headline" type="text" maxlength="30" placeholder="Eine Orgel von 1908">'
       + '<label for="ad-body">Anzeigentext <span id="zaehl-body" class="hint"></span></label>'
       + '<textarea id="ad-body" maxlength="300" style="min-height:90px;"></textarea>'
-      + '<label>Bilder</label>'
+      + '<label>Bilder <span id="zaehl-bilder" class="hint"></span></label>'
       + '<div id="ads-images"><p class="hint">Lade …</p></div>'
       /* Das native Dateifeld bringt einen Systemknopf mit ("Datei auswählen",
          Grau, Systemschrift). Es wird versteckt und über ein Label bedient,
@@ -560,7 +574,7 @@
             return api('upload', {
               property: property, filename: f.name, contentType: f.type, data: btoa(bin)
             });
-          }).then(function (r) { picked.push(r); });
+          }).then(function (r) { if (picked.indexOf(r.key) < 0) picked.push(r.key); });
         });
       });
       kette.then(function () {
@@ -590,7 +604,7 @@
         headline: document.getElementById('ad-headline').value.trim(),
         body: document.getElementById('ad-body').value.trim(),
         landingPath: document.getElementById('ad-path').value.trim(),
-        imageKeys: picked.map(function (p) { return p.key; })
+        imageKeys: picked.slice()
       };
       msg.className = 'msg';
       msg.textContent = 'Lege an …';
