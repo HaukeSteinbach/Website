@@ -10,6 +10,10 @@ process.env.S3_REGION = 'auto'; process.env.SESSION_SECRET = 'x'.repeat(48);
 process.env.ADMIN_PASSWORD_HASH = `scrypt$s$${scryptSync('einLangesPasswort2026','s',64).toString('hex')}`;
 process.env.APP_ORIGIN = `http://127.0.0.1:${APP}`; process.env.NODE_ENV = 'test';
 process.env.UPLOAD_DIR = '/tmp/sec-uploads';
+/* Die Seiten liegen im Repo-Wurzelverzeichnis, im Image unter public/. Ohne
+   das hier lieferten die Seitenabrufe 404 und die CSP-Pruefungen unten haetten
+   nur die Kopfzeile einer Fehlerseite geprueft. */
+process.env.PUBLIC_DIR = new URL('../../', import.meta.url).pathname;
 
 await createMiniS3(S3);
 const { default: app } = await import(new URL('../src/app.js', import.meta.url));
@@ -52,6 +56,22 @@ try {
   const r2 = await fetch(`${base}/api/v1/public/release-pages`, { method: 'POST', headers: { Cookie: cookie }, body: ok });
   const b2 = await r2.json();
   check('erlaubter Host passiert die Hostprüfung', () => assert.notEqual(b2.error, 'host_not_allowed'));
+
+  // 4. Die gelockerte CSP gilt NUR fuer das UI Studio
+  const studio = await fetch(`${base}/uistudio.html`);
+  const andere = await fetch(`${base}/impressum.html`);
+  const cspStudio = studio.headers.get('content-security-policy') || '';
+  const cspAndere = andere.headers.get('content-security-policy') || '';
+  check('UI Studio darf eigene Skripte ausfuehren', () => {
+    assert.ok(cspStudio.includes("script-src 'self' 'unsafe-inline'"), `bekam: ${cspStudio.slice(0, 120)}`);
+  });
+  check('der Rest der Seite darf es nicht', () => {
+    assert.ok(!cspAndere.includes("'unsafe-inline'") || !/script-src[^;]*unsafe-inline/.test(cspAndere),
+      `bekam: ${cspAndere.slice(0, 160)}`);
+  });
+  check('UI Studio erreicht Supabase, auch als WebSocket', () => {
+    assert.ok(cspStudio.includes('wss://eojchbkieeqyfgfazydk.supabase.co'), `bekam: ${cspStudio.slice(0, 200)}`);
+  });
 } catch (e) {
   fail.push('Lauf: ' + e.message);
 } finally {

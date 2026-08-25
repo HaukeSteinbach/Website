@@ -33,6 +33,16 @@ the file handoff. Both are bundled into one Docker image.
 | `admin.html` | the studio's project list — password protected |
 | `/d/<token>` | rendered per delivery: downloads and the revision form |
 
+### Internal
+| | |
+|---|---|
+| `werbung.html` | ad campaigns, shared with Steinbach Instruments |
+| `uistudio.html` | the UI Studio — plug-in interfaces, edited by two people at once |
+
+Both sign in with a team account at Supabase, not with the admin password.
+That separation is on purpose: the admin password opens the customer projects,
+and the designer has no business there.
+
 Set up on the server with `./setup.sh` — one command, it asks for what it
 needs and deploys at the end. If someone else operates the server, run
 `./prepare.sh` on your own machine first; it writes a single file to hand over.
@@ -59,6 +69,7 @@ assets/
 backend/
   src/                          Express: routes, storage, projects, mail
   scripts/                      setup helpers and the flow test
+tools/uistudio/                 source of the UI Studio, published separately
 setup.sh, prepare.sh            configure and deploy
 Dockerfile                      frontend and backend in one image
 ```
@@ -101,6 +112,47 @@ and left running in parallel. Switching only crossfades two gain nodes over
 All sixteen files sit at −18 LUFS so the comparison is decided by the sound
 rather than by level. Re-exporting any of them means matching that, and
 keeping true peak under −1 dBTP.
+
+## The UI Studio
+
+`uistudio.html` is only the door. The tool itself is one large HTML file that
+lives in private Supabase storage and is delivered by the `cockpit-content`
+edge function to accounts on the `UISTUDIO_AUDIO_ALLOWED` list. A deploy of
+this site does not change it — publishing a new build is:
+
+```bash
+./tools-publish-uistudio.sh
+```
+
+The source is `tools/uistudio/uistudio-audio.html`, kept in this repository so
+there is a history and a diff. It is deliberately outside the part that gets
+copied into the image, so it never becomes reachable without signing in.
+
+Rolling the whole thing out the first time — migration, access list, edge
+functions, publish, deploy — is one guided script that explains each step and
+asks before it changes anything:
+
+```bash
+./tools/uistudio-ausrollen.command
+```
+
+Projects live in the team store, in a scope of their own (`_uistudio-audio/`,
+separate from the Kontakt instruments on the other site). Two people can work
+on the same project at the same time: `assets/js/uistudio-live.js` speaks the
+Supabase Realtime protocol directly, cursors and selections show up as
+coloured markers, and edits travel as per-field differences so two people on
+the same element but different fields do not overwrite each other.
+
+Graphics are the exception — embedded as base64, they are larger than a
+Realtime message may be, so adding one prompts everybody else to reload from
+the team store instead of travelling live.
+
+Undo is personal: it merges its snapshot back in while leaving the fields the
+other person touched alone. Alone in a project it behaves exactly as before.
+
+```bash
+node tools/uistudio/live-sync-test.mjs     # 16 checks on the sync and undo rules
+```
 
 ## The stylesheet
 

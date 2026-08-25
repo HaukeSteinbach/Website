@@ -1,0 +1,3410 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>UI Studio · Steinbach Audio</title>
+<!--
+  Steinbach UI Studio — Fassung fuer Steinbach Audio (haukesteinbach.de).
+
+  Diese Datei liegt NICHT im ausgelieferten Teil der Website. Die Quelle steht
+  im Website-Repo unter tools/uistudio/, veroeffentlicht wird sie mit
+  tools-publish-uistudio.sh in den privaten Supabase-Storage
+  (installers/_docs/uistudio-audio.html). Von dort holt uistudio.html sie ueber
+  die Edge Function cockpit-content?doc=uistudio-audio — nur fuer Konten in
+  UISTUDIO_AUDIO_ALLOWED.
+
+  Unterschiede zur Instruments-Fassung:
+    - keine Roever-Vorlage (954 KB, gehoert zu den Kontakt-Instrumenten)
+    - Team-Speicher im Bereich 'audio', siehe CLOUD_SCOPE weiter unten
+    - Anmeldung aus /assets/js/ads/ statt /assets/js/
+
+  Beim Aendern: den Baustand-Aufkleber oben mitziehen. Steht dort ein alter
+  Wert, laeuft eine alte Kopie — das hat schon einmal einen halben Tag gekostet.
+-->
+<style>
+:root{
+  --bg:#17191d; --panel:#20232a; --panel2:#1b1e24; --line:#31353e;
+  --text:#d9dce2; --dim:#8d929c; --acc:#4da3ff; --danger:#e05b5b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font:13px/1.45 -apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:var(--text);background:#2b2f38;border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap}
+button:hover{background:#343945}
+button.primary{background:var(--acc);border-color:var(--acc);color:#08121f;font-weight:600}
+button.primary:hover{filter:brightness(1.1)}
+button.mini{padding:2px 7px;font-size:12px}
+button.danger{color:#ffb3b3;border-color:#5a3333}
+input,select,textarea{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:3px 6px;user-select:text;-webkit-user-select:text}
+input[type=number]{width:62px}
+input[type=color]{padding:1px;width:34px;height:24px}
+input:focus,select:focus,textarea:focus{outline:1px solid var(--acc);border-color:var(--acc)}
+label{color:var(--dim)}
+
+/* ---------- Toolbar ---------- */
+#toolbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+#toolbar .brand{font-weight:700;letter-spacing:.02em;margin-right:4px}
+#toolbar .sep{width:1px;height:22px;background:var(--line);margin:0 2px}
+#kFit{font:11px/1 ui-monospace,monospace;letter-spacing:.03em;padding:4px 8px;border-radius:5px;
+  border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+#kFit.gut{color:#7fb98a;border-color:#3c5a44}
+#kFit.schlecht{color:#e2a33c;border-color:#5c4a26;background:#2a2116}
+#modeSwitch,#kviewSwitch{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+#kviewSwitch button{border:none;border-radius:0;background:transparent;padding:4px 10px;font-size:12px}
+#kviewSwitch button.on{background:#3d434f;color:#fff;font-weight:600}
+#modeSwitch button{border:none;border-radius:0;background:transparent;padding:4px 12px}
+#modeSwitch button.on{background:var(--acc);color:#08121f;font-weight:600}
+#projName{width:150px}
+
+/* ---------- Layout ---------- */
+#main{flex:1;display:flex;min-height:0}
+.panel{width:230px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#rightPanel{border-right:none;border-left:1px solid var(--line);width:260px}
+.panel h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);padding:8px 10px 4px}
+.panel .scroll{overflow-y:auto;flex:1;padding:0 8px 8px}
+
+/* Assets */
+#dropZone{margin:4px 8px;border:1.5px dashed var(--line);border-radius:8px;padding:12px 8px;text-align:center;color:var(--dim);cursor:pointer;font-size:12px}
+#dropZone.hot{border-color:var(--acc);color:var(--acc);background:rgba(77,163,255,.06)}
+.assetItem{display:flex;align-items:center;gap:8px;padding:4px;border-radius:6px;margin-bottom:2px}
+.assetItem:hover{background:var(--panel2)}
+.assetItem img{width:34px;height:34px;object-fit:contain;background:
+  repeating-conic-gradient(#2a2d34 0 25%,#22252b 0 50%) 0 0/12px 12px;border-radius:4px;flex:none}
+.assetItem .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.assetItem.isBg .nm::after{content:" · BG";color:var(--acc)}
+/* Layers */
+.layerItem{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:12px}
+.layerItem:hover{background:var(--panel2)}
+.layerItem.sel{background:rgba(77,163,255,.15);color:#fff}
+.layerItem .tag{font-size:10px;color:var(--dim);border:1px solid var(--line);border-radius:4px;padding:0 4px;flex:none}
+
+/* Inspector */
+#insp .row{display:flex;align-items:center;gap:6px;margin:5px 0}
+#insp .row>label{width:82px;flex:none;font-size:12px}
+#insp .row input[type=text],#insp .row select,#insp .row textarea{flex:1;min-width:0}
+#insp .group{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
+#insp .btns{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+#insp .empty{color:var(--dim);padding:16px 8px;font-size:12px}
+
+/* ---------- Stage ---------- */
+#stageWrap{flex:1;overflow:auto;background:#101114;position:relative}
+#stageBox{margin:40px;position:relative}
+/* Der Streifen, den Kontakt mit seiner eigenen Leiste (Name, Output, MIDI)
+   verdeckt. Er gehoert zum Wallpaper, ist im Plugin aber nie zu sehen. */
+#kHead{position:absolute;left:0;transform-origin:0 100%;background-repeat:no-repeat;
+  box-shadow:inset 0 0 0 1px var(--line);display:none;overflow:hidden}
+#kHead::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(
+  135deg,rgba(0,0,0,.62) 0 8px,rgba(0,0,0,.48) 8px 16px)}
+/* In der Kontakt-Ansicht steht dort Kontakts eigene Kopfleiste, nicht das
+   verdeckte Wallpaper - so sieht man die Flaeche wie im Plugin. */
+#kHead.kontakt{background-image:none!important;box-shadow:none}
+#kHead.kontakt::after{display:none}
+#kHead.kontakt span{display:none}
+#kHead .kmock{position:absolute;inset:0;display:none;background:#3c3c3c;
+  font:11px/1 -apple-system,"Segoe UI",Roboto,sans-serif;color:#d6d6d6;overflow:hidden}
+#kHead.kontakt .kmock{display:block}
+#kHead .kmock .krow{position:absolute;left:34px;right:0;background:#4a4a4a;
+  border-bottom:1px solid #333;display:flex;align-items:center;gap:8px;padding:0 8px}
+#kHead .kmock .kname{font-weight:600;color:#fff}
+#kHead .kmock .kwrench{position:absolute;left:0;top:0;bottom:0;width:34px;
+  background:#2e2e2e;border-right:1px solid #222}
+#kHead .kmock .kdim{color:#9a9a9a}
+#kHead span{position:absolute;left:10px;top:50%;transform:translateY(-50%);z-index:1;
+  font:600 11px/1 ui-monospace,monospace;letter-spacing:.14em;color:#c8cdd6;
+  text-shadow:0 1px 3px #000;pointer-events:none}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0;background:#000;box-shadow:0 0 0 1px var(--line),0 12px 40px rgba(0,0,0,.6);background-repeat:no-repeat}
+#stage.checker{background-color:#26292f;background-image:repeating-conic-gradient(#2c2f36 0 25%,#26292f 0 50%);background-size:24px 24px}
+#stage.gridOn::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:var(--gs) var(--gs)}
+.el{position:absolute;background-repeat:no-repeat}
+.el.edit{cursor:move}
+.el.edit:hover{outline:1px dashed rgba(77,163,255,.55)}
+.el.sel{outline:1.5px solid var(--acc) !important}
+.el.test.grab{cursor:ns-resize}
+.el .rs{position:absolute;right:-6px;bottom:-6px;width:11px;height:11px;background:var(--acc);border:1.5px solid #fff;border-radius:2px;cursor:nwse-resize}
+.el .rot{position:absolute;inset:0;background-repeat:no-repeat;background-size:100% 100%}
+.el .lbl{width:100%;height:100%;display:flex;align-items:center;white-space:pre-wrap}
+/* Platzhalter-Optik solange keine Grafik zugewiesen ist */
+.ph-knob{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,#5a5f6a,#2b2e35 70%);box-shadow:inset 0 0 0 2px #14161a,0 2px 5px rgba(0,0,0,.5)}
+.ph-knob .pin{position:absolute;left:calc(50% - 1.5px);top:6%;width:3px;height:38%;background:#e8eaee;border-radius:2px;transform-origin:50% calc(44% / .38 * .5)}
+.ph-knob .pinwrap{position:absolute;inset:0}
+.ph-track{position:absolute;background:#14161a;border-radius:4px;box-shadow:inset 0 1px 3px rgba(0,0,0,.8)}
+.ph-handle{position:absolute;background:linear-gradient(#6a707c,#3a3e47);border-radius:3px;box-shadow:0 2px 4px rgba(0,0,0,.5)}
+.ph-btn{position:absolute;inset:0;border-radius:6px;background:linear-gradient(#3a3e47,#24272d);box-shadow:inset 0 0 0 1.5px #14161a}
+.ph-btn.on{background:linear-gradient(#4da3ff,#2f6db3);box-shadow:inset 0 0 0 1.5px #14161a,0 0 12px rgba(77,163,255,.5)}
+.ph-img{position:absolute;inset:0;border:1.5px dashed #4a4f5a;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#4a4f5a;font-size:11px}
+.ph-link{position:absolute;inset:0;border:1.5px dashed #4da3ff;background:rgba(77,163,255,.14);border-radius:4px;display:flex;align-items:center;justify-content:center;color:#9cc9ff;font-size:10px;overflow:hidden;white-space:nowrap}
+.el.test .ph-link{opacity:0}
+/* Button ohne Grafik = unsichtbare Trefferflaeche (wie in Kontakt). Beim
+   Bearbeiten durchscheinend, beim Testen nur ein feiner Umriss - sonst
+   verdeckt die Platte das Bild darunter. */
+.ph-btn{opacity:.45}
+.el.test .ph-btn{background:none;box-shadow:none;opacity:1;
+  border:1px dashed rgba(255,255,255,.22)}
+.el.test .ph-btn.on{border-color:rgba(77,163,255,.55)}
+.el.test.t-link{cursor:pointer}
+
+/* ---------- Statusbar ---------- */
+#status{display:flex;gap:16px;padding:5px 12px;background:var(--panel);border-top:1px solid var(--line);color:var(--dim);font-size:12px}
+#status .right{margin-left:auto;color:var(--text)}
+
+/* ---------- Modal ---------- */
+#modalBack{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:50}
+#modalBack.open{display:flex}
+#modal{background:var(--panel);border:1px solid var(--line);border-radius:10px;width:min(720px,92vw);max-height:86vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#modal header{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);font-weight:600}
+#modal header button{margin-left:auto}
+#modalBody{padding:14px 16px;overflow-y:auto}
+#modalBody textarea{width:100%;height:320px;font:11px/1.5 ui-monospace,Menlo,monospace;white-space:pre;resize:vertical}
+#modalBody .btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+#modalBody h4{margin:12px 0 4px}
+#modalBody p,#modalBody li{color:var(--text);font-size:13px;margin-bottom:6px}
+#modalBody ul{padding-left:18px}
+#modalBody kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:11px}
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <span class="brand">Steinbach UI Studio · Audio</span><span class="tag" id="buildTag" title="Baustand dieser Datei — bei Problemen zuerst vergleichen">2026-08-25 · Audio</span>
+  <input id="projName" type="text" title="Projektname">
+  <div class="sep"></div>
+  <div id="modeSwitch">
+    <button id="modeEdit" class="on">Bearbeiten</button>
+    <button id="modeTest">Testen</button>
+  </div>
+  <div class="sep"></div>
+  <button class="mini" data-add="knob">+ Knob</button>
+  <button class="mini" data-add="fader">+ Fader</button>
+  <button class="mini" data-add="button">+ Button</button>
+  <button class="mini" data-add="label">+ Text</button>
+  <button class="mini" data-add="image">+ Bild</button>
+  <button class="mini" data-add="link">+ Link</button>
+  <div class="sep"></div>
+  <label>Fenster</label>
+  <select id="preset">
+    <option value="">Preset …</option>
+    <option value="auto">NI Kontakt — Größe aus der Tafel rechnen</option>
+    <option value="1000x568x68">NI Kontakt · Tafel 636 → 1000×568 (Röver)</option>
+    <option value="1000x750x68">NI Kontakt · Tafel 818 → 1000×750 (max)</option>
+    <option value="1000x682x68">NI Kontakt · Tafel 750 → 1000×682</option>
+    <option value="frei">ohne Kopfzeile (freies Fenster)</option>
+  </select>
+  <input id="winW" type="number" min="100" step="1" title="Breite">×
+  <input id="winH" type="number" min="100" step="1" title="Höhe">
+  <span id="kFit" title="Tafelhöhe = Kontakt-Kopfzeile + Fensterhöhe"></span>
+  <div id="kviewSwitch" title="Entwurf zeigt nur unsere Fläche. Kontakt zeigt sie so, wie das Plugin aussieht – mit Kontakts eigener Kopfleiste darüber.">
+    <button id="kvDraft" class="on">Entwurf</button>
+    <button id="kvKontakt">Kontakt</button>
+  </div>
+  <div class="sep"></div>
+  <label>Zoom</label>
+  <select id="zoomSel">
+    <option value="0.5">50 %</option>
+    <option value="0.75">75 %</option>
+    <option value="1" selected>100 %</option>
+    <option value="1.5">150 %</option>
+    <option value="fit">Einpassen</option>
+    <option value="2">200 %</option>
+  </select>
+  <label><input id="gridOn" type="checkbox"> Raster</label>
+  <input id="gridSize" type="number" min="2" step="1" value="8" style="width:48px" title="Rastergröße px">
+  <div class="sep"></div>
+  <button id="btnNew" class="mini">Neu</button>
+  <button id="btnOpen" class="mini">Öffnen</button>
+  <button id="btnSave" class="mini">Speichern</button>
+  <button id="btnCloudSave" class="mini" title="Im Team-Speicher ablegen">Sichern</button>
+  <button id="btnCloudOpen" class="mini" title="Aus dem Team-Speicher laden">Projekte</button>
+  <span id="cloudNote" style="font:11px/1 ui-monospace,monospace;color:#8a8378;margin-left:6px;"></span>
+  <span id="liveNote" style="font:11px/1 ui-monospace,monospace;color:#8a8378;margin-left:6px;" title="Zustand der gemeinsamen Bearbeitung"></span>
+  <span id="livePeers" title="Wer sonst noch an diesem Projekt ist"></span>
+  <button id="btnSprite" class="mini" title="Einzelbilder zu einem Sprite zusammensetzen">Sprite bauen</button>
+  <button id="btnExport" class="primary mini">Export für Hauke</button>
+  <button id="btnHelp" class="mini" title="Hilfe">?</button>
+</div>
+
+<div id="main">
+  <div class="panel" id="leftPanel">
+    <h3>Grafiken</h3>
+    <div id="dropZone">Bilder hierher ziehen<br>oder klicken (PNG/JPG/SVG)</div>
+    <div class="scroll" id="assetList"></div>
+    <h3>Elemente <button class="mini" id="btnGroup" title="Ausgewähltes Element in eine neue Gruppe legen" style="float:right;margin-top:-2px;">+ Gruppe</button></h3>
+    <div class="scroll" id="layerList" style="flex:0 1 40%"></div>
+  </div>
+
+  <div id="stageWrap">
+    <div id="stageBox"><div id="kHead"><span></span><div class="kmock"></div></div><div id="stage"></div></div>
+  </div>
+
+  <div class="panel" id="rightPanel">
+    <h3>Eigenschaften</h3>
+    <div class="scroll" id="insp"></div>
+  </div>
+</div>
+
+<div id="status">
+  <span id="hint"></span>
+  <span class="right" id="selInfo"></span>
+</div>
+
+<div id="modalBack"><div id="modal">
+  <header><span id="modalTitle"></span><button class="mini" id="modalClose">Schließen</button></header>
+  <div id="modalBody"></div>
+</div></div>
+
+<input type="file" id="fileImg" accept="image/*" multiple hidden>
+<input type="file" id="fileProj" accept=".json,application/json" hidden>
+
+<script src="/assets/js/ads/store-config.js"></script>
+<script src="/assets/js/ads/store.js"></script>
+<script src="/assets/js/uistudio-live.js"></script>
+<script>
+'use strict';
+/* ============================== State ============================== */
+const $ = s => document.querySelector(s);
+const clamp = (v,a,b)=>Math.min(b,Math.max(a,v));
+const deep = o => JSON.parse(JSON.stringify(o));
+let elCounter = 1, assetCounter = 1;
+
+function newProject(){
+  return { name:'Mein Plugin', win:{w:1000,h:560}, bg:null, assets:{}, elements:[], groups:[] };
+}
+
+/* Standard-Reihenfolge der Button-States, je nach Anzahl der Bilder.
+   Frame 0 ist immer der Ruhezustand — daran haelt sich auch der Export. */
+const STATE_PRESETS = {
+  2: ['Aus','An'],
+  3: ['Aus','Halb','An'],
+  4: ['Aus','An','Aus · Hover','An · Hover'],
+  5: ['Aus','Halb','An','Hover','Gedrückt'],
+  6: ['Aus','An','Aus · Hover','An · Hover','Aus · Gedrückt','An · Gedrückt'],
+};
+function defaultStates(n){
+  if(STATE_PRESETS[n]) return STATE_PRESETS[n].slice();
+  return Array.from({length:n}, (_,i)=> i===0 ? 'Aus' : (i===n-1 ? 'An' : 'Zwischen '+i));
+}
+let project = newProject();
+let sel = null;              // ausgewählte Element-ID
+let mode = 'edit';           // 'edit' | 'test'
+let zoom = 1;
+let grid = {on:false, size:8};
+let undoStack = [], redoStack = [];
+
+const byId = id => project.elements.find(e=>e.id===id);
+const selEl = () => sel ? byId(sel) : null;
+
+/* ============================== History ============================== */
+function pushHistory(){
+  undoStack.push(JSON.stringify(project));
+  if(undoStack.length>60) undoStack.shift();
+  redoStack.length = 0;
+  autosave();
+}
+/* Rueckgaengig ist PERSOENLICH.
+
+   Frueher setzte es schlicht `project` auf einen alten Schnappschuss zurueck.
+   Allein ist das richtig. Zu zweit loescht es die Arbeit des anderen mit: der
+   Schnappschuss stammt aus einer Zeit, in der dessen letzte zehn Minuten noch
+   nicht passiert waren, und mit ihm wandern sie weg.
+
+   Deshalb wird der Schnappschuss nicht mehr aufgelegt, sondern eingemischt —
+   ohne die Felder, die seither von der anderen Seite kamen (liveFremdFelder).
+   Ist niemand sonst da, ist diese Menge leer und es verhaelt sich exakt wie
+   vorher. */
+function zurueckMischen(schnappschuss){
+  const alt = JSON.parse(schnappschuss);
+  const fremd = (typeof liveFremdFelder !== 'undefined') ? liveFremdFelder : new Set();
+
+  if(!fremd.size){ project = alt; return; }
+
+  ['name','bg','bgTop','win'].forEach(k => {
+    if(!fremd.has('kopf|' + k)) project[k] = alt[k];
+  });
+
+  ['elements','groups'].forEach(feld => {
+    const jetzt = new Map((project[feld]||[]).map(e => [e.id, e]));
+    const damals = new Map((alt[feld]||[]).map(e => [e.id, e]));
+    const ergebnis = [];
+
+    (alt[feld]||[]).forEach(damalsE => {
+      const jetztE = jetzt.get(damalsE.id);
+      if(!jetztE){ ergebnis.push(damalsE); return; }   // ich hatte es geloescht
+      const zusammen = {};
+      new Set([...Object.keys(damalsE), ...Object.keys(jetztE)]).forEach(k => {
+        zusammen[k] = fremd.has(damalsE.id + '|' + k) ? jetztE[k] : damalsE[k];
+      });
+      // Felder, die es damals nicht gab und die nicht von aussen kamen, fallen weg
+      Object.keys(zusammen).forEach(k => { if(zusammen[k] === undefined) delete zusammen[k]; });
+      ergebnis.push(zusammen);
+    });
+
+    /* Was der andere waehrenddessen angelegt hat, gab es im Schnappschuss
+       nicht — es bleibt trotzdem stehen. */
+    jetzt.forEach((e, id) => { if(!damals.has(id) && fremd.has(id + '|__neu')) ergebnis.push(e); });
+
+    project[feld] = ergebnis;
+  });
+
+  /* Grafiken sind additiv und gehen nie ueber die Leitung; sie zurueckzurollen
+     wuerde nur fremde Bilder unerreichbar machen. */
+  project.assets = Object.assign({}, alt.assets, project.assets);
+}
+
+function undo(){
+  if(!undoStack.length) return;
+  redoStack.push(JSON.stringify(project));
+  zurueckMischen(undoStack.pop());
+  maskenCacheLeeren();
+  if(sel && !byId(sel)) sel = null;
+  renderAll(); autosave();
+}
+function redo(){
+  if(!redoStack.length) return;
+  undoStack.push(JSON.stringify(project));
+  zurueckMischen(redoStack.pop());
+  maskenCacheLeeren();
+  if(sel && !byId(sel)) sel = null;
+  renderAll(); autosave();
+}
+function autosave(){
+  try{ localStorage.setItem('sus_autosave', JSON.stringify(project)); }catch(e){/* zu groß – egal */}
+  /* Derselbe Aufruf traegt die Aenderung zum anderen. Absichtlich hier und
+     nicht an den dreissig Stellen, die autosave() rufen: was der oertliche
+     Speicher mitbekommt, bekommt die Runde auch mit. Siehe „Gemeinsam
+     arbeiten" weiter unten. */
+  if(typeof liveAbgleich === 'function') liveAbgleich();
+}
+
+/* ============================== Elemente ============================== */
+const TYPE_NAMES = {knob:'Knob', fader:'Fader', button:'Button', label:'Text', image:'Bild', link:'Link'};
+
+/* ============================== Icons ==============================
+   Schlanke Inline-SVGs statt Emoji: gleiche Strichstaerke, faerben sich
+   ueber currentColor mit der Oberflaeche mit und sehen auf jedem System
+   identisch aus. */
+const ICONS = {
+  eye:      '<path d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8Z"/><circle cx="8" cy="8" r="2"/>',
+  eyeOff:   '<path d="M2 2l12 12"/><path d="M6.3 6.35A2 2 0 0 0 8 10a2 2 0 0 0 1.66-.9"/><path d="M4.2 4.3C2.4 5.5 1 8 1 8s2.5 4.5 7 4.5c1.2 0 2.2-.3 3.1-.7"/><path d="M13.4 10.6C14.5 9.6 15 8 15 8s-2.5-4.5-7-4.5c-.5 0-1 .05-1.4.14"/>',
+  lock:     '<rect x="3.5" y="7" width="9" height="6" rx="1.2"/><path d="M5.6 7V5.2a2.4 2.4 0 0 1 4.8 0V7"/>',
+  unlock:   '<rect x="3.5" y="7" width="9" height="6" rx="1.2"/><path d="M5.6 7V5.2a2.4 2.4 0 0 1 4.6-.8"/>',
+  cloudUp:  '<path d="M4.5 12a3 3 0 0 1-.3-6 4 4 0 0 1 7.6-.7A2.8 2.8 0 0 1 12.8 12"/><path d="M8 13V8"/><path d="M6.2 9.6 8 7.8l1.8 1.8"/>',
+  cloud:    '<path d="M4.5 12a3 3 0 0 1-.3-6 4 4 0 0 1 7.6-.7A2.8 2.8 0 0 1 12.8 12Z"/>',
+  link:     '<path d="M6.6 9.4a2.6 2.6 0 0 0 3.7 0l2-2a2.6 2.6 0 1 0-3.7-3.7l-.9.9"/><path d="M9.4 6.6a2.6 2.6 0 0 0-3.7 0l-2 2a2.6 2.6 0 1 0 3.7 3.7l.9-.9"/>',
+  chevDown: '<path d="M4 6.5 8 10.5l4-4"/>',
+  chevRight:'<path d="M6.5 4 10.5 8l-4 4"/>',
+  up:       '<path d="M8 12.5V4"/><path d="M4.5 7.5 8 4l3.5 3.5"/>',
+  down:     '<path d="M8 3.5V12"/><path d="M4.5 8.5 8 12l3.5-3.5"/>',
+  close:    '<path d="M4 4l8 8"/><path d="M12 4l-8 8"/>',
+  layers:   '<path d="M8 2 2 5.5 8 9l6-3.5L8 2Z"/><path d="M2 10.5 8 14l6-3.5"/>',
+};
+function icon(name, size){
+  const sz = size || 14;
+  return '<svg viewBox="0 0 16 16" width="' + sz + '" height="' + sz + '" fill="none" '
+    + 'stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" '
+    + 'aria-hidden="true" style="display:block;">' + (ICONS[name] || '') + '</svg>';
+}
+/** Knopf mit Icon (und optionalem Text) — ersetzt die frueheren Emoji-Knoepfe. */
+function iconBtn(name, title, label){
+  const b = document.createElement('button');
+  b.className = 'mini';
+  b.title = title || '';
+  b.innerHTML = icon(name) + (label ? '<span style="margin-left:5px;">' + esc(label) + '</span>' : '');
+  b.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;';
+  return b;
+}
+
+
+function addElement(type){
+  pushHistory();
+  const w = project.win.w, h = project.win.h;
+  const base = { id:'el_'+(elCounter++), type, name:TYPE_NAMES[type]+' '+elCounter, paramId:'',
+                 x:Math.round(w/2-30), y:Math.round(h/2-30), w:60, h:60, value:0.7,
+                 groupId:null, hidden:false, locked:false, alphaHit:true };
+  if(type==='knob') Object.assign(base,{render:'auto', asset:null, frames:31, gridCols:1, startDeg:-135, sweep:270, steps:0});
+  if(type==='fader') Object.assign(base,{render:'auto', orient:'v', asset:null, frames:31, gridCols:1,
+                 handleAsset:null, hw:28, hh:16, w:36, h:160, x:Math.round(w/2-18), y:Math.round(h/2-80)});
+  if(type==='button') Object.assign(base,{asset:null, frames:2, value:0, w:56, h:28, toggle:'cycle',
+                 states:defaultStates(2), drives:[]});
+  if(type==='label') Object.assign(base,{text:'TEXT', font:'Helvetica Neue', size:14, weight:'500', color:'#e8eaee',
+                 spacing:1, align:'center', w:120, h:24});
+  /* Bilder koennen selbst Sprites sein: so schaltet ein Button den Backdrop
+     (Orgelschluessel, Philicorda-Licht) einfach auf einen anderen Frame um. */
+  if(type==='image') Object.assign(base,{asset:null, w:120, h:120, frames:1, gridCols:1, states:['Standard']});
+  if(type==='link') Object.assign(base,{url:'https://steinbach-instruments.de', w:120, h:40});
+  project.elements.push(base);
+  sel = base.id;
+  renderAll();
+}
+function deleteSel(){
+  if(!sel) return;
+  pushHistory();
+  project.elements = project.elements.filter(e=>e.id!==sel);
+  sel = null; renderAll();
+}
+function duplicateSel(dx=16, dy=16, silent=false){
+  const e = selEl(); if(!e) return null;
+  if(!silent) pushHistory();
+  const c = deep(e); c.id = 'el_'+(elCounter++); c.name = e.name+' Kopie';
+  c.x += dx; c.y += dy;
+  project.elements.push(c);
+  sel = c.id;
+  if(!silent) renderAll();
+  return c;
+}
+function rowDuplicate(){
+  const e = selEl(); if(!e) return;
+  const n  = parseInt(prompt('Wie viele Kopien?', '5')||'0',10);
+  if(!n||n<1) return;
+  const dx = parseFloat(prompt('Abstand X (px)', '62')||'0');
+  const dy = parseFloat(prompt('Abstand Y (px)', '0')||'0');
+  pushHistory();
+  let last = e;
+  for(let i=1;i<=n;i++){
+    const c = deep(e); c.id='el_'+(elCounter++); c.name=e.name+' '+(i+1);
+    c.x = Math.round(e.x+dx*i); c.y = Math.round(e.y+dy*i);
+    project.elements.push(c); last=c;
+  }
+  sel = last.id; renderAll();
+}
+function moveZ(dir){
+  const i = project.elements.findIndex(e=>e.id===sel);
+  if(i<0) return;
+  const j = i+dir;
+  if(j<0||j>=project.elements.length) return;
+  pushHistory();
+  const [e] = project.elements.splice(i,1);
+  project.elements.splice(j,0,e);
+  renderAll();
+}
+
+/* ============================== Rendering ============================== */
+function renderAll(){ renderStage(); renderLayers(); renderAssets(); renderInspector(); syncToolbar(); maskenVorwaermen(); }
+
+/* Die Trefferpruefung faellt auf das Rechteck zurueck, solange ein Sprite
+   noch nicht dekodiert ist. Ohne Vorwaermen traefe deshalb ausgerechnet
+   der erste Klick auf jede Taste daneben. */
+function maskenVorwaermen(){
+  for(const el of project.elements){
+    if(el.asset && el.alphaHit !== false) alphaBild(el.asset);
+  }
+}
+
+function syncToolbar(){
+  $('#projName').value = project.name;
+  $('#winW').value = project.win.w;
+  $('#winH').value = project.win.h;
+  /* Die Rechnung steht dauerhaft in der Werkzeugleiste, nicht nur im
+     Inspektor - sie ist der Punkt, an dem es schiefgehen kann. */
+  const fit = $('#kFit'), zelle = tafelZellenhoehe();
+  if(!project.bgTop){ fit.className=''; fit.textContent = zelle ? 'ohne Kopfzeile' : ''; }
+  else if(zelle === null){ fit.className=''; fit.textContent = 'Kopfzeile ' + project.bgTop + ' · keine Tafel'; }
+  else if(Math.abs(zelle - (project.win.h + project.bgTop)) < 0.51){
+    fit.className='gut';
+    fit.textContent = 'Tafel ' + Math.round(zelle) + ' = ' + project.bgTop + ' + ' + project.win.h;
+  }else{
+    fit.className='schlecht';
+    fit.textContent = 'Tafel ' + Math.round(zelle) + ' ≠ ' + project.bgTop + ' + ' + project.win.h;
+  }
+}
+
+function renderStage(){
+  const st = $('#stage');
+  const w = project.win.w, h = project.win.h;
+  st.style.width = w+'px'; st.style.height = h+'px';
+  st.style.transform = 'scale('+zoom+')';
+  $('#stageBox').style.width  = (w*zoom)+'px';
+  $('#stageBox').style.height = (h*zoom)+'px';
+  /* Platz fuer das Kopfzeilenband ueber der Buehne, sonst schiebt es sich
+     unter die Werkzeugleiste. */
+  $('#stageBox').style.marginTop = (40 + Math.max(0, project.bgTop|0) * zoom) + 'px';
+  const bg = project.bg && project.assets[project.bg];
+  st.classList.toggle('checker', !bg);
+  st.style.backgroundImage = bg ? 'url('+bg.dataUrl+')' : '';
+  /* Hintergrund kann selbst ein Sprite sein: ein Bogen mit mehreren Zustaenden,
+     von dem immer ein Ausschnitt zu sehen ist — genau wie Kontakt es macht.
+     Ein Button kann den Ausschnitt umschalten (Orgelschluessel, Lampe …). */
+  const bgN = Math.max(1, project.bgFrames|0 || 1);
+  /* Kontakt legt oben seine eigene Leiste (Name, Output, MIDI) ueber die
+     Tafel. Diese Zeilen gehoeren zum Bild, sind im Plugin aber nie zu sehen.
+     bgTop schneidet sie weg: eine Zustandszelle ist h+bgTop hoch, gezeigt
+     wird der Teil darunter. So bleiben die Elementkoordinaten genau die
+     move_control_px-Werte aus dem KSP. */
+  const bgTop = Math.max(0, project.bgTop|0);
+  const cellH = h + bgTop;
+  if(bg && bgN > 1){
+    const cols = Math.max(1, project.bgCols|0 || 1);
+    const rows = Math.ceil(bgN / cols);
+    const idx  = Math.min(Math.max(0, project.bgValue|0), bgN-1);
+    const c = idx % cols, r = Math.floor(idx / cols);
+    st.style.backgroundSize = (w*cols)+'px '+(cellH*rows)+'px';
+    st.style.backgroundPosition = (-c*w)+'px '+(-(r*cellH + bgTop))+'px';
+    st.style.backgroundRepeat = 'no-repeat';
+  }else if(bg && bgTop > 0){
+    st.style.backgroundSize = w+'px '+cellH+'px';
+    st.style.backgroundPosition = '0 '+(-bgTop)+'px';
+    st.style.backgroundRepeat = 'no-repeat';
+  }else{
+    st.style.backgroundSize = bg ? '100% 100%' : '';
+    st.style.backgroundPosition = '0 0';
+  }
+  /* Kopfzeilenband: zeigt genau die Wallpaper-Zeilen, die Kontakt verdeckt,
+     damit man beim Entwerfen sieht, was oben verlorengeht. */
+  const kh = $('#kHead');
+  if(bg && bgTop > 0){
+    const cols = Math.max(1, project.bgCols|0 || 1);
+    const idx  = Math.min(Math.max(0, project.bgValue|0), bgN-1);
+    const c = idx % cols, r = Math.floor(idx / cols);
+    const rows = Math.ceil(bgN / cols);
+    kh.style.display = 'block';
+    kh.style.width  = w+'px';
+    kh.style.height = bgTop+'px';
+    kh.style.transform = 'scale('+zoom+')';
+    kh.style.top = (-bgTop*zoom)+'px';
+    kh.style.backgroundImage = 'url('+bg.dataUrl+')';
+    kh.style.backgroundSize = (w*cols)+'px '+(cellH*rows)+'px';
+    kh.style.backgroundPosition = (-c*w)+'px '+(-r*cellH)+'px';
+    kh.querySelector('span').textContent = 'KONTAKT-KOPFZEILE · ' + bgTop + ' px — verdeckt';
+    kh.classList.toggle('kontakt', kview === 'kontakt');
+    if(kview === 'kontakt') zeichneKontaktKopf(kh.querySelector('.kmock'), bgTop);
+  }else{
+    kh.style.display = 'none';
+  }
+  st.classList.toggle('gridOn', grid.on && mode==='edit');
+  st.style.setProperty('--gs', grid.size+'px');
+  st.innerHTML = '';
+  const bgNow = Math.min(Math.max(0, project.bgValue|0), bgN-1);
+  for(const el of project.elements){
+    if(el.hidden) continue;               // im Layer-Stack ausgeblendet
+    /* An eine Ansicht gebunden: leer = immer sichtbar (z. B. die Fussleiste),
+       sonst nur in den aufgezaehlten Hintergrundzustaenden — wie Kontakt
+       Bedienelemente pro Seite ein- und ausblendet. */
+    if(Array.isArray(el.showOnBg) && el.showOnBg.length
+       && !el.showOnBg.includes(bgNow) && el.id!==sel) continue;   // markiertes bleibt greifbar
+    st.appendChild(elementNode(el));
+  }
+  updateStatus();
+}
+
+function elementNode(el){
+  const d = document.createElement('div');
+  d.className = 'el t-'+el.type+' '+(mode==='edit'?'edit':'test')+(el.id===sel?' sel':'');
+  if(mode==='test'&&(el.type==='knob'||el.type==='fader')) d.classList.add('grab');
+  d.dataset.id = el.id;
+  d.style.left = el.x+'px'; d.style.top = el.y+'px';
+  d.style.width = el.w+'px'; d.style.height = el.h+'px';
+  renderContent(d, el);
+  if(mode==='edit' && el.id===sel){
+    const rs = document.createElement('div'); rs.className='rs'; d.appendChild(rs);
+  }
+  return d;
+}
+function updateNode(el){
+  const d = $('#stage').querySelector('.el[data-id="'+el.id+'"]');
+  if(!d){ renderStage(); return; }
+  d.style.left=el.x+'px'; d.style.top=el.y+'px'; d.style.width=el.w+'px'; d.style.height=el.h+'px';
+  const rs = d.querySelector('.rs');
+  d.innerHTML=''; renderContent(d, el);
+  if(rs) d.appendChild(rs);
+  updateStatus();
+}
+
+function applyStrip(node, asset, frames, cols, idx, w, h){
+  frames = Math.max(1, frames|0); cols = Math.max(1, cols|0);
+  const rows = Math.ceil(frames/cols);
+  idx = clamp(idx|0, 0, frames-1);
+  node.style.backgroundImage = 'url('+asset.dataUrl+')';
+  node.style.backgroundSize = (cols*w)+'px '+(rows*h)+'px';
+  const c = idx%cols, r = Math.floor(idx/cols);
+  node.style.backgroundPosition = (-c*w)+'px '+(-r*h)+'px';
+}
+const snapSteps = (v,steps)=> steps>=2 ? Math.round(v*(steps-1))/(steps-1) : v;
+
+/** Button-Zustand auf gekoppelte Bild-Elemente uebertragen. */
+/* ---------------------------------------------------------------
+   Animation. Ein Element mit mehr als zwei Frames laeuft im Test-
+   Modus durch seine Zwischenstufen, statt zu springen — die Taste
+   kippt also sichtbar. Alles, was im Test einen Wert setzt, geht
+   durch setzeWert(); damit animiert auch, was ueber 'drives'
+   mitgezogen wird, und spaetere Animationen erben das von selbst.
+   --------------------------------------------------------------- */
+const ANIM_STD = 70;            // ms fuer den ganzen Weg, wenn nichts gesetzt ist
+const laufend = new Map();      // el.id -> {von, ziel, t0, ms}
+let tickerAn = false;
+
+function animDauer(el){
+  /* Ohne ausdrueckliche Angabe wird nicht animiert: Bestandsprojekte
+     sollen sich genau wie vorher verhalten. ANIM_STD ist nur der
+     Vorschlagswert fuer neu gebaute Pakete. */
+  const v = (el.animMs===undefined || el.animMs===null) ? 0 : (el.animMs|0);
+  return Math.max(0, v);
+}
+
+function setzeWert(el, ziel, sofort){
+  const max = Math.max(2, el.frames|0) - 1;
+  ziel = Math.min(max, Math.max(0, ziel|0));
+  const ms = sofort ? 0 : animDauer(el);
+  const von = el.value|0;
+  if(ms <= 0 || max < 2 || von === ziel){
+    const a0 = laufend.get(el.id);
+    if(a0 && !sofort && a0.ziel !== ziel){ a0.danach = ziel; return; }
+    laufend.delete(el.id);
+    el.value = ziel; updateNode(el); applyDrives(el);
+    return;
+  }
+  /* Laeuft noch ein Anschlag, wird er zu Ende gefuehrt und das neue Ziel
+     danach angesteuert. Ein kurzes Antippen zeigt so den vollen Weg —
+     eine echte Taste federt auch erst zurueck, wenn sie unten war. */
+  const a = laufend.get(el.id);
+  if(a && a.ziel !== ziel){ a.danach = ziel; return; }
+  // Teilweg kostet nur seinen Anteil der Zeit — ein Antippen federt schnell zurueck.
+  const anteil = Math.abs(ziel - von) / max;
+  laufend.set(el.id, {von, ziel, t0: performance.now(), ms: Math.max(16, ms*anteil)});
+  starteTicker();
+}
+
+/* Logischer Zustand: waehrend einer Animation ist el.value der gerade
+   sichtbare Frame, nicht der Zustand. Geschaltet wird ab dem Ziel. */
+function zielWert(el){
+  const a = laufend.get(el.id);
+  if(!a) return el.value|0;
+  return a.danach !== undefined ? a.danach : a.ziel;
+}
+
+function starteTicker(){
+  if(tickerAn) return;
+  tickerAn = true;
+  /* Waechter: requestAnimationFrame ruht, sobald das Fenster in den
+     Hintergrund geht. Ohne ihn bliebe eine Taste auf halbem Weg stehen.
+     Der Waechter setzt jede ueberfaellige Animation auf ihren Endwert. */
+  const waechter = setInterval(()=>{
+    const jetzt = performance.now();
+    for(const [id, a] of Array.from(laufend)){
+      if(laufend.get(id) !== a) continue;
+      if(jetzt - a.t0 < a.ms + 250) continue;
+      const el = byId(id);
+      if(el){ el.value = a.ziel; updateNode(el); applyDrives(el); }
+      laufend.delete(id);
+      if(el && a.danach !== undefined && a.danach !== a.ziel) setzeWert(el, a.danach);
+    }
+    if(!laufend.size){ clearInterval(waechter); tickerAn = false; }
+  }, 250);
+  requestAnimationFrame(function schritt(jetzt){
+    for(const [id, a] of Array.from(laufend)){
+      // In diesem Durchlauf ersetzt (applyDrives) — der naechste Frame nimmt
+      // den neuen Eintrag. Ohne diese Wache loescht der alte Snapshot ihn.
+      if(laufend.get(id) !== a) continue;
+      const el = byId(id);
+      if(!el){ laufend.delete(id); continue; }
+      const p = a.ms<=0 ? 1 : Math.min(1, (jetzt - a.t0)/a.ms);
+      const v = Math.round(a.von + (a.ziel - a.von)*p);
+      if(v !== (el.value|0)){ el.value = v; updateNode(el); applyDrives(el); }
+      if(p >= 1){
+        el.value = a.ziel; updateNode(el); applyDrives(el);
+        laufend.delete(id);
+        if(a.danach !== undefined && a.danach !== a.ziel) setzeWert(el, a.danach);
+      }
+    }
+    if(laufend.size) requestAnimationFrame(schritt);
+    else { clearInterval(waechter); tickerAn = false; }
+  });
+}
+
+/* Was sich im Test wie eine Taste verhaelt: ein Button auf 'momentary'
+   — oder ein Bild-Sprite, das direkt gedrueckt werden kann. Dieselbe
+   Bedingung wie im pointerdown-Zweig, sonst faende die Rechnertastatur
+   eine Klaviatur aus Bild-Elementen ueberhaupt nicht. */
+function istTaste(el){
+  if(el.toggle === 'momentary') return true;
+  return el.type === 'image' && (el.frames|0) > 1 && !wirdGetrieben(el.id);
+}
+
+/* Wird dieses Element von einem anderen ueber 'drives' geschaltet? */
+function wirdGetrieben(id){
+  for(const e of project.elements){
+    if(!Array.isArray(e.drives)) continue;
+    for(const d of e.drives) if(d.target === id) return true;
+  }
+  return false;
+}
+
+/* Kontakts Instrumentenkopf, masstabsgetreu nachgebaut: Titelzeile 26 px,
+   darunter zwei Zeilen zu je 21 - zusammen die 68 px, die das Wallpaper
+   verdecken. Nur Kulisse, damit der Entwurf im Plugin-Zusammenhang steht. */
+function zeichneKontaktKopf(box, h){
+  const t = Math.round(h * 26/68), z = Math.round(h * 21/68);
+  box.innerHTML =
+    '<div class="kwrench"></div>' +
+    '<div class="krow" style="top:0;height:'+t+'px"><span class="kdim">▾</span>' +
+      '<span class="kname">' + (project.name || 'Instrument') + '</span></div>' +
+    '<div class="krow" style="top:'+t+'px;height:'+z+'px">' +
+      '<span class="kdim">Output:</span><span>Out 1</span>' +
+      '<span style="flex:1"></span><span class="kdim">Voices:</span><span>0</span>' +
+      '<span class="kdim">Max:</span><span>1024</span></div>' +
+    '<div class="krow" style="top:'+(t+z)+'px;height:'+(h-t-z)+'px;border-bottom:none">' +
+      '<span class="kdim">MIDI Ch:</span><span>Omni</span>' +
+      '<span style="flex:1"></span><span class="kdim">Memory:</span><span>0.56 GB</span></div>';
+}
+
+function applyDrives(el){
+  if(!Array.isArray(el.drives)) return;
+  for(const d of el.drives){
+    if(d.target === '__bg'){                      // das Wallpaper selbst
+      /* Der Hintergrund ist eine Ansicht, kein bewegtes Teil: er blaettert
+         erst um, wenn der Anschlag steht. Sonst flackerte die ganze Seite
+         durch jede Zwischenstufe, und renderStage baute die Buehne bei
+         jedem Animationsbild neu auf. */
+      if(laufend.has(el.id)) continue;
+      const max = Math.max(1, project.bgFrames|0 || 1) - 1;
+      let v = el.value|0;
+      /* 'map' ordnet einem Knopfwert eine bestimmte Ansicht zu — noetig, sobald
+         mehrere Knoepfe denselben Hintergrund auf verschiedene Seiten schalten. */
+      if(d.map && Object.prototype.hasOwnProperty.call(d.map, v)) v = d.map[v]|0;
+      const neuerWert = Math.min(Math.max(0, v), max);
+      if(neuerWert !== project.bgValue){       // ohne echten Wechsel nicht neu zeichnen
+        project.bgValue = neuerWert;
+        renderStage();
+      }
+      continue;
+    }
+    const t = byId(d.target);
+    if(!t || t.type!=='image') continue;
+    const max = Math.max(1, t.frames|0) - 1;
+    /* Quelle und Ziel haben nicht zwingend gleich viele Frames: eine
+       Klickflaeche kennt nur auf/zu, die Taste darunter drei Stellungen.
+       Ohne Umrechnung bliebe die Taste auf halbem Weg stehen. */
+    const emax = Math.max(2, el.frames|0) - 1;   // nie 0: sonst Division durch Null
+    const ziel = emax === max ? Math.min(el.value|0, max)
+                              : Math.round((el.value|0) / emax * max);
+    if(mode==='test' && animDauer(t) > 0 && max >= 2){
+      // laeuft ueber die Zwischenstufen; kein applyDrives-Rueckruf, sonst Schleife
+      /* Nicht nur den Anzeigeframe vergleichen: waehrend einer Animation
+         ist t.value der gerade sichtbare Frame, nicht der Zustand. Sonst
+         bliebe beim schnellen Glissando ein alter Anschlag stehen und die
+         ueberstrichene Taste liefe unten fest. */
+      const a = laufend.get(t.id);
+      if((t.value|0) !== ziel || (a && a.ziel !== ziel)){
+        laufend.set(t.id, {von: t.value|0, ziel, t0: performance.now(),
+                           ms: Math.max(16, animDauer(t)*Math.abs(ziel-(t.value|0))/max)});
+        starteTicker();
+      }
+    }else{
+      t.value = ziel;
+      updateNode(t);
+    }
+  }
+}
+
+function renderContent(d, el){
+  const a = el.asset ? project.assets[el.asset] : null;
+  if(el.type==='knob'){
+    const v = snapSteps(el.value, el.steps);
+    const deg = el.startDeg + v*el.sweep;
+    const wantRotate = el.render==='rotate' || (el.render==='auto' && el.frames<=1);
+    if(a && !wantRotate){
+      applyStrip(d, a, el.frames, el.gridCols, Math.round(v*(el.frames-1)), el.w, el.h);
+    }else if(a && wantRotate){
+      const r = document.createElement('div'); r.className='rot';
+      r.style.backgroundImage='url('+a.dataUrl+')';
+      r.style.transform='rotate('+deg+'deg)';
+      d.appendChild(r);
+    }else{
+      const k = document.createElement('div'); k.className='ph-knob';
+      const pw = document.createElement('div'); pw.className='pinwrap';
+      pw.style.transform='rotate('+deg+'deg)';
+      const pin = document.createElement('div'); pin.className='pin';
+      pw.appendChild(pin); k.appendChild(pw); d.appendChild(k);
+    }
+  }
+  else if(el.type==='fader'){
+    const v = el.value, vert = el.orient!=='h';
+    const ha = el.handleAsset ? project.assets[el.handleAsset] : null;
+    if(a && el.render!=='handle' && el.frames>1){
+      applyStrip(d, a, el.frames, el.gridCols, Math.round(v*(el.frames-1)), el.w, el.h);
+    }else{
+      if(a){ // Track-Grafik
+        const t=document.createElement('div'); t.className='rot';
+        t.style.backgroundImage='url('+a.dataUrl+')'; d.appendChild(t);
+      }else{
+        const t=document.createElement('div'); t.className='ph-track';
+        if(vert){ t.style.left='calc(50% - 3px)'; t.style.top='4px'; t.style.bottom='4px'; t.style.width='6px'; }
+        else{ t.style.top='calc(50% - 3px)'; t.style.left='4px'; t.style.right='4px'; t.style.height='6px'; }
+        d.appendChild(t);
+      }
+      const hd = document.createElement('div');
+      hd.style.position='absolute';
+      const hw=el.hw, hh=el.hh;
+      if(ha){ hd.style.backgroundImage='url('+ha.dataUrl+')'; hd.style.backgroundSize='100% 100%'; }
+      else hd.className='ph-handle';
+      hd.style.width=hw+'px'; hd.style.height=hh+'px';
+      if(vert){ hd.style.left=((el.w-hw)/2)+'px'; hd.style.top=((1-v)*(el.h-hh))+'px'; }
+      else{ hd.style.top=((el.h-hh)/2)+'px'; hd.style.left=(v*(el.w-hw))+'px'; }
+      d.appendChild(hd);
+    }
+  }
+  else if(el.type==='button'){
+    const frames = Math.max(2, el.frames|0);
+    const idx = (el.value|0)%frames;
+    if(a) applyStrip(d, a, frames, 1, idx, el.w, el.h);
+    else{
+      const b=document.createElement('div'); b.className='ph-btn'+(idx>0?' on':'');
+      d.appendChild(b);
+    }
+  }
+  else if(el.type==='label'){
+    const t=document.createElement('div'); t.className='lbl';
+    t.textContent = el.text;
+    t.style.fontFamily = el.font||'sans-serif';
+    t.style.fontSize = el.size+'px';
+    t.style.fontWeight = el.weight;
+    t.style.color = el.color;
+    t.style.letterSpacing = el.spacing+'px';
+    t.style.justifyContent = el.align==='left'?'flex-start':el.align==='right'?'flex-end':'center';
+    t.style.textAlign = el.align;
+    d.appendChild(t);
+  }
+  else if(el.type==='image'){
+    if(a && (el.frames|0) > 1){
+      applyStrip(d, a, el.frames|0, el.gridCols||1, Math.min(el.value|0, (el.frames|0)-1), el.w, el.h);
+    }
+    else if(a){ const i=document.createElement('div'); i.className='rot'; i.style.backgroundImage='url('+a.dataUrl+')'; d.appendChild(i); }
+    else{ const p=document.createElement('div'); p.className='ph-img'; p.textContent='Bild wählen'; d.appendChild(p); }
+  }
+  else if(el.type==='link'){
+    const p=document.createElement('div'); p.className='ph-link';
+    p.innerHTML = icon('link') + '<span style="margin-left:6px;">' + esc(el.url||'(keine URL)') + '</span>';
+    p.style.cssText = (p.style.cssText||'') + ';display:flex;align-items:center;justify-content:center;';
+    d.title = el.url||'';
+    d.appendChild(p);
+  }
+}
+
+/* ============================== Layers & Assets ============================== */
+/* Layer-Stack: Reihenfolge = Zeichenreihenfolge (unten = vorn). Elemente
+   lassen sich per Drag umsortieren, in Gruppen legen, ausblenden und sperren.
+   Gruppen sind reine Ordnung im Editor — der Export bleibt eine flache Liste. */
+function groupById(id){ return (project.groups||[]).find(g=>g.id===id) || null; }
+
+function renderLayers(){
+  const box = $('#layerList'); box.innerHTML='';
+  project.groups = project.groups || [];
+  if(!project.elements.length && !project.groups.length){
+    box.innerHTML='<div class="empty" style="color:var(--dim);padding:8px;font-size:12px">Noch keine Elemente – oben „+ Knob“ usw. klicken.</div>';
+    return;
+  }
+
+  /* Von oben nach unten: zuletzt gezeichnetes Element steht oben in der Liste. */
+  const order = [...project.elements].reverse();
+  const seenGroups = new Set();
+  const rows = [];
+  for(const el of order){
+    const g = el.groupId && groupById(el.groupId);
+    if(g && !seenGroups.has(g.id)){
+      seenGroups.add(g.id);
+      rows.push({ kind:'group', group:g });
+    }
+    if(g && g.collapsed) continue;
+    rows.push({ kind:'el', el, inGroup: !!g });
+  }
+  /* Leere Gruppen trotzdem zeigen, damit man hineinziehen kann */
+  for(const g of project.groups){
+    if(!seenGroups.has(g.id)) rows.unshift({ kind:'group', group:g });
+  }
+
+  const dropOn = (node, handler) => {
+    node.addEventListener('dragover', e=>{ e.preventDefault(); node.style.outline='1px solid var(--acc)'; });
+    node.addEventListener('dragleave', ()=>{ node.style.outline=''; });
+    node.addEventListener('drop', e=>{
+      e.preventDefault(); node.style.outline='';
+      const id = e.dataTransfer.getData('text/plain');
+      if(id) handler(id);
+    });
+  };
+
+  for(const r of rows){
+    if(r.kind === 'group'){
+      const g = r.group;
+      const d = document.createElement('div');
+      d.className = 'layerItem';
+      d.style.cssText = 'background:var(--panel2);font-weight:600;';
+      const tw = document.createElement('span');
+      tw.innerHTML = icon(g.collapsed ? 'chevRight' : 'chevDown', 12);
+      tw.style.cssText = 'cursor:pointer;width:12px;flex:none;color:var(--dim);';
+      tw.onclick = e => { e.stopPropagation(); g.collapsed = !g.collapsed; renderLayers(); autosave(); };
+      const nm = document.createElement('span');
+      nm.textContent = g.name; nm.style.cssText='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;';
+      nm.ondblclick = e => {
+        e.stopPropagation();
+        const v = prompt('Gruppe umbenennen', g.name);
+        if(v){ pushHistory(); g.name = v; renderLayers(); autosave(); }
+      };
+      const cnt = project.elements.filter(e=>e.groupId===g.id).length;
+      const badge = document.createElement('span');
+      badge.className='tag'; badge.textContent = cnt;
+      const ug = iconBtn('close', 'Gruppe auflösen (Elemente bleiben)');
+      ug.onclick = e => {
+        e.stopPropagation();
+        pushHistory();
+        project.elements.forEach(el=>{ if(el.groupId===g.id) el.groupId=null; });
+        project.groups = project.groups.filter(x=>x.id!==g.id);
+        renderLayers(); autosave();
+      };
+      d.appendChild(tw); d.appendChild(nm); d.appendChild(badge); d.appendChild(ug);
+      dropOn(d, id => {
+        const el = byId(id); if(!el) return;
+        pushHistory(); el.groupId = g.id; renderLayers(); autosave();
+      });
+      box.appendChild(d);
+      continue;
+    }
+
+    const el = r.el;
+    const d = document.createElement('div');
+    d.className = 'layerItem' + (el.id===sel ? ' sel' : '');
+    if(r.inGroup) d.style.paddingLeft = '20px';
+    d.draggable = true;
+    d.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', el.id));
+    dropOn(d, id => {
+      if(id === el.id) return;
+      const from = project.elements.findIndex(x=>x.id===id);
+      const to   = project.elements.findIndex(x=>x.id===el.id);
+      if(from < 0 || to < 0) return;
+      pushHistory();
+      const [m] = project.elements.splice(from,1);
+      m.groupId = el.groupId;              // in dieselbe Gruppe wie das Ziel
+      project.elements.splice(to, 0, m);
+      renderAll(); autosave();
+    });
+
+    const tag = document.createElement('span');
+    tag.className='tag'; tag.textContent = TYPE_NAMES[el.type];
+    const nm = document.createElement('span');
+    nm.textContent = el.name;
+    nm.style.cssText = 'flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
+      + (el.hidden ? 'opacity:.45;text-decoration:line-through;' : '');
+
+    const eye = iconBtn(el.hidden ? 'eyeOff' : 'eye', el.hidden ? 'Einblenden' : 'Ausblenden');
+    eye.onclick = e => { e.stopPropagation(); pushHistory(); el.hidden = !el.hidden; renderAll(); autosave(); };
+
+    const lk = iconBtn(el.locked ? 'lock' : 'unlock', el.locked ? 'Entsperren' : 'Sperren (nicht verschiebbar)');
+    lk.onclick = e => { e.stopPropagation(); pushHistory(); el.locked = !el.locked; renderLayers(); autosave(); };
+
+    d.appendChild(tag); d.appendChild(nm); d.appendChild(eye); d.appendChild(lk);
+    d.onclick = ()=>{ sel=el.id; renderStage(); renderLayers(); renderInspector(); };
+    box.appendChild(d);
+  }
+}
+
+/* Ausgewaehltes Element in eine neue Gruppe legen */
+function newGroupFromSelection(){
+  const el = byId(sel);
+  pushHistory();
+  project.groups = project.groups || [];
+  const g = { id:'gr_'+(project.groups.length+1)+'_'+Date.now().toString(36),
+              name:'Gruppe '+(project.groups.length+1), collapsed:false };
+  project.groups.push(g);
+  if(el) el.groupId = g.id;
+  renderLayers(); autosave();
+}
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function renderAssets(){
+  const box = $('#assetList'); box.innerHTML='';
+  const ids = Object.keys(project.assets);
+  for(const id of ids){
+    const a = project.assets[id];
+    const d = document.createElement('div');
+    d.className = 'assetItem'+(project.bg===id?' isBg':'');
+    const img = document.createElement('img'); img.src = a.dataUrl;
+    const nm = document.createElement('span'); nm.className='nm'; nm.textContent=a.name; nm.title=a.name+' ('+a.w+'×'+a.h+')';
+    const bgBtn = document.createElement('button'); bgBtn.className='mini'; bgBtn.textContent='BG';
+    bgBtn.title='Als Hintergrund setzen';
+    bgBtn.onclick = ()=>{ pushHistory(); project.bg = (project.bg===id?null:id);
+      ausTafelRechnen(true);            // im Kontakt-Modus Groesse mitziehen
+      renderStage(); renderAssets(); renderInspector(); syncToolbar(); };
+    const del = document.createElement('button'); del.className='mini danger'; del.textContent='✕';
+    del.onclick = ()=>{
+      pushHistory();
+      delete project.assets[id];
+      if(project.bg===id) project.bg=null;
+      for(const el of project.elements){
+        if(el.asset===id) el.asset=null;
+        if(el.handleAsset===id) el.handleAsset=null;
+      }
+      renderAll();
+    };
+    d.append(img, nm, bgBtn, del);
+    box.appendChild(d);
+  }
+}
+
+function addImageFiles(files){
+  const imgs = [...files].filter(f=>f.type.startsWith('image/'));
+  if(!imgs.length) return;
+  pushHistory();
+  let pending = imgs.length;
+  for(const f of imgs){
+    const rd = new FileReader();
+    rd.onload = ()=>{
+      const url = rd.result;
+      const im = new Image();
+      im.onload = ()=>{
+        project.assets['as_'+(assetCounter++)] = {name:f.name, dataUrl:url, w:im.naturalWidth, h:im.naturalHeight};
+        if(--pending===0){ renderAssets(); renderInspector(); autosave(); }
+      };
+      im.src = url;
+    };
+    rd.readAsDataURL(f);
+  }
+}
+
+/* ============================== Inspector ============================== */
+function row(label, input){
+  const r = document.createElement('div'); r.className='row';
+  const l = document.createElement('label'); l.textContent=label;
+  r.append(l, input); return r;
+}
+function numIn(el, key, opts={}){
+  const i = document.createElement('input'); i.type='number';
+  if(opts.min!==undefined) i.min=opts.min;
+  if(opts.step!==undefined) i.step=opts.step;
+  i.value = el[key];
+  i.addEventListener('focus', ()=>pushHistory());
+  i.addEventListener('input', ()=>{
+    const v = parseFloat(i.value);
+    if(!isNaN(v)){ el[key] = v; updateNode(el); }
+  });
+  return i;
+}
+function textIn(el, key, cb){
+  const i = document.createElement('input'); i.type='text'; i.value = el[key]||'';
+  i.addEventListener('focus', ()=>pushHistory());
+  i.addEventListener('input', ()=>{ el[key]=i.value; updateNode(el); if(cb)cb(); });
+  return i;
+}
+function selectIn(el, key, options, cb){
+  const s = document.createElement('select');
+  for(const [val,lab] of options){
+    const o=document.createElement('option'); o.value=val; o.textContent=lab; s.appendChild(o);
+  }
+  s.value = String(el[key]);
+  s.addEventListener('change', ()=>{ pushHistory(); el[key]=s.value; updateNode(el); if(cb)cb(); });
+  return s;
+}
+function assetSelect(el, key){
+  const s = document.createElement('select');
+  const none=document.createElement('option'); none.value=''; none.textContent='(keine Grafik)';
+  s.appendChild(none);
+  for(const id of Object.keys(project.assets)){
+    const o=document.createElement('option'); o.value=id; o.textContent=project.assets[id].name;
+    s.appendChild(o);
+  }
+  s.value = el[key]||'';
+  s.addEventListener('change', ()=>{ pushHistory(); el[key]=s.value||null; updateNode(el); });
+  return s;
+}
+
+/* An eine Ansicht binden: in welchen Hintergrundzustaenden ist das Element da?
+   Nichts angehakt = immer sichtbar (Fussleiste). Genau wie in Kontakt, wo je
+   Seite ein anderer Satz Bedienelemente gezeichnet wird. */
+/* Drei Zahlen muessen zusammenpassen: Tafelhoehe = Kopfzeile + Fensterhoehe.
+   Stimmen sie nicht, hat Kontakt unten kein Wallpaper mehr und zeichnet
+   Schwarz - der Fehler, der uns einen halben Tag gekostet hat. Deshalb rechnet
+   der Baukasten das jetzt selbst nach und sagt es sofort. */
+/* Kontakt-Modus: der Baukasten rechnet die Fenstergroesse aus der Tafel, statt
+   sie abzufragen. Tafelhoehe = Kopfzeile + Fensterhoehe, und die Tafelhoehe
+   steht im Hintergrundbild. Wer eine neue Tafel einsetzt oder die Zahl der
+   Ansichten aendert, bekommt die Fenstergroesse sofort mitgezogen - der Stand,
+   bei dem Kontakt unten kein Wallpaper mehr hat, ist damit nicht mehr
+   erreichbar. */
+function tafelZellenhoehe(){
+  const bg = project.bg && project.assets[project.bg];
+  if(!bg) return null;
+  const cols   = Math.max(1, project.bgCols|0 || 1);
+  const reihen = Math.ceil(Math.max(1, project.bgFrames|0 || 1) / cols);
+  return bg.h / reihen;
+}
+function ausTafelRechnen(still){
+  if(!project.kontakt) return false;
+  const zelle = tafelZellenhoehe();
+  if(!zelle) return false;
+  const neu = Math.max(100, Math.round(zelle - (project.bgTop|0)));
+  const bg  = project.bg && project.assets[project.bg];
+  const brt = bg ? Math.round(bg.w / Math.max(1, project.bgCols|0 || 1)) : project.win.w;
+  if(project.win.h === neu && project.win.w === brt) return false;
+  project.win.h = neu;
+  if(brt >= 100) project.win.w = brt;
+  if(!still){ renderStage(); renderInspector(); syncToolbar(); autosave(); }
+  return true;
+}
+
+function passtDieTafel(){
+  const box = document.createElement('div');
+  box.style.cssText='font-size:11px;line-height:1.6;margin:6px 0 2px;';
+  const bg = project.bg && project.assets[project.bg];
+  if(!bg){ return box; }
+  const cols  = Math.max(1, project.bgCols|0 || 1);
+  const bgN   = Math.max(1, project.bgFrames|0 || 1);
+  const reihen = Math.ceil(bgN / cols);
+  /* Nicht jedes Projekt bringt die Bildmasse im Asset mit — gebaute
+     Pakete speichern nur Namen und Bilddaten. Dann wird die Hoehe aus
+     dem geladenen Bild genommen; sonst stuende hier 'NaN hoch'. */
+  let hoehe = bg.h;
+  if(!(hoehe > 0)){
+    const geladen = alphaBild(project.bg);
+    if(geladen && geladen.bereit) hoehe = geladen.h;
+  }
+  if(!(hoehe > 0)) return box;                 // Bild noch nicht da: nichts melden
+  const ist   = hoehe / reihen;                // tatsaechliche Zellenhoehe
+  const soll  = (project.win.h|0) + (project.bgTop|0);
+  if(Math.abs(ist - soll) < 0.51){
+    box.style.color = '#7fb98a';
+    box.textContent = '✓ Tafel ' + Math.round(ist) + ' = Kopfzeile ' + (project.bgTop|0) +
+                      ' + Fenster ' + (project.win.h|0);
+    return box;
+  }
+  box.style.color = '#e2a33c';
+  const fehl = Math.round(soll - ist);
+  box.innerHTML = '⚠ Tafel ist ' + Math.round(ist) + ' hoch, Kopfzeile ' + (project.bgTop|0) +
+    ' + Fenster ' + (project.win.h|0) + ' ergeben ' + soll + '.<br>' +
+    (fehl > 0 ? fehl + ' Zeilen ohne Bild — in Kontakt unten schwarz.'
+              : (-fehl) + ' Zeilen zu viel — der Rest wird nie gezeigt.');
+  const b = document.createElement('button');
+  b.className='mini'; b.style.marginTop='6px';
+  b.textContent = 'Fenster auf ' + Math.round(ist - (project.bgTop|0)) + ' setzen';
+  b.onclick = ()=>{ pushHistory();
+    project.win.h = Math.max(100, Math.round(ist - (project.bgTop|0)));
+    renderStage(); renderInspector(); syncToolbar(); autosave(); };
+  box.appendChild(b);
+  return box;
+}
+
+function viewBindPanel(el){
+  const wrap = document.createElement('div'); wrap.className='group';
+  const bgN = Math.max(1, project.bgFrames|0 || 1);
+  const head = document.createElement('div');
+  head.style.cssText='font-size:11px;color:var(--dim);margin-bottom:6px;letter-spacing:.04em;';
+  head.textContent = 'NUR IN ANSICHT';
+  wrap.appendChild(head);
+  if(bgN < 2){
+    const p = document.createElement('div');
+    p.style.cssText='font-size:12px;color:var(--dim);line-height:1.6;';
+    p.textContent = 'Der Hintergrund hat nur eine Ansicht — es gibt nichts zu binden.';
+    wrap.appendChild(p);
+    return wrap;
+  }
+  el.showOnBg = Array.isArray(el.showOnBg) ? el.showOnBg : [];
+  for(let i=0;i<bgN;i++){
+    const r = document.createElement('div');
+    r.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px;';
+    const cb = document.createElement('input');
+    cb.type='checkbox'; cb.checked = el.showOnBg.includes(i);
+    cb.onchange = ()=>{
+      pushHistory();
+      el.showOnBg = el.showOnBg.filter(v => v !== i);
+      if(cb.checked) el.showOnBg.push(i);
+      el.showOnBg.sort((a,b)=>a-b);
+      renderStage(); renderInspector(); autosave();
+    };
+    const lb = document.createElement('span');
+    lb.style.cssText='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    lb.textContent = (project.bgStates && project.bgStates[i]) || ('Ansicht ' + i);
+    r.appendChild(cb); r.appendChild(lb);
+    wrap.appendChild(r);
+  }
+  const hint = document.createElement('div');
+  hint.style.cssText='font-size:11px;color:var(--dim);line-height:1.5;margin-top:6px;';
+  hint.textContent = 'Nichts angehakt = in jeder Ansicht sichtbar.';
+  wrap.appendChild(hint);
+  return wrap;
+}
+
+function renderInspector(){
+  const box = $('#insp'); box.innerHTML='';
+  const el = selEl();
+  if(!el){
+    box.innerHTML = '<div class="empty">Kein Element ausgewählt.<br><br>Klicke ein Element auf der Fläche an – oder lege oben mit „+ Knob“, „+ Fader“ usw. ein neues an.<br><br>Im Modus <b>Testen</b> kannst du Knobs drehen, Fader ziehen und Buttons schalten.</div>';
+    box.appendChild(backdropPanel());
+    return;
+  }
+  box.appendChild(row('Name', textIn(el,'name', renderLayers)));
+  const pid = textIn(el,'paramId');
+  pid.placeholder = autoParamId(el);
+  box.appendChild(row('Param-ID', pid));
+
+  const g1 = document.createElement('div'); g1.className='group';
+  const pos = document.createElement('div'); pos.className='row';
+  pos.innerHTML='<label>Position</label>';
+  pos.append(numIn(el,'x',{step:1}), numIn(el,'y',{step:1}));
+  const size = document.createElement('div'); size.className='row';
+  size.innerHTML='<label>Größe</label>';
+  size.append(numIn(el,'w',{min:2,step:1}), numIn(el,'h',{min:2,step:1}));
+  g1.append(pos,size);
+  box.appendChild(g1);
+
+  const g2 = document.createElement('div'); g2.className='group';
+  if(el.type==='knob'){
+    g2.appendChild(row('Grafik', assetSelect(el,'asset')));
+    g2.appendChild(row('Darstellung', selectIn(el,'render',[['auto','Automatisch'],['strip','Filmstrip'],['rotate','Bild rotieren']])));
+    const fr = document.createElement('div'); fr.className='row';
+    fr.innerHTML='<label>Frames / Spalten</label>';
+    fr.append(numIn(el,'frames',{min:1,step:1}), numIn(el,'gridCols',{min:1,step:1}));
+    g2.appendChild(fr);
+    const an = document.createElement('div'); an.className='row';
+    an.innerHTML='<label>Start° / Weg°</label>';
+    an.append(numIn(el,'startDeg',{step:1}), numIn(el,'sweep',{step:1}));
+    g2.appendChild(an);
+    g2.appendChild(row('Rastung (0=stufenlos)', numIn(el,'steps',{min:0,step:1})));
+  }
+  if(el.type==='fader'){
+    g2.appendChild(row('Richtung', selectIn(el,'orient',[['v','Vertikal'],['h','Horizontal']])));
+    g2.appendChild(row('Darstellung', selectIn(el,'render',[['auto','Automatisch'],['strip','Filmstrip'],['handle','Griff auf Bahn']])));
+    g2.appendChild(row('Bahn/Strip', assetSelect(el,'asset')));
+    const fr = document.createElement('div'); fr.className='row';
+    fr.innerHTML='<label>Frames / Spalten</label>';
+    fr.append(numIn(el,'frames',{min:1,step:1}), numIn(el,'gridCols',{min:1,step:1}));
+    g2.appendChild(fr);
+    g2.appendChild(row('Griff-Grafik', assetSelect(el,'handleAsset')));
+    const hs = document.createElement('div'); hs.className='row';
+    hs.innerHTML='<label>Griff B × H</label>';
+    hs.append(numIn(el,'hw',{min:2,step:1}), numIn(el,'hh',{min:2,step:1}));
+    g2.appendChild(hs);
+  }
+  if(el.type==='button'){
+    g2.appendChild(row('Grafik (Strip)', assetSelect(el,'asset')));
+    g2.appendChild(row('Zustände', numIn(el,'frames',{min:2,step:1})));
+    g2.appendChild(row('Schalten', selectIn(el,'toggle',[['cycle','Alle durchschalten'],['onoff','An/Aus (erster↔letzter)'],['momentary','Taste — gedrückt halten']])));
+    g2.appendChild(row('Animation ms', numIn(el,'animMs',{min:0,step:10})));
+    const animNote = document.createElement('div');
+    animNote.style.cssText = 'color:var(--dim);font-size:11px;padding:2px 10px 6px';
+    animNote.textContent = '0 = springt sofort. Sonst Zeit für den ganzen Weg durch die Frames, z. B. 70.';
+    g2.appendChild(animNote);
+    g2.appendChild(stateEditor(el));
+    g2.appendChild(drivesEditor(el));
+  }
+  if(el.type==='label'){
+    const t = document.createElement('textarea'); t.rows=2; t.value=el.text;
+    t.addEventListener('focus',()=>pushHistory());
+    t.addEventListener('input',()=>{ el.text=t.value; updateNode(el); });
+    g2.appendChild(row('Text', t));
+    g2.appendChild(row('Schrift', textIn(el,'font')));
+    const fs = document.createElement('div'); fs.className='row';
+    fs.innerHTML='<label>Größe / Sperrung</label>';
+    fs.append(numIn(el,'size',{min:4,step:1}), numIn(el,'spacing',{step:.5}));
+    g2.appendChild(fs);
+    g2.appendChild(row('Gewicht', selectIn(el,'weight',[['300','Leicht'],['400','Normal'],['500','Medium'],['600','Halbfett'],['700','Fett']])));
+    const col = document.createElement('input'); col.type='color'; col.value = el.color;
+    col.addEventListener('focus',()=>pushHistory());
+    col.addEventListener('input',()=>{ el.color=col.value; updateNode(el); });
+    g2.appendChild(row('Farbe', col));
+    g2.appendChild(row('Ausrichtung', selectIn(el,'align',[['left','Links'],['center','Mitte'],['right','Rechts']])));
+  }
+  if(el.type==='link'){
+    g2.appendChild(row('URL', textIn(el,'url')));
+    const hint=document.createElement('div');
+    hint.style.cssText='color:var(--dim);font-size:11px;margin-top:4px';
+    hint.textContent='Unsichtbare Klickfläche. Im Testen-Modus öffnet ein Klick die URL im Browser.';
+    g2.appendChild(hint);
+  }
+  if(el.type==='image'){
+    g2.appendChild(row('Grafik', assetSelect(el,'asset')));
+    const fit = document.createElement('button'); fit.className='mini'; fit.textContent='Originalgröße übernehmen';
+    fit.onclick = ()=>{
+      const a = el.asset && project.assets[el.asset]; if(!a) return;
+      pushHistory();
+      /* Bei Sprites die Groesse EINES Frames nehmen, nicht die des ganzen Bogens */
+      if(a.sprite && (el.frames|0) > 1){ el.w = a.sprite.fw; el.h = a.sprite.fh; }
+      else { el.w=a.w; el.h=a.h; }
+      updateNode(el); renderInspector();
+    };
+    g2.appendChild(fit);
+    /* Bild als Sprite: mehrere Zustaende, die ein Button umschalten kann */
+    g2.appendChild(row('Zustände', numIn(el,'frames',{min:1,step:1})));
+    if((el.frames|0) > 1){
+      g2.appendChild(row('Spalten', numIn(el,'gridCols',{min:1,step:1})));
+      g2.appendChild(row('Zeigt Frame', numIn(el,'value',{min:0,step:1})));
+      g2.appendChild(stateEditor(el));
+    }
+  }
+  // Alpha-Trefferpruefung je Element abschaltbar — bei Fadern soll die ganze
+  // Bahn anklickbar bleiben, nicht nur der Griff.
+  if(el.asset){
+    const gA = document.createElement('div'); gA.className='grp';
+    const lab = document.createElement('label'); lab.className='chk';
+    const cb = document.createElement('input'); cb.type='checkbox';
+    cb.checked = el.alphaHit !== false;
+    cb.onchange = ()=>{ pushHistory(); el.alphaHit = cb.checked; };
+    lab.append(cb, document.createTextNode(' Treffer nur auf sichtbaren Pixeln'));
+    gA.appendChild(lab);
+    box.appendChild(gA);
+  }
+
+  if(el.type==='knob'||el.type==='fader'){
+    const vr = document.createElement('input'); vr.type='range'; vr.min=0; vr.max=1; vr.step=0.001; vr.value=el.value;
+    vr.style.flex='1';
+    vr.addEventListener('input', ()=>{ el.value=parseFloat(vr.value); updateNode(el); });
+    g2.appendChild(row('Wert (Vorschau)', vr));
+  }
+  box.appendChild(g2);
+  box.appendChild(viewBindPanel(el));
+
+  const g3 = document.createElement('div'); g3.className='group btns';
+  const mk = (txt,fn,cls='mini')=>{ const b=document.createElement('button'); b.className=cls; b.textContent=txt; b.onclick=fn; return b; };
+  g3.append(
+    mk('Duplizieren', ()=>duplicateSel()),
+    mk('Als Reihe …', rowDuplicate),
+    mk('▲ vor', ()=>moveZ(1)),
+    mk('▼ zurück', ()=>moveZ(-1)),
+    mk('Löschen', deleteSel, 'mini danger')
+  );
+  box.appendChild(g3);
+}
+
+/* ============================== Interaktion ============================== */
+/* 'draft' zeigt nur unsere Flaeche, 'kontakt' setzt Kontakts eigene Kopfleiste
+   darueber - dieselben 68 px, die im Plugin das Wallpaper verdecken. */
+let kview = 'draft';
+const stage = $('#stage');
+let dragState = null;
+
+/* ---------------------------- Alpha-Trefferpruefung ----------------------
+   Ein Klick trifft das oberste Element, dessen Pixel an dieser Stelle
+   tatsaechlich deckend ist — nicht das oberste Rechteck.
+
+   Warum das noetig ist: Bei perspektivisch gezeichneten Bauteilen ueberlappen
+   sich die Rechtecke stark. Eine weisse Klaviaturtaste ist 67 px breit, der
+   Tastenabstand betraegt aber nur 43 — mit reiner Rechteckpruefung landet der
+   Klick auf dem Nachbarn. Gemessen: nur 52 % der Klicks trafen die richtige
+   Taste, die schlechteste kam auf 9 %.
+
+   Elemente ohne Bild und solche mit alphaHit === false behalten das ganze
+   Rechteck als Trefferflaeche — das braucht man bei Fadern, wo die ganze Bahn
+   anklickbar bleiben soll, nicht nur der Griff. */
+/* Gerenderte Sprites enthalten den Schlagschatten auf die Nachbartaste.
+   Bei 0.35 zaehlte dieser Schatten als Trefferflaeche und E griff nach F.
+   Gemessen: Tastenkoerper liegt geschlossen ueber 90 %, Schatten darunter. */
+const ALPHA_SCHWELLE = 0.9;
+const alphaCache = new Map();
+
+function alphaBild(assetId){
+  if(alphaCache.has(assetId)) return alphaCache.get(assetId);
+  const a = project.assets[assetId];
+  if(!a){ alphaCache.set(assetId, null); return null; }
+  const eintrag = { bereit:false, ctx:null, w:0, h:0 };
+  alphaCache.set(assetId, eintrag);
+  const img = new Image();
+  img.onload = ()=>{
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext('2d', { willReadFrequently:true });
+    ctx.drawImage(img, 0, 0);
+    eintrag.ctx = ctx; eintrag.w = c.width; eintrag.h = c.height;
+    eintrag.bereit = true;
+  };
+  img.src = a.dataUrl;
+  return eintrag;
+}
+
+/* Trefferflaeche eines Elements: die Vereinigung aller Frames, auf einen
+   Frame zusammengelegt. Noetig, weil ein Sprite nur zeigt, was sich
+   gegenueber dem Hintergrund aendert — die Taste in Ruhe steckt im
+   Hintergrundbild, ihr Frame 0 ist leer. Wer nur den gerade sichtbaren
+   Frame prueft, kann so eine Taste nie treffen. Beim Drehknopf ergibt
+   die Vereinigung sauber die runde Grundflaeche. */
+const trefferCache = new Map();
+
+/* Wie viele Frames zeigt die DARSTELLUNG wirklich? Ein Knopf mit
+   'Bild rotieren' und ein Fader mit 'Griff auf Bahn' spannen das ganze
+   Bild ueber das Element — dann darf die Maske nicht nach frames
+   zerschnitten werden. Ein Button zeichnet immer einspaltig. */
+function maskenRaster(el){
+  const n = Math.max(1, el.frames|0 || 1);
+  const cols = Math.max(1, el.gridCols|0 || 1);
+  if(el.type === 'knob'){
+    const dreht = el.render === 'rotate' || (el.render === 'auto' && (el.frames|0) <= 1);
+    return dreht ? [1, 1] : [n, cols];
+  }
+  if(el.type === 'fader')
+    return (el.render !== 'handle' && (el.frames|0) > 1) ? [n, cols] : [1, 1];
+  if(el.type === 'button') return [Math.max(2, el.frames|0), 1];
+  return [n, cols];
+}
+
+/* Schmale Spalte schliessen (Dilatation, dann Erosion). Zwischen den
+   beiden Haelften einer Wippe laeuft ein zwei Pixel schmaler Spalt quer
+   durch — er ist vom Rand erreichbar, also kein Loch, aber er gehoert
+   zum Bedienteil. Radius 2 schliesst Spalte bis vier Pixel; die rund
+   zwanzig Pixel breite Aussparung einer weissen Taste bleibt offen. */
+function spalteSchliessen(bild, w, h, r){
+  const N = w*h;
+  let a = new Uint8Array(N);
+  for(let i = 0; i < N; i++) a[i] = bild.data[i*4+3]/255 >= ALPHA_SCHWELLE ? 1 : 0;
+  const wachsen = (q, an) => {
+    const z = new Uint8Array(N);
+    for(let y = 0; y < h; y++) for(let x = 0; x < w; x++){
+      const i = y*w + x;
+      let v = q[i];
+      if(an){
+        if(!v){
+          if(x > 0   && q[i-1]) v = 1;
+          else if(x < w-1 && q[i+1]) v = 1;
+          else if(y > 0   && q[i-w]) v = 1;
+          else if(y < h-1 && q[i+w]) v = 1;
+        }
+      }else{
+        if(v){
+          if(x === 0 || x === w-1 || y === 0 || y === h-1) v = 1;   // Rand haelt
+          else if(!q[i-1] || !q[i+1] || !q[i-w] || !q[i+w]) v = 0;
+        }
+      }
+      z[i] = v;
+    }
+    return z;
+  };
+  for(let k = 0; k < r; k++) a = wachsen(a, true);
+  for(let k = 0; k < r; k++) a = wachsen(a, false);
+  for(let i = 0; i < N; i++) if(a[i] && bild.data[i*4+3]/255 < ALPHA_SCHWELLE) bild.data[i*4+3] = 255;
+}
+
+/* Vom Rand her fluten; was unerreicht bleibt, ist ein eingeschlossenes
+   Loch und wird deckend gemacht. */
+function loecherFuellen(bild, w, h){
+  const deckend = i => bild.data[i*4+3]/255 >= ALPHA_SCHWELLE;
+  const aussen = new Uint8Array(w*h);
+  const stapel = [];
+  for(let x = 0; x < w; x++){
+    if(!deckend(x)){ aussen[x] = 1; stapel.push(x); }
+    const u = (h-1)*w + x;
+    if(!deckend(u)){ aussen[u] = 1; stapel.push(u); }
+  }
+  for(let y = 0; y < h; y++){
+    const l = y*w, r = y*w + w - 1;
+    if(!deckend(l)){ aussen[l] = 1; stapel.push(l); }
+    if(!deckend(r)){ aussen[r] = 1; stapel.push(r); }
+  }
+  while(stapel.length){
+    const i = stapel.pop();
+    const x = i % w, y = (i - x) / w;
+    if(x > 0   && !aussen[i-1] && !deckend(i-1)){ aussen[i-1] = 1; stapel.push(i-1); }
+    if(x < w-1 && !aussen[i+1] && !deckend(i+1)){ aussen[i+1] = 1; stapel.push(i+1); }
+    if(y > 0   && !aussen[i-w] && !deckend(i-w)){ aussen[i-w] = 1; stapel.push(i-w); }
+    if(y < h-1 && !aussen[i+w] && !deckend(i+w)){ aussen[i+w] = 1; stapel.push(i+w); }
+  }
+  for(let i = 0; i < w*h; i++){
+    if(!aussen[i] && !deckend(i)) bild.data[i*4+3] = 255;
+  }
+}
+
+function trefferMaske(el){
+  const [n, cols] = maskenRaster(el);
+  const key = el.asset + '|' + n + '|' + cols;
+  if(trefferCache.has(key)) return trefferCache.get(key);
+  const b = alphaBild(el.asset);
+  if(!b || !b.bereit) return null;               // noch nicht geladen
+  const rows = Math.ceil(n / cols);
+  const kw = Math.floor(b.w / cols), kh = Math.floor(b.h / rows);
+  const c = document.createElement('canvas');
+  c.width = kw; c.height = kh;
+  const ctx = c.getContext('2d', { willReadFrequently:true });
+  const ziel = ctx.createImageData(kw, kh);
+  for(let i = 0; i < n; i++){
+    const sx = (i % cols) * kw, sy = Math.floor(i / cols) * kh;
+    const q = b.ctx.getImageData(sx, sy, kw, kh).data;
+    for(let j = 3; j < q.length; j += 4){
+      if(q[j] > ziel.data[j]) ziel.data[j] = q[j];
+    }
+  }
+  /* Eingeschlossene Loecher schliessen. Ein Sprite zeigt nur, was sich
+     gegenueber dem Hintergrund aendert: bei einer Wippe kippen nur die
+     beiden Haelften, ihre Mitte bleibt stehen und bleibt darum
+     durchsichtig. Ohne diesen Schritt haette die Trefferflaeche
+     ausgerechnet dort ein Loch, wo man hinklickt. Gefuellt wird nur,
+     was vom Rand her nicht erreichbar ist — eine Einbuchtung wie die
+     Aussparung einer weissen Taste bleibt also offen. */
+  spalteSchliessen(ziel, kw, kh, 3);   // gemessen: Wippenspalt ist 6 px
+  loecherFuellen(ziel, kw, kh);
+
+  ctx.putImageData(ziel, 0, 0);
+  /* Eine Maske, die kaum etwas abdeckt, taugt nicht als Trefferflaeche —
+     etwa bei einem Platzhalterbild von wenigen Pixeln. Dann gilt wieder
+     das Rechteck, sonst waere das Element ueberhaupt nicht zu treffen. */
+  let deckend = 0;
+  for(let j = 3; j < ziel.data.length; j += 4){
+    if(ziel.data[j]/255 >= ALPHA_SCHWELLE) deckend++;
+  }
+  const brauchbar = (kw*kh) >= 64 && deckend >= 0.02*kw*kh;
+  const m = { ctx, w: kw, h: kh, brauchbar };
+  trefferCache.set(key, m);
+  return m;
+}
+
+/* Beide Caches sind nur ueber die Asset-Kennung verschluesselt. Da jedes
+   neu geladene Projekt wieder bei 'as_1' anfaengt, muessen sie leer sein,
+   sobald ein anderes Projekt gilt — sonst gelten fremde Masken. */
+function maskenCacheLeeren(){ alphaCache.clear(); trefferCache.clear(); }
+
+/* Deckung eines Elements an der Stelle (fx, fy), beide 0..1 im Element. */
+function deckungAn(el, fx, fy){
+  if(el.alphaHit === false) return 1;
+  if(!el.asset) return 1;
+  const m = trefferMaske(el);
+  if(!m || !m.brauchbar) return 1;       // nicht geladen oder untauglich: Rechteck gilt
+  const px = Math.floor(fx * m.w), py = Math.floor(fy * m.h);
+  if(px < 0 || py < 0 || px >= m.w || py >= m.h) return 0;
+  try {
+    return m.ctx.getImageData(px, py, 1, 1).data[3] / 255;
+  } catch(e){
+    return 1;                            // z. B. getaintetes Canvas
+  }
+}
+
+/* Das Element unter dem Zeiger, mit Alpha-Pruefung von oben nach unten. */
+function trefferUnter(ev){
+  const stapel = document.elementsFromPoint(ev.clientX, ev.clientY);
+  let ersterRahmen = null, erstesBedienteil = null;
+  const bedienbar = e => e.type==='button' || e.type==='knob' ||
+                         e.type==='fader'  || e.type==='link' ||
+                         (e.type==='image' && (e.frames|0) > 1 && !wirdGetrieben(e.id));
+  for(const node of stapel){
+    const d = node.closest && node.closest('.el');
+    if(!d) continue;
+    const el = byId(d.dataset.id);
+    if(!el || el.hidden) continue;
+    if(!ersterRahmen) ersterRahmen = d;
+    if(!erstesBedienteil && bedienbar(el)) erstesBedienteil = d;
+    /* Reine Anzeige faengt keinen Klick: die Kontrollleuchte etwa wird
+       vom Netzschalter geschaltet, ihr Kasten ist wegen des Lichthofs
+       aber gross und vollflaechig deckend — er lag ueber den Wippen und
+       verschluckte sie. Im Bearbeiten-Modus bleibt sie auswaehlbar. */
+    if(mode !== 'edit' && el.type === 'image' && wirdGetrieben(el.id)) continue;
+    const r = d.getBoundingClientRect();
+    if(r.width <= 0 || r.height <= 0) continue;
+    const fx = (ev.clientX - r.left) / r.width;
+    const fy = (ev.clientY - r.top) / r.height;
+    if(fx < 0 || fy < 0 || fx > 1 || fy > 1) continue;
+    // Im Bearbeiten-Modus gilt das Rechteck: Auswahl und Hover-Umriss
+    // muessen mit dem uebereinstimmen, was der Klick trifft.
+    if(mode === 'edit' || deckungAn(el, fx, fy) >= ALPHA_SCHWELLE) return d;
+  }
+  /* Nichts war deckend genug. Im Bearbeiten-Modus gilt dann das oberste
+     Rechteck, sonst liesse sich ein durchsichtiges Element nie auswaehlen.
+     Im Test greift das oberste BEDIENTEIL — ein Klick in die Fuge zwischen
+     zwei Tasten soll etwas ausloesen, und kein Element darf durch die
+     Deckungspruefung voellig unerreichbar werden, etwa wenn seine Grafik
+     an falscher Stelle sitzt. */
+  return mode === 'edit' ? ersterRahmen : erstesBedienteil;
+}
+
+stage.addEventListener('pointerdown', ev=>{
+  const target = trefferUnter(ev)
+              || ((ev.target && ev.target.closest) ? ev.target.closest('.el') : null);
+  if(mode==='edit'){
+    if(ev.target.classList.contains('rs')){
+      const el = selEl(); if(!el || el.locked) return;
+      dragState = {kind:'resize', el, sx:ev.clientX, sy:ev.clientY, ow:el.w, oh:el.h, pushed:false, ratio:el.w/el.h};
+      startWindowDrag(); ev.preventDefault(); return;
+    }
+    if(target){
+      const el = byId(target.dataset.id);
+      if(sel!==el.id){ sel=el.id; renderStage(); renderLayers(); renderInspector(); }
+      if(el.locked) return;               // im Layer-Stack gesperrt
+      dragState = {kind:'move', el, sx:ev.clientX, sy:ev.clientY, ox:el.x, oy:el.y, pushed:false};
+      startWindowDrag(); ev.preventDefault();
+    }else if(ev.target===stage){
+      sel=null; renderStage(); renderLayers(); renderInspector();
+    }
+  }else{ // Test-Modus
+    if(!target) return;
+    let el = byId(target.dataset.id);
+    /* Ein Bild mit mehreren Frames laesst sich im Test unmittelbar druecken,
+       auch wenn niemand eine Klickflaeche dafuer angelegt hat. Wird es
+       bereits von einem anderen Element ueber 'drives' geschaltet, bleibt
+       es passiv — sonst schalteten Klickflaeche und Bild gegeneinander. */
+    if(el.type==='image' && (el.frames|0) > 1 && !wirdGetrieben(el.id)){
+      const n = el.frames|0;
+      el = Object.assign(el, {toggle: el.toggle || (n >= 3 ? 'momentary' : 'onoff')});
+      const frames = Math.max(2, n);
+      if(el.toggle==='momentary'){
+        setzeWert(el, frames-1);
+        dragState = {kind:'taste', el, gedrueckt:new Set([el.id])};
+        startWindowDrag(); ev.preventDefault();
+      }else{
+        setzeWert(el, zielWert(el)>0 ? 0 : frames-1);
+      }
+      return;
+    }
+    if(el.type==='button'){
+      const frames = Math.max(2, el.frames|0);
+      if(el.toggle==='momentary'){
+        // Wie eine echte Taste: gedrueckt, solange die Maus unten ist. Beim
+        // Ziehen laeuft ein Glissando ueber die Nachbartasten.
+        setzeWert(el, frames-1);
+        dragState = {kind:'taste', el, gedrueckt:new Set([el.id])};
+        startWindowDrag(); ev.preventDefault();
+      }else{
+        // 'onoff': erster ↔ letzter Frame (z. B. Registerzug), 'cycle': alle durchschalten
+        const v = zielWert(el);
+        setzeWert(el, el.toggle==='onoff' ? (v>0 ? 0 : frames-1) : (v+1)%frames);
+      }
+    }else if(el.type==='link'){
+      if(el.url) window.open(el.url, '_blank');
+    }else if(el.type==='knob'||el.type==='fader'){
+      dragState = {kind:'value', el, sx:ev.clientX, sy:ev.clientY, ov:el.value,
+                   bewegt:false};
+      startWindowDrag(); ev.preventDefault();
+    }
+  }
+});
+
+function startWindowDrag(){
+  window.addEventListener('pointermove', onDragMove);
+  window.addEventListener('pointerup', onDragEnd, {once:true});
+}
+function onDragMove(ev){
+  if(!dragState) return;
+  const d = dragState, el = d.el;
+  if(d.kind==='value' && !d.bewegt &&
+     Math.hypot(ev.clientX-d.sx, ev.clientY-d.sy) > 3) d.bewegt = true;
+  if(d.kind==='taste'){
+    // Glissando: die Taste unter dem Zeiger drueckt, alle anderen gehen hoch.
+    const t = trefferUnter(ev);
+    const neuEl = t ? byId(t.dataset.id) : null;
+    const jetzt = new Set();
+    if(neuEl && neuEl.type==='button' && neuEl.toggle==='momentary'){
+      jetzt.add(neuEl.id);
+      if(!d.gedrueckt.has(neuEl.id)) setzeWert(neuEl, Math.max(2,(neuEl.frames|0))-1);
+    }
+    for(const id of d.gedrueckt){
+      if(jetzt.has(id)) continue;
+      const alt = byId(id);
+      if(alt) setzeWert(alt, 0);
+    }
+    d.gedrueckt = jetzt;
+    return;
+  }
+  if(d.kind==='move'){
+    if(!d.pushed){ pushHistory(); d.pushed=true; }
+    let nx = d.ox + (ev.clientX-d.sx)/zoom;
+    let ny = d.oy + (ev.clientY-d.sy)/zoom;
+    if(grid.on && !ev.altKey){ nx = Math.round(nx/grid.size)*grid.size; ny = Math.round(ny/grid.size)*grid.size; }
+    el.x = Math.round(nx); el.y = Math.round(ny);
+    updateNode(el); syncPosInputs(el);
+  }
+  else if(d.kind==='resize'){
+    if(!d.pushed){ pushHistory(); d.pushed=true; }
+    let nw = Math.max(4, d.ow + (ev.clientX-d.sx)/zoom);
+    let nh = Math.max(4, d.oh + (ev.clientY-d.sy)/zoom);
+    if(ev.shiftKey){ nh = nw/d.ratio; }
+    if(grid.on && !ev.altKey){ nw = Math.round(nw/grid.size)*grid.size; nh = Math.round(nh/grid.size)*grid.size; }
+    el.w = Math.round(nw); el.h = Math.round(Math.max(4,nh));
+    updateNode(el); syncPosInputs(el);
+  }
+  else if(d.kind==='value'){
+    const range = ev.shiftKey ? 600 : 150;
+    let dv;
+    if(el.type==='fader' && el.orient==='h') dv = (ev.clientX-d.sx)/range;
+    else dv = (d.sy-ev.clientY)/range;
+    el.value = clamp(d.ov+dv, 0, 1);
+    updateNode(el);
+    const shown = el.type==='knob' ? snapSteps(el.value, el.steps) : el.value;
+    $('#selInfo').textContent = el.name+' : '+Math.round(shown*100)+' %';
+  }
+}
+function onDragEnd(){
+  /* Ein Knopf mit wenigen Rasten ist am Geraet ein Klickschalter: vox-chord
+     hat drei Stellungen, der selector zwei. Ein Klick ohne Ziehen rastet
+     deshalb eine Stellung weiter, statt nichts zu tun. Gezogen wird er
+     weiterhin wie ein Regler. */
+  if(dragState && dragState.kind==='value' && !dragState.bewegt && mode==='test'){
+    const el = dragState.el, n = el.steps|0;
+    if(el.type==='knob' && n >= 2 && n <= 6){
+      const i = Math.round((el.value||0) * (n-1));
+      el.value = ((i + 1) % n) / (n - 1);
+      updateNode(el); applyDrives(el); renderInspector();
+    }
+  }
+  if(dragState && dragState.kind==='taste'){
+    for(const id of dragState.gedrueckt){
+      const el = byId(id);
+      if(el) setzeWert(el, 0);
+    }
+    dragState = null;
+    window.removeEventListener('pointermove', onDragMove);
+    return;
+  }
+  window.removeEventListener('pointermove', onDragMove);
+  if(dragState && dragState.kind!=='value') { renderInspector(); autosave(); }
+  dragState = null;
+  updateStatus();
+}
+function syncPosInputs(){ /* Inspector wird am Drag-Ende neu aufgebaut */ }
+
+window.addEventListener('keydown', ev=>{
+  const zielKnoten = (ev.target && ev.target.closest) ? ev.target : document.activeElement;
+  const inField = zielKnoten && zielKnoten.closest
+                ? zielKnoten.closest('input,textarea,select') : null;
+  const meta = ev.metaKey||ev.ctrlKey;
+  if(meta && ev.key==='z' && !ev.shiftKey){ ev.preventDefault(); undo(); return; }
+  if(meta && (ev.key==='y' || (ev.key==='z'&&ev.shiftKey))){ ev.preventDefault(); redo(); return; }
+  if(meta && ev.key==='s'){ ev.preventDefault(); saveProject(); return; }
+  if(inField) return;
+  if(meta && ev.key==='d'){ ev.preventDefault(); duplicateSel(); return; }
+  const el = selEl();
+  if(!el || mode!=='edit') return;
+  if(ev.key==='Backspace'||ev.key==='Delete'){ ev.preventDefault(); deleteSel(); return; }
+  const step = ev.shiftKey?10:1;
+  let moved=false;
+  if(ev.key==='ArrowLeft'){ el.x-=step; moved=true; }
+  if(ev.key==='ArrowRight'){ el.x+=step; moved=true; }
+  if(ev.key==='ArrowUp'){ el.y-=step; moved=true; }
+  if(ev.key==='ArrowDown'){ el.y+=step; moved=true; }
+  if(moved){ ev.preventDefault(); updateNode(el); renderInspector(); autosave(); }
+});
+
+function updateStatus(){
+  const hints = {
+    edit:'Bearbeiten: ziehen = verschieben · Ecke = Größe (⇧ = proportional) · Pfeiltasten = 1 px (⇧ = 10 px) · ⌘D = duplizieren · ⌘Z = rückgängig',
+    test:'Testen: Knobs/Fader vertikal ziehen (⇧ = fein) · Buttons klicken'
+  };
+  $('#hint').textContent = hints[mode];
+  const el = selEl();
+  $('#selInfo').textContent = el ? el.name+' — x '+el.x+' · y '+el.y+' · '+el.w+'×'+el.h : '';
+}
+
+/* ============================== Toolbar-Events ============================== */
+$('#modeEdit').onclick = ()=>{ alleTastenLoesen(); mode='edit'; $('#modeEdit').classList.add('on'); $('#modeTest').classList.remove('on'); renderStage(); };
+$('#modeTest').onclick = ()=>{ alleTastenLoesen(); mode='test'; sel=null; $('#modeTest').classList.add('on'); $('#modeEdit').classList.remove('on'); renderStage(); renderLayers(); renderInspector(); };
+document.querySelectorAll('[data-add]').forEach(b=> b.onclick = ()=>addElement(b.dataset.add));
+$('#projName').addEventListener('input', ()=>{ project.name=$('#projName').value; autosave(); });
+$('#preset').addEventListener('change', ()=>{
+  const v = $('#preset').value; if(!v) return;
+  if(v === 'auto'){
+    pushHistory(); project.kontakt = true; project.bgTop = 68;
+    if(!ausTafelRechnen()){ renderStage(); renderInspector(); syncToolbar(); }
+    $('#preset').value=''; autosave(); return;
+  }
+  if(v === 'frei'){
+    pushHistory(); project.kontakt = false; project.bgTop = 0;
+    renderStage(); renderInspector(); syncToolbar(); autosave();
+    $('#preset').value=''; return;
+  }
+  const [w,h,top] = v.split('x').map(Number);
+  /* Ein Kontakt-Preset setzt IMMER auch die Kopfzeile: Tafelhoehe = Kopfzeile +
+     Fensterhoehe. Wer nur die Fenstergroesse aendert, baut sich sonst genau den
+     Fehler, bei dem Kontakt unten kein Wallpaper mehr hat. */
+  pushHistory(); project.win={w,h};
+  if(typeof top === 'number' && !isNaN(top)) project.bgTop = top;
+  project.kontakt = (top|0) > 0;
+  renderStage(); renderInspector(); syncToolbar();
+  $('#preset').value='';
+});
+$('#kvDraft').addEventListener('click', ()=>{ kview='draft';
+  $('#kvDraft').classList.add('on'); $('#kvKontakt').classList.remove('on'); renderStage(); });
+$('#kvKontakt').addEventListener('click', ()=>{ kview='kontakt';
+  $('#kvKontakt').classList.add('on'); $('#kvDraft').classList.remove('on'); renderStage(); });
+$('#winW').addEventListener('change', ()=>{ pushHistory(); project.win.w=Math.max(100,parseInt($('#winW').value)||100); renderStage(); });
+$('#winH').addEventListener('change', ()=>{ pushHistory(); project.win.h=Math.max(100,parseInt($('#winH').value)||100); renderStage(); });
+/* ---------------------------------------------------------------
+   Zoom. Beim Stufenwechsel bleibt der Bildpunkt in der Mitte des
+   Ausschnitts stehen — sonst springt die Ansicht beim Vergroessern
+   weg und man sucht seine Taste wieder. Cmd/Strg + Mausrad zoomt
+   stufenlos auf den Zeiger, wie man es von Karten kennt.
+   --------------------------------------------------------------- */
+function passendZoom(){
+  const wrap = $('#stageWrap'), box = $('#stageBox');
+  const r = wrap.getBoundingClientRect();
+  const w = project.win.w, h = project.win.h;
+  if(!w || !h) return 1;
+  /* Der Rand um die Buehne kommt aus dem Stil und ist nicht 32 px —
+     abgemessen wird er, statt ihn zu raten, sonst passt 'Einpassen' nie. */
+  const bs = getComputedStyle(box);
+  const randX = (parseFloat(bs.marginLeft)||0) + (parseFloat(bs.marginRight)||0);
+  const randY = (parseFloat(bs.marginTop)||0) + (parseFloat(bs.marginBottom)||0);
+  return Math.max(0.1, Math.min(4,
+    Math.min((r.width - randX - 8)/w, (r.height - randY - 8)/h)));
+}
+
+function setzeZoom(neu, ankerX, ankerY){
+  const wrap = $('#stageWrap');
+  const alt = zoom;
+  neu = Math.max(0.1, Math.min(4, neu));
+  if(Math.abs(neu-alt) < 1e-6) return;
+  const r = wrap.getBoundingClientRect();
+  const box = $('#stageBox');
+  const bs = getComputedStyle(box);
+  // Der Rand von #stageBox skaliert nicht mit; er muss aus der Rechnung heraus,
+  // sonst wandert der Punkt unter dem Zeiger beim Zoomen weg.
+  const randL = parseFloat(bs.marginLeft)||0, randO = parseFloat(bs.marginTop)||0;
+  // Ankerpunkt: der Zeiger, sonst die Mitte des Ausschnitts
+  const ax = (ankerX === undefined ? r.width/2  : ankerX - r.left);
+  const ay = (ankerY === undefined ? r.height/2 : ankerY - r.top);
+  const bildX = (wrap.scrollLeft + ax - randL) / alt;   // Punkt in Buehnenkoordinaten
+  const bildY = (wrap.scrollTop  + ay - randO) / alt;
+  zoom = neu;
+  renderStage();
+  wrap.scrollLeft = bildX*neu - ax + randL;
+  wrap.scrollTop  = bildY*neu - ay + randO;
+  zoomAuswahlAbgleichen();
+}
+
+/* Die Auswahlliste zeigt die naechstliegende Stufe. Sie darf nach dem
+   Rad-Zoom nicht auf 'Einpassen' stehenbleiben, sonst laesst sich diese
+   Stufe nicht mehr auswaehlen — 'change' feuert bei gleichem Wert nicht. */
+function zoomAuswahlAbgleichen(){
+  const sel = $('#zoomSel');
+  if(!sel) return;
+  let beste = null, abstand = Infinity;
+  for(const o of sel.options){
+    const v = parseFloat(o.value);
+    if(isNaN(v)) continue;
+    const d = Math.abs(v - zoom);
+    if(d < abstand){ abstand = d; beste = o.value; }
+  }
+  if(beste !== null && abstand < 0.01) sel.value = beste;
+  else sel.selectedIndex = -1;              // Zwischenstufe: keine Zeile markiert
+}
+
+$('#zoomSel').addEventListener('change', ()=>{
+  const v = $('#zoomSel').value;
+  setzeZoom(v === 'fit' ? passendZoom() : parseFloat(v));
+});
+
+$('#stageWrap').addEventListener('wheel', ev=>{
+  if(!(ev.metaKey || ev.ctrlKey)) return;           // ohne Zusatztaste bleibt es Scrollen
+  ev.preventDefault();
+  const schritt = Math.exp(-ev.deltaY * 0.0015);
+  setzeZoom(zoom * schritt, ev.clientX, ev.clientY);
+}, {passive:false});
+$('#gridOn').addEventListener('change', ()=>{ grid.on=$('#gridOn').checked; renderStage(); });
+$('#gridSize').addEventListener('change', ()=>{ grid.size=Math.max(2,parseInt($('#gridSize').value)||8); renderStage(); });
+
+$('#btnNew').onclick = ()=>{
+  if(!confirm('Neues Projekt beginnen? Nicht Gespeichertes geht verloren.')) return;
+  project = newProject(); sel=null; undoStack=[]; redoStack=[];
+  elCounter=1; assetCounter=1; maskenCacheLeeren();
+  cloudSlug = null;                 // neues Projekt -> eigener Platz im Speicher
+  liveStop();                       // das alte Projekt geht die Runde nichts mehr an
+  localStorage.removeItem('sus_autosave');
+  renderAll();
+};
+$('#btnOpen').onclick = ()=> $('#fileProj').click();
+$('#btnSave').onclick = saveProject;
+
+/* ====================== Team-Speicher (Cloud) ======================
+   Projekte liegen serverseitig im privaten Bucket, erreichbar nur fuer
+   eingeloggte Team-Mitglieder (uistudio-api). Damit ist ein Projekt an
+   jedem Rechner da, an dem sich jemand aus dem Team anmeldet. */
+const CLOUD_URL = () => window.STORE_CONFIG.supabaseUrl + '/functions/v1/uistudio-api';
+
+/* Diese Fassung arbeitet im Bereich 'audio' (Ablage `_uistudio-audio/`). Die
+   Instruments-Fassung schickt kein scope mit und landet damit weiterhin im
+   alten Bereich. Beide Listen bleiben so getrennt — hier stehen die
+   Plugin-Oberflaechen, dort die Kontakt-Instrumente. Der Zugang haengt am
+   Bereich: siehe SCOPES in supabase/functions/uistudio-api/index.ts. */
+const CLOUD_SCOPE = 'audio';
+let cloudSlug = null;   // zuletzt verwendeter Projekt-Slug
+
+function cloudNote(t, err){
+  const el = document.getElementById('cloudNote');
+  if(!el) return;
+  el.textContent = t || '';
+  el.style.color = err ? '#c96f5a' : '#8a8378';
+}
+
+function cloudCall(payload){
+  const store = window.SteinbachStore;
+  if(!store || !store.configured) return Promise.reject(new Error('Store nicht konfiguriert'));
+  return store.getSession().then(s => {
+    if(!s) throw new Error('Nicht angemeldet');
+    return fetch(CLOUD_URL(), {
+      method:'POST',
+      headers:{ 'apikey': window.STORE_CONFIG.supabaseAnonKey,
+                'Authorization': 'Bearer ' + s.access_token,
+                'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ scope: CLOUD_SCOPE }, payload))
+    });
+  }).then(res => res.json().catch(()=>({})).then(body => {
+    if(!res.ok) throw new Error(body.error || ('HTTP ' + res.status));
+    return body;
+  }));
+}
+
+/* Das Ziel ergibt sich IMMER aus dem Projektnamen. Vorher wurde der Slug des
+   zuletzt geoeffneten Projekts weiterverwendet — wer eins oeffnete und danach
+   ein neues anlegte, ueberschrieb damit das alte. Wuerde ein fremdes Projekt
+   ueberschrieben, wird vorher gefragt. */
+function cloudSave(){
+  const name = project.name || 'Projekt';
+  const slug = fileSlug(name);
+  if(!slug){ cloudNote('Bitte dem Projekt oben einen Namen geben.', true); return; }
+  cloudNote('sichere …');
+  const write = () => cloudCall({ action:'save', slug, name, project }).then(r => {
+    cloudSlug = r.saved;
+    if(!live) liveStart(r.saved);
+    const mb = (r.bytes/1048576).toFixed(1);
+    cloudNote('gesichert als „' + r.saved + '" · ' + mb + ' MB');
+    setTimeout(()=>cloudNote(''), 8000);
+  }).catch(e => cloudNote('Fehler: ' + e.message, true));
+
+  if(slug === cloudSlug){ write(); return; }   // dasselbe Projekt wie geladen
+  cloudCall({ action:'list' }).then(r => {
+    const treffer = (r.projects||[]).some(p => p.slug === slug);
+    if(treffer && !confirm('Im Team-Speicher liegt bereits „' + slug + '".\n\nÜberschreiben?')){
+      cloudNote('nicht gesichert');
+      return;
+    }
+    write();
+  }).catch(() => write());
+}
+
+function cloudOpen(){
+  cloudNote('lade Liste …');
+  cloudCall({ action:'list' }).then(r => {
+    cloudNote('');
+    const rows = r.projects || [];
+    const build = (body) => {
+    if(!rows.length){
+      body.innerHTML = '<p style="color:#8a8378;">Noch nichts im Team-Speicher. Mit „Sichern" das erste Projekt ablegen.</p>';
+    }
+    rows.forEach(p => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);';
+      const info = document.createElement('div');
+      info.style.cssText = 'flex:1;min-width:0;';
+      const when = (p.updated_at || '').slice(0,16).replace('T',' ');
+      info.innerHTML = '<div style="color:#e9e4da;">' + p.slug + '</div>' +
+        '<div style="font:11px/1.6 ui-monospace,monospace;color:#8a8378;">' +
+        when + ' · ' + (p.size/1048576).toFixed(1) + ' MB</div>';
+      const open = document.createElement('button');
+      open.className = 'mini'; open.textContent = 'Öffnen';
+      open.onclick = () => {
+        cloudNote('lade ' + p.slug + ' …');
+        cloudCall({ action:'load', slug:p.slug }).then(d => {
+          const proj = d.project || d;
+          if(!proj.win || !proj.elements) throw new Error('Kein Studio-Projekt');
+          pushHistory();
+          project = proj; sel = null; cloudSlug = p.slug;
+          recountIds(); renderAll(); autosave();
+          liveStart(p.slug);
+          $('#modalBack').classList.remove('open');
+          cloudNote('geladen · ' + p.slug);
+          setTimeout(()=>cloudNote(''), 6000);
+        }).catch(e => cloudNote('Fehler: ' + e.message, true));
+      };
+      const del = document.createElement('button');
+      del.className = 'mini'; del.textContent = 'Löschen';
+      del.onclick = () => {
+        if(!confirm('„' + p.slug + '" endgültig aus dem Team-Speicher löschen?')) return;
+        cloudCall({ action:'delete', slug:p.slug })
+          .then(() => { row.remove(); cloudNote('gelöscht · ' + p.slug); })
+          .catch(e => cloudNote('Fehler: ' + e.message, true));
+      };
+      row.appendChild(info); row.appendChild(open); row.appendChild(del);
+      body.appendChild(row);
+    });
+    };
+    openModal('Team-Speicher', build);
+  }).catch(e => cloudNote('Fehler: ' + e.message, true));
+}
+
+/* ====================== Gemeinsam arbeiten ======================
+   Zwei Leute an derselben Oberflaeche, in Echtzeit.
+
+   WIE die Aenderungen entstehen: nicht von Hand an dreissig Stellen
+   gemeldet, sondern abgeleitet. Der Editor ruft nach jeder Aenderung
+   ohnehin autosave() auf; dort wird `project` gegen einen Schatten des
+   zuletzt gesendeten Standes verglichen und nur die Differenz verschickt.
+   Das ist der einzige Weg, der ohne Umbau jedes einzelnen Aufrufs
+   auskommt — und er kann nichts uebersehen, was ein vergessener Aufruf
+   uebersehen wuerde.
+
+   WER GEWINNT: der letzte, und zwar JE FELD, nicht je Element. Wer eine
+   Frequenz verschiebt, waehrend der andere denselben Knopf umbenennt,
+   verliert nichts. Nur wer dasselbe Feld desselben Elements gleichzeitig
+   anfasst, ueberschreibt den anderen — dagegen hilft die Anwesenheits-
+   anzeige mehr als jede Mechanik.
+
+   GRAFIKEN GEHEN NICHT UEBER DIE LEITUNG. Sie stecken als Base64 im
+   Projekt und sind einzeln groesser als eine Realtime-Nachricht sein
+   darf. Wer ein Bild hinzufuegt, sichert stattdessen in den Team-Speicher;
+   die anderen bekommen einen Hinweis und laden neu. Das ist selten genug,
+   um zumutbar zu sein — Layout aendert man staendig, Grafiken einmal. */
+
+let live = null;              // Verbindung, solange ein Projekt offen ist
+let liveSchatten = null;      // letzter gesendeter Stand, fuer den Vergleich
+let liveAnwendend = false;    // gerade eine fremde Aenderung einspielen?
+let liveTakt = null;
+let liveRunde = [];           // wer ist sonst noch da
+/* Welche Felder von der anderen Seite kamen — "elementId|feld", fuer den
+   Kopf "kopf|feld", fuer ganz neue Elemente "elementId|__neu". Rueckgaengig
+   laesst genau diese in Ruhe (siehe zurueckMischen). Sobald ich ein solches
+   Feld selbst anfasse, gehoert es wieder mir und faellt hier heraus. */
+const liveFremdFelder = new Set();
+const LIVE_FARBEN = ['#e8c078','#7fd1c1','#e07a9a','#8fb3e8','#c3a5e0','#9dd18a'];
+
+function liveMeineFarbe(){
+  /* Aus der Kennung, damit dieselbe Person ueber eine Sitzung hinweg
+     dieselbe Farbe behaelt, ohne dass jemand sie vergeben muss. */
+  const k = (live && live.kennung) || '';
+  let n = 0; for(const c of k) n = (n*31 + c.charCodeAt(0)) >>> 0;
+  return LIVE_FARBEN[n % LIVE_FARBEN.length];
+}
+
+function liveNote(text, art){
+  const el = document.getElementById('liveNote');
+  if(!el) return;
+  el.textContent = text || '';
+  el.style.color = art === 'fehler' ? '#c96f5a' : (art === 'gut' ? '#7fd1c1' : '#8a8378');
+}
+
+function liveKlon(o){ return JSON.parse(JSON.stringify(o)); }
+
+/* --- Vergleich: was hat sich seit dem letzten Senden geaendert? --- */
+function liveDifferenz(alt, neu){
+  const aend = {};
+
+  // Kopf: Name, Fenstergroesse, Hintergrund, Kontakt-Kopfzeile
+  const kopf = {};
+  ['name','bg','bgTop'].forEach(k => {
+    if(JSON.stringify(alt[k]) !== JSON.stringify(neu[k])) kopf[k] = neu[k];
+  });
+  if(JSON.stringify(alt.win) !== JSON.stringify(neu.win)) kopf.win = neu.win;
+  if(Object.keys(kopf).length) aend.kopf = kopf;
+
+  // Elemente und Gruppen: nach Kennung, Feld fuer Feld
+  ['elements','groups'].forEach(feld => {
+    const altM = new Map((alt[feld]||[]).map(e => [e.id, e]));
+    const neuM = new Map((neu[feld]||[]).map(e => [e.id, e]));
+    const neuZ = {}, aendZ = {}, weg = [];
+
+    neuM.forEach((e, id) => {
+      const a = altM.get(id);
+      if(!a){ neuZ[id] = e; return; }
+      const teil = {};
+      new Set([...Object.keys(a), ...Object.keys(e)]).forEach(k => {
+        if(JSON.stringify(a[k]) !== JSON.stringify(e[k])) teil[k] = e[k];
+      });
+      if(Object.keys(teil).length) aendZ[id] = teil;
+    });
+    altM.forEach((_, id) => { if(!neuM.has(id)) weg.push(id); });
+
+    /* Die Reihenfolge im Feld ist die Stapelreihenfolge und damit sichtbar.
+       Sie wandert als eigene Liste mit, sonst landet ein neu angelegtes
+       Element beim anderen immer zuoberst. */
+    const reihe = (neu[feld]||[]).map(e => e.id);
+    const reiheAlt = (alt[feld]||[]).map(e => e.id);
+    const reiheNeu = JSON.stringify(reihe) !== JSON.stringify(reiheAlt);
+
+    if(Object.keys(neuZ).length || Object.keys(aendZ).length || weg.length || reiheNeu){
+      aend[feld] = { neu:neuZ, teil:aendZ, weg, reihe: reiheNeu ? reihe : null };
+    }
+  });
+
+  // Grafiken: nur melden DASS welche dazukamen, nie die Bilder selbst
+  const altA = Object.keys(alt.assets||{}), neuA = Object.keys(neu.assets||{});
+  if(altA.length !== neuA.length || neuA.some(k => !(k in (alt.assets||{})))){
+    aend.grafiken = true;
+  }
+
+  return Object.keys(aend).length ? aend : null;
+}
+
+/* --- Empfang: dieselbe Aenderung auf dieses Bild anwenden --- */
+function liveEinspielen(aend){
+  if(!aend) return;
+  liveAnwendend = true;
+  try{
+    if(aend.kopf){
+      Object.assign(project, aend.kopf);
+      Object.keys(aend.kopf).forEach(k => liveFremdFelder.add('kopf|' + k));
+      if('name' in aend.kopf) $('#projName').value = project.name || '';
+    }
+
+    ['elements','groups'].forEach(feld => {
+      const teil = aend[feld];
+      if(!teil) return;
+      if(!Array.isArray(project[feld])) project[feld] = [];
+      const karte = new Map(project[feld].map(e => [e.id, e]));
+
+      (teil.weg||[]).forEach(id => karte.delete(id));
+      Object.entries(teil.neu||{}).forEach(([id,e]) => {
+        karte.set(id, e);
+        liveFremdFelder.add(id + '|__neu');
+      });
+      Object.entries(teil.teil||{}).forEach(([id,felder]) => {
+        const e = karte.get(id);
+        /* Ein Feld-Update auf ein Element, das es hier nicht (mehr) gibt,
+           wird verworfen statt als halbes Element angelegt. */
+        if(e) Object.assign(e, felder);
+        Object.keys(felder).forEach(k => liveFremdFelder.add(id + '|' + k));
+      });
+
+      if(teil.reihe){
+        const sortiert = teil.reihe.map(id => karte.get(id)).filter(Boolean);
+        karte.forEach((e,id) => { if(!teil.reihe.includes(id)) sortiert.push(e); });
+        project[feld] = sortiert;
+      } else {
+        project[feld] = Array.from(karte.values());
+      }
+    });
+
+    if(aend.grafiken){
+      liveNote('Jemand hat Grafiken hinzugefügt — „Projekte" → neu laden.', 'fehler');
+    }
+
+    maskenCacheLeeren();
+    if(sel && !byId(sel)) sel = null;
+    recountIds();
+    renderAll();
+    liveSchatten = liveKlon(project);   // sonst schicken wir es sofort zurueck
+  } finally {
+    liveAnwendend = false;
+  }
+}
+
+/* --- Senden, gebremst: beim Ziehen sonst 60 Nachrichten je Sekunde --- */
+function liveAbgleich(){
+  if(!live || liveAnwendend || !liveSchatten) return;
+  clearTimeout(liveTakt);
+  liveTakt = setTimeout(() => {
+    const aend = liveDifferenz(liveSchatten, project);
+    if(!aend) return;
+
+    /* Was ich anfasse, ist wieder meins — sonst bliebe ein Feld, das der
+       andere einmal gesetzt hat, fuer immer vor meinem Rueckgaengig
+       geschuetzt. */
+    Object.keys(aend.kopf || {}).forEach(k => liveFremdFelder.delete('kopf|' + k));
+    ['elements','groups'].forEach(feld => {
+      const teil = aend[feld]; if(!teil) return;
+      Object.entries(teil.teil || {}).forEach(([id,felder]) => {
+        Object.keys(felder).forEach(k => liveFremdFelder.delete(id + '|' + k));
+      });
+      (teil.weg || []).forEach(id => {
+        Array.from(liveFremdFelder).forEach(e => { if(e.startsWith(id + '|')) liveFremdFelder.delete(e); });
+      });
+    });
+
+    live.senden('aend', aend);
+    liveSchatten = liveKlon(project);
+  }, 60);
+}
+
+/* --- Anwesenheit --- */
+function liveRundeZeigen(liste){
+  liveRunde = liste || [];
+  const el = document.getElementById('livePeers');
+  if(!el) return;
+  el.innerHTML = '';
+  liveRunde.forEach(p => {
+    const punkt = document.createElement('span');
+    punkt.textContent = (p.name || '?').slice(0,1).toUpperCase();
+    punkt.title = (p.name || 'Unbekannt') + (p.sieht ? ' · ' + p.sieht : '');
+    punkt.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;' +
+      'width:18px;height:18px;border-radius:50%;font:10px/1 ui-monospace,monospace;' +
+      'margin-left:4px;color:#111;background:' + (p.farbe || '#8a8378');
+    el.appendChild(punkt);
+  });
+  liveZeigerZeichnen();
+}
+
+/* Fremde Zeiger und Auswahlrahmen liegen ueber der Buehne, nicht darin —
+   so kann kein fremder Zeiger versehentlich einen Klick abfangen. */
+function liveZeigerZeichnen(){
+  let schicht = document.getElementById('liveLayer');
+  if(!schicht){
+    const box = document.getElementById('stage');
+    if(!box) return;
+    schicht = document.createElement('div');
+    schicht.id = 'liveLayer';
+    schicht.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:40;overflow:hidden';
+    box.appendChild(schicht);
+  }
+  schicht.innerHTML = '';
+  liveRunde.forEach(p => {
+    if(typeof p.x !== 'number') return;
+    const z = document.createElement('div');
+    z.style.cssText = 'position:absolute;left:' + p.x + 'px;top:' + p.y + 'px;' +
+      'width:10px;height:10px;border-radius:50% 50% 50% 2px;transform:rotate(-8deg);' +
+      'background:' + (p.farbe || '#8a8378');
+    const name = document.createElement('div');
+    name.textContent = p.name || '';
+    name.style.cssText = 'position:absolute;left:12px;top:8px;white-space:nowrap;' +
+      'font:10px/1.4 ui-monospace,monospace;padding:1px 4px;border-radius:3px;' +
+      'color:#111;background:' + (p.farbe || '#8a8378');
+    z.appendChild(name);
+    schicht.appendChild(z);
+
+    if(p.auswahl){
+      const e = byId(p.auswahl);
+      if(e){
+        const r = document.createElement('div');
+        r.style.cssText = 'position:absolute;left:' + e.x + 'px;top:' + e.y + 'px;' +
+          'width:' + e.w + 'px;height:' + e.h + 'px;border:1px solid ' + (p.farbe || '#8a8378') +
+          ';border-radius:2px;';
+        schicht.appendChild(r);
+      }
+    }
+  });
+}
+
+/* --- An- und abmelden --- */
+function liveStart(slug){
+  liveStop();
+  if(!slug || !window.SteinbachLive || !window.SteinbachStore) return;
+  const store = window.SteinbachStore;
+
+  liveSchatten = liveKlon(project);
+  live = window.SteinbachLive.verbinden({
+    raum: slug,
+    holeToken: () => store.getSession().then(s => s && s.access_token),
+    ich: { name: 'wird geladen …' },
+    aufOp: (name, daten) => { if(name === 'aend') liveEinspielen(daten); },
+    aufAnwesend: liveRundeZeigen,
+    aufZustand: (zustand, text) => {
+      if(zustand === 'verbunden'){
+        liveNote(liveRunde.length ? 'gemeinsam · ' + slug : 'allein · ' + slug, 'gut');
+      } else {
+        liveNote(text || zustand, zustand === 'fehler' ? 'fehler' : null);
+      }
+    }
+  });
+
+  /* Der Name kommt aus dem angemeldeten Konto — niemand tippt ihn ein, und
+     niemand kann sich als der andere ausgeben. */
+  store.getSession().then(s => {
+    const mail = (s && s.email) || '';
+    live.michMelden({ name: mail.split('@')[0] || 'jemand', farbe: liveMeineFarbe() });
+  });
+}
+
+function liveStop(){
+  if(live){ live.trennen(); live = null; }
+  liveSchatten = null;
+  liveRunde = [];
+  liveFremdFelder.clear();
+  clearTimeout(liveTakt);
+  const schicht = document.getElementById('liveLayer');
+  if(schicht) schicht.remove();
+  liveNote('');
+}
+
+/* Zeiger und Auswahl melden, aber hoechstens zehnmal je Sekunde. */
+let liveZeigerTakt = 0;
+document.addEventListener('mousemove', ev => {
+  if(!live) return;
+  const jetzt = performance.now();
+  if(jetzt - liveZeigerTakt < 100) return;
+  const buehne = document.getElementById('stage');
+  if(!buehne) return;
+  const r = buehne.getBoundingClientRect();
+  if(ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) return;
+  liveZeigerTakt = jetzt;
+  live.michMelden({
+    x: Math.round((ev.clientX - r.left) / zoom),
+    y: Math.round((ev.clientY - r.top) / zoom),
+    auswahl: sel || null
+  });
+});
+
+/* Cloud-Knoepfe mit Icon bestuecken (Icons stehen erst zur Laufzeit bereit) */
+$('#btnCloudSave').innerHTML = icon('cloudUp') + '<span style="margin-left:5px;">Sichern</span>';
+$('#btnCloudOpen').innerHTML = icon('cloud')   + '<span style="margin-left:5px;">Projekte</span>';
+for(const b of [$('#btnCloudSave'), $('#btnCloudOpen')])
+  b.style.cssText = 'display:inline-flex;align-items:center;';
+$('#btnCloudSave').onclick = cloudSave;
+$('#btnCloudOpen').onclick = cloudOpen;
+/* Cmd/Ctrl+Shift+S sichert in die Cloud */
+window.addEventListener('keydown', ev => {
+  if((ev.metaKey || ev.ctrlKey) && ev.shiftKey && ev.key.toLowerCase() === 's'){
+    ev.preventDefault(); cloudSave();
+  }
+});
+/* ---------------------------------------------------------------
+   Rechnertastatur als Klaviatur, Belegung wie in Ableton Live.
+   Gelesen wird ev.code, also die Taste an ihrer Stelle — damit
+   spielt sich das auf deutscher wie auf englischer Tastatur gleich.
+   Y/X verschiebt die Oktave, C/V die Anschlagstaerke (die merkt
+   sich der Editor, gespielt wird sie spaeter vom Plugin).
+   --------------------------------------------------------------- */
+const TASTATUR = {
+  KeyA:0,  KeyW:1,  KeyS:2,  KeyE:3,  KeyD:4,  KeyF:5,  KeyT:6,
+  KeyG:7,  KeyY:8,  KeyH:9,  KeyU:10, KeyJ:11,
+  KeyK:12, KeyO:13, KeyL:14, KeyP:15, Semicolon:16, Quote:17
+};
+let oktavVerschiebung = 0;
+let anschlag = 100;
+const klingend = new Map();          // code -> Element
+
+/* Alle spielbaren Tasten nach MIDI-Note, aus paramId 'note_<n>'. */
+function notenTasten(){
+  const m = new Map();
+  for(const el of project.elements){
+    if(!istTaste(el)) continue;
+    const t = /(?:^|_)note_?(\d+)/.exec(el.paramId || '');
+    if(!t) continue;
+    const note = parseInt(t[1], 10);
+    // Bei zwei Manualen traegt jede Note zwei Elemente. Das erste gewinnt,
+    // damit nicht stillschweigend eines der beiden stumm bleibt.
+    if(!m.has(note)) m.set(note, el);
+  }
+  return m;
+}
+
+/* Grundton: das tiefste C, das im Instrument vorkommt, plus Verschiebung. */
+function grundNote(noten){
+  const alle = Array.from(noten.keys()).sort((a,b)=>a-b);
+  if(!alle.length) return 60;
+  /* Startlage so, dass die 18 Tasten der Belegung moeglichst weit im
+     Instrument liegen: sie beginnt am Grundton und reicht 17 Halbtoene
+     nach oben. Die Mitte allein wuerde bei kleinen Instrumenten auf der
+     obersten Note landen — dann waere nur eine einzige Taste spielbar. */
+  const tief = alle[0], hoch = alle[alle.length-1];
+  let basis = Math.round(((tief + hoch)/2 - 8.5) / 12) * 12;
+  if(basis + 17 > hoch) basis = Math.floor((hoch - 17)/12)*12;   // oben Platz lassen
+  if(basis < tief)      basis = Math.floor(tief/12)*12;          // nie unter das unterste C
+  return basis + oktavVerschiebung*12;
+}
+
+function tastaturHinweis(text){
+  let n = document.getElementById('klavHinweis');
+  if(!n){
+    n = document.createElement('div');
+    n.id = 'klavHinweis';
+    n.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);'+
+      'background:#1b1b1f;color:#e8e8ea;border:1px solid #3a3a42;border-radius:6px;'+
+      'padding:6px 12px;font:12px ui-monospace,monospace;z-index:99999;pointer-events:none;'+
+      'opacity:0;transition:opacity .18s';
+    document.body.appendChild(n);
+  }
+  n.textContent = text;
+  n.style.opacity = '1';
+  clearTimeout(n.__t);
+  n.__t = setTimeout(()=>{ n.style.opacity='0'; }, 1400);
+}
+
+function tippenErlaubt(ev){
+  if(mode !== 'test') return false;
+  const a = document.activeElement;
+  if(a && (a.tagName==='INPUT' || a.tagName==='TEXTAREA' || a.tagName==='SELECT' || a.isContentEditable)) return false;
+  return !(ev.metaKey || ev.ctrlKey || ev.altKey);
+}
+
+window.addEventListener('keydown', ev => {
+  if(!tippenErlaubt(ev)) return;
+  const noten = notenTasten();
+  if(!noten.size) return;
+
+  if(ev.code === 'KeyZ' || ev.code === 'KeyX'){        // Oktave
+    ev.preventDefault();
+    if(ev.repeat) return;
+    oktavVerschiebung += (ev.code === 'KeyX' ? 1 : -1);
+    oktavVerschiebung = Math.max(-4, Math.min(4, oktavVerschiebung));
+    tastaturHinweis('Oktave ' + (oktavVerschiebung>=0?'+':'') + oktavVerschiebung +
+                    '   (Grundton ' + grundNote(noten) + ')');
+    return;
+  }
+  if(ev.code === 'KeyC' || ev.code === 'KeyV'){        // Anschlagstaerke
+    ev.preventDefault();
+    if(ev.repeat) return;
+    anschlag = Math.max(1, Math.min(127, anschlag + (ev.code==='KeyV' ? 10 : -10)));
+    tastaturHinweis('Anschlag ' + anschlag);
+    return;
+  }
+
+  const halbton = TASTATUR[ev.code];
+  if(halbton === undefined) return;
+  ev.preventDefault();
+  if(ev.repeat || klingend.has(ev.code)) return;       // Wiederholung ist kein neuer Anschlag
+
+  const el = noten.get(grundNote(noten) + halbton);
+  if(!el){ tastaturHinweis('keine Taste fuer Note ' + (grundNote(noten)+halbton)); return; }
+  klingend.set(ev.code, el);
+  setzeWert(el, Math.max(2, el.frames|0) - 1);
+});
+
+window.addEventListener('keyup', ev => {
+  const el = klingend.get(ev.code);
+  if(!el) return;
+  klingend.delete(ev.code);
+  setzeWert(el, 0);
+});
+
+/* Alle gehaltenen Tasten loesen. Noetig beim Verlassen des Fensters, aber
+   auch bei Modus- und Projektwechsel: sonst schreibt das spaetere keyup in
+   ein Element, das es nicht mehr gibt, oder eine Taste bleibt unten. */
+function alleTastenLoesen(){
+  for(const [, el] of klingend){
+    if(el && byId(el.id)) setzeWert(el, 0, true);
+  }
+  klingend.clear();
+}
+window.addEventListener('blur', alleTastenLoesen);
+
+$('#btnGroup').onclick = newGroupFromSelection;
+$('#btnSprite').onclick = ()=>{
+  const el = byId(sel);
+  /* Knobs und Fader brauchen viele Frames, Buttons benannte Zustaende. */
+  openSpriteMaker(el && (el.type==='knob'||el.type==='fader') ? 'motion' : 'button');
+};
+$('#btnExport').onclick = openExport;
+$('#btnHelp').onclick = openHelp;
+
+/* Bild-Import */
+$('#dropZone').onclick = ()=> $('#fileImg').click();
+$('#fileImg').addEventListener('change', ev=>{ addImageFiles(ev.target.files); ev.target.value=''; });
+$('#fileProj').addEventListener('change', ev=>{
+  const f = ev.target.files[0]; ev.target.value='';
+  if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ()=>{
+    try{
+      const data = JSON.parse(rd.result);
+      const p = data.project || data;
+      if(!p.win || !p.elements) throw new Error('Kein Studio-Projekt');
+      pushHistory();
+      project = p; sel=null;
+      cloudSlug = null;             // aus Datei geladen -> Ziel neu bestimmen
+      recountIds();
+      renderAll();
+    }catch(e){ alert('Datei konnte nicht gelesen werden: '+e.message); }
+  };
+  rd.readAsText(f);
+});
+for(const zone of [document.body]){
+  zone.addEventListener('dragover', ev=>{ ev.preventDefault(); $('#dropZone').classList.add('hot'); });
+  zone.addEventListener('dragleave', ev=>{ if(ev.target===document.body) $('#dropZone').classList.remove('hot'); });
+  zone.addEventListener('drop', ev=>{
+    ev.preventDefault(); $('#dropZone').classList.remove('hot');
+    if(ev.dataTransfer.files.length) addImageFiles(ev.dataTransfer.files);
+  });
+}
+function recountIds(){
+  maskenCacheLeeren();        // anderes Projekt -> alte Masken sind ungueltig
+  let m=0; for(const e of project.elements){ const n=parseInt((e.id||'').split('_')[1])||0; m=Math.max(m,n); }
+  elCounter=m+1;
+  m=0; for(const id of Object.keys(project.assets)){ const n=parseInt(id.split('_')[1])||0; m=Math.max(m,n); }
+  assetCounter=m+1;
+}
+
+/* ============================== Speichern / Export ============================== */
+function download(filename, text, type='application/json'){
+  downloadBlob(filename, new Blob([text],{type}));
+}
+function downloadBlob(filename, blob){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+}
+const fileSlug = s => (s||'projekt').toLowerCase().replace(/[äöüß]/g,c=>({ä:'ae',ö:'oe',ü:'ue',ß:'ss'}[c])).replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+
+function saveProject(){
+  download(fileSlug(project.name)+'.uistudio.json',
+    JSON.stringify({app:'steinbach-ui-studio', version:1, project}, null, 1));
+}
+
+function autoParamId(el){
+  return (el.name||el.id).toLowerCase()
+    .replace(/[äöüß]/g,c=>({ä:'ae',ö:'oe',ü:'ue',ß:'ss'}[c]))
+    .replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') || el.id;
+}
+function assetName(id){ const a = id && project.assets[id]; return a ? a.name : null; }
+
+function usedAssetIds(){
+  const ids = new Set();
+  if(project.bg) ids.add(project.bg);
+  for(const el of project.elements){
+    if(el.asset) ids.add(el.asset);
+    if(el.handleAsset) ids.add(el.handleAsset);
+  }
+  return [...ids].filter(id=>project.assets[id]);
+}
+function buildExport(withAssets){
+  const W = project.win.w, H = project.win.h;
+  const n5 = v => +(v.toFixed(5));
+  const bg = project.bg && project.assets[project.bg];
+  return {
+    format:'steinbach-ui-layout', version:1,
+    name: project.name,
+    window:{ w:W, h:H },
+    background: bg ? { file:bg.name, naturalW:bg.w, naturalH:bg.h,
+      frames: Math.max(1, project.bgFrames|0 || 1),
+      cols: Math.max(1, project.bgCols|0 || 1),
+      stateNames: (project.bgFrames|0) > 1 && Array.isArray(project.bgStates) ? project.bgStates.slice() : undefined,
+    } : null,
+    assets: withAssets ? usedAssetIds().map(id=>{
+      const a = project.assets[id];
+      return { file:a.name, w:a.w, h:a.h, dataUrl:a.dataUrl };
+    }) : undefined,
+    elements: project.elements.map(el=>{
+      const cx = el.x+el.w/2, cy = el.y+el.h/2;
+      const out = {
+        id: el.paramId || autoParamId(el),
+        name: el.name,
+        type: el.type,
+        px:   { left:el.x, top:el.y, w:el.w, h:el.h, cx:+cx.toFixed(1), cy:+cy.toFixed(1) },
+        norm: { left:n5(el.x/W), top:n5(el.y/H), w:n5(el.w/W), h:n5(el.h/H), cx:n5(cx/W), cy:n5(cy/H) }
+      };
+      /* An eine Ansicht gebunden? Leer/fehlend heisst: in jeder Ansicht da. */
+      if(Array.isArray(el.showOnBg) && el.showOnBg.length){
+        out.views = el.showOnBg.slice();
+        out.viewNames = el.showOnBg.map(i =>
+          (Array.isArray(project.bgStates) && project.bgStates[i]) || ('Ansicht '+i));
+      }
+      if(el.type==='knob') out.knob = {
+        render:el.render, file:assetName(el.asset), frames:el.frames, gridCols:el.gridCols,
+        startDeg:el.startDeg, sweepDeg:el.sweep, steps:el.steps||0, radius:+(Math.min(el.w,el.h)/2).toFixed(1),
+        alphaHit: el.alphaHit !== false,
+        /* 2 bis 6 Rastungen: am Geraet ein Klickschalter, nicht nur Ziehen */
+        klickRastet: (el.steps|0) >= 2 && (el.steps|0) <= 6
+      };
+      if(el.type==='fader') out.fader = {
+        orient:el.orient, render:el.render, file:assetName(el.asset), frames:el.frames, gridCols:el.gridCols,
+        handleFile:assetName(el.handleAsset), handleW:el.hw, handleH:el.hh
+      };
+      if(el.type==='button') out.button = {
+        file:assetName(el.asset), states:Math.max(2,el.frames|0), toggle:el.toggle||'cycle',
+        stateNames: Array.isArray(el.states) ? el.states.slice() : undefined,
+        /* 'momentary' ist eine Taste: unten, solange gedrueckt wird.
+           alphaHit: getroffen wird am sichtbaren Bild statt am Rechteck.
+           animMs: Zeit fuer den ganzen Weg durch die Frames. */
+        alphaHit: el.alphaHit !== false,
+        animMs: (el.animMs===undefined || el.animMs===null) ? undefined : (el.animMs|0),
+        /* Bilder, die dieser Button mitschaltet (Backdrop-Wechsel) */
+        drives: (el.drives||[]).map(d=>{
+          if(d.target === '__bg') return 'background';
+          const t = byId(d.target); return t ? t.name : null;
+        }).filter(Boolean),
+        /* Welche Ansicht waehlt welcher Knopfwert? */
+        drivesMap: (el.drives||[]).find(d => d.target==='__bg' && d.map)?.map,
+      };
+      if(el.type==='label') out.label = {
+        text:el.text, font:el.font, size:el.size, weight:el.weight, color:el.color,
+        letterSpacing:el.spacing, align:el.align
+      };
+      if(el.type==='image') out.image = {
+        file:assetName(el.asset),
+        frames: Math.max(1, el.frames|0),
+        cols: el.gridCols||1,
+        stateNames: (el.frames|0) > 1 && Array.isArray(el.states) ? el.states.slice() : undefined,
+        alphaHit: el.alphaHit !== false,
+      };
+      if(el.type==='link') out.link = { url:el.url||'' };
+      return out;
+    })
+  };
+}
+
+function rustConst(s){
+  return s.toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').replace(/^(\d)/,'_$1');
+}
+function buildRust(){
+  const W = project.win.w, H = project.win.h;
+  const L = [];
+  L.push('// GENERIERT von Steinbach UI Studio ('+project.name+') — nicht von Hand editieren');
+  L.push('// Anker: Zentrum. _N = normiert 0..1 relativ zum Fenster/Hintergrund.');
+  L.push('#![allow(dead_code)]');
+  L.push('');
+  L.push('pub const WINDOW_W: f32 = '+W.toFixed(1)+';');
+  L.push('pub const WINDOW_H: f32 = '+H.toFixed(1)+';');
+  L.push('');
+  for(const el of project.elements){
+    const id = rustConst(el.paramId || autoParamId(el));
+    const cx = el.x+el.w/2, cy = el.y+el.h/2;
+    L.push('// '+el.name+' ('+TYPE_NAMES[el.type]+')'+(assetName(el.asset)?' — '+assetName(el.asset):''));
+    L.push('pub const '+id+': (f32, f32) = ('+cx.toFixed(1)+', '+cy.toFixed(1)+');');
+    L.push('pub const '+id+'_N: (f32, f32) = ('+(cx/W).toFixed(5)+', '+(cy/H).toFixed(5)+');');
+    L.push('pub const '+id+'_SIZE: (f32, f32) = ('+el.w.toFixed(1)+', '+el.h.toFixed(1)+');');
+    if(el.type==='knob'){
+      L.push('pub const '+id+'_FRAMES: u32 = '+Math.max(1,el.frames|0)+';'+(el.gridCols>1?' // Grid, '+el.gridCols+' Spalten':''));
+      if(el.steps>=2) L.push('pub const '+id+'_STEPS: u32 = '+(el.steps|0)+';');
+    }
+    if(el.type==='button') L.push('pub const '+id+'_STATES: u32 = '+Math.max(2,el.frames|0)+';');
+    L.push('');
+  }
+  return L.join('\n');
+}
+
+/* ============================== NI-Kontakt-Export ============================== */
+/* Erzeugt ein ZIP mit KSP-Script + Resources/pictures (PNG + NI-Metadaten-txt),
+   nach dem Muster der originalen Röver-Kontakt-Library. */
+
+const KONTAKT_MAX_W = 1000, KONTAKT_MAX_H = 750;
+/* Kontakt zeichnet das Wallpaper hinter der Instrument-Kopfzeile (~45 px, empirisch
+   aus der Röver-Library). Der Export legt diese Zugabe automatisch oben an. */
+const KONTAKT_HEADER_PAD = 45;
+
+const CRC_T = (()=>{ const t=new Uint32Array(256);
+  for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; t[n]=c; }
+  return t; })();
+function crc32(u8){ let c=0xFFFFFFFF;
+  for(let i=0;i<u8.length;i++) c = CRC_T[(c^u8[i])&255]^(c>>>8);
+  return (c^0xFFFFFFFF)>>>0; }
+
+/* ZIP ohne Kompression (Store) — reicht, PNGs sind bereits komprimiert. */
+function zipStore(files){
+  const enc=new TextEncoder(); const parts=[], central=[]; let off=0;
+  const DOS_T=0x6000, DOS_D=((2026-1980)<<9)|(8<<5)|17;
+  for(const f of files){
+    const name=enc.encode(f.name), data=f.data, crc=crc32(data);
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(6,0x0800,true);
+    lh.setUint16(8,0,true); lh.setUint16(10,DOS_T,true); lh.setUint16(12,DOS_D,true);
+    lh.setUint32(14,crc,true); lh.setUint32(18,data.length,true); lh.setUint32(22,data.length,true);
+    lh.setUint16(26,name.length,true); lh.setUint16(28,0,true);
+    parts.push(new Uint8Array(lh.buffer), name, data);
+    const ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true); ch.setUint16(4,20,true); ch.setUint16(6,20,true);
+    ch.setUint16(8,0x0800,true); ch.setUint16(10,0,true);
+    ch.setUint16(12,DOS_T,true); ch.setUint16(14,DOS_D,true);
+    ch.setUint32(16,crc,true); ch.setUint32(20,data.length,true); ch.setUint32(24,data.length,true);
+    ch.setUint16(28,name.length,true);
+    ch.setUint32(42,off,true);
+    central.push(new Uint8Array(ch.buffer), name);
+    off += 30+name.length+data.length;
+  }
+  let cd=0; central.forEach(p=>cd+=p.length);
+  const eo=new DataView(new ArrayBuffer(22));
+  eo.setUint32(0,0x06054b50,true); eo.setUint16(8,files.length,true); eo.setUint16(10,files.length,true);
+  eo.setUint32(12,cd,true); eo.setUint32(16,off,true);
+  parts.push(...central, new Uint8Array(eo.buffer));
+  return new Blob(parts,{type:'application/zip'});
+}
+
+function dataUrlBytes(dataUrl){
+  const b=atob(dataUrl.split(',')[1]);
+  const u=new Uint8Array(b.length);
+  for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i);
+  return u;
+}
+const deUmlaut = s => s.replace(/[äöüÄÖÜß]/g, c=>({'ä':'ae','ö':'oe','ü':'ue','Ä':'Ae','Ö':'Oe','Ü':'Ue','ß':'ss'}[c]));
+function kspIdent(s){
+  s = deUmlaut(s||'').replace(/[^A-Za-z0-9_]/g,'_').replace(/^_+|_+$/g,'');
+  if(!/^[A-Za-z]/.test(s)) s = 'c_'+s;
+  return s || 'ctrl';
+}
+function kontaktPicName(assetName){
+  return deUmlaut(assetName.replace(/\.[^.]+$/,'')).replace(/[^A-Za-z0-9_-]/g,'_') || 'pic';
+}
+/* KSP-Dateien reines ASCII halten (wie das Original: "Roever", "Soehne") */
+const kspText = s => deUmlaut(String(s||'')).replace(/[^\x20-\x7E]/g,'-');
+function kontaktPicTxt(o){
+  return 'Has Alpha Channel: '+(o.alpha?'yes':'no')+'\n'
+       + 'Number of Animations: '+o.anims+'\n'
+       + 'Horizontal Animation: no\n'
+       + 'Vertical Resizable: '+(o.rs?'yes':'no')+'\n'
+       + 'Horizontal Resizable: '+(o.rs?'yes':'no')+'\n'
+       + 'Fixed Top: 0\nFixed Bottom: 0\nFixed Left: 0\nFixed Right: 0\n';
+}
+function loadImg(dataUrl){
+  return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=dataUrl; });
+}
+async function padTopPng(dataUrl, pad){
+  const img = await loadImg(dataUrl);
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth; c.height = img.naturalHeight + pad;
+  c.getContext('2d').drawImage(img, 0, pad);
+  return c.toDataURL('image/png');
+}
+function emptyPng(){
+  const c=document.createElement('canvas'); c.width=16; c.height=16;
+  c.getContext('2d');
+  return c.toDataURL('image/png');
+}
+
+async function buildKontaktZip(){
+  const W=project.win.w, H=project.win.h;
+  const slug=fileSlug(project.name);
+  const warn=[];
+  if(W>KONTAKT_MAX_W) warn.push('Fensterbreite '+W+' px liegt über dem Kontakt-Maximum von '+KONTAKT_MAX_W+' px.');
+  if(H>KONTAKT_MAX_H) warn.push('Fensterhöhe '+H+' px liegt über dem Kontakt-Maximum von '+KONTAKT_MAX_H+' px.');
+
+  const pics={};   // picName -> {dataUrl, alpha, anims, rs}
+  const usedNames=new Set();
+  function regPic(assetId, anims, alpha=true, rs=true){
+    const a=project.assets[assetId]; if(!a) return null;
+    const name=kontaktPicName(a.name);
+    if(pics[name]){ if(anims>pics[name].anims) pics[name].anims=anims; }
+    else pics[name]={dataUrl:a.dataUrl, alpha, anims, rs};
+    return name;
+  }
+  function uniqIdent(base){
+    let n=base, i=2;
+    while(usedNames.has(n)) n=base+'_'+(i++);
+    usedNames.add(n); return n;
+  }
+
+  const decl=[], layout=[], handlers=[];
+  let needEmpty=false;
+
+  for(const el of project.elements){
+    const id=uniqIdent(kspIdent(el.paramId||autoParamId(el)));
+    const x=Math.round(el.x), y=Math.round(el.y), w=Math.round(el.w), h=Math.round(el.h);
+    const D=s=>decl.push(s), P=[];
+    const par =(k,v)=>P.push('    set_control_par($'+id+'_Id, '+k+', '+v+')');
+    const parS=(k,v)=>P.push('    set_control_par_str($'+id+'_Id, '+k+', "'+v+'")');
+
+    if(el.type==='button'){
+      const pic = el.asset ? regPic(el.asset, Math.max(2,el.frames|0)) : null;
+      if(el.asset && (el.frames|0)!==6 && (el.frames|0)!==2)
+        warn.push('"'+el.name+'": Kontakt-Buttons erwarten 2 oder 6 Frames (NI-Konvention: Aus/Aus-Hover/Aus-Klick/An/An-Hover/An-Klick) — Strip hat '+el.frames+'.');
+      if(el.toggle==='cycle' && (el.frames|0)>2)
+        warn.push('"'+el.name+'": Kontakt-Buttons schalten nur An/Aus, kein Durchschalten mehrerer Zustände.');
+      D('    declare ui_button $'+id);
+      D('    set_text($'+id+', "")');
+      D('    make_persistent($'+id+')');
+      D('    declare $'+id+'_Id');
+      D('    $'+id+'_Id := get_ui_id($'+id+')');
+      par('$CONTROL_PAR_WIDTH', w); par('$CONTROL_PAR_HEIGHT', h);
+      if(pic) parS('$CONTROL_PAR_PICTURE', pic);
+      decl.push(...P);
+      layout.push('    move_control_px($'+id+', '+x+', '+y+')   { '+kspText(el.name)+' }');
+    }
+    else if(el.type==='knob'||el.type==='fader'){
+      const frames=Math.max(1,el.frames|0);
+      const steps = el.type==='knob' && el.steps>=2 ? el.steps : 0;
+      const maxV = steps ? steps-1 : 127;
+      const pic = el.asset ? regPic(el.asset, frames) : null;
+      if(el.asset && (el.gridCols|0)>1)
+        warn.push('"'+el.name+'": Kontakt kann nur vertikale Filmstrips (1 Spalte), der Strip hat '+el.gridCols+' Spalten.');
+      if(el.type==='knob' && el.render==='rotate')
+        warn.push('"'+el.name+'": "Bild rotieren" gibt es in Kontakt nicht — dort ist ein Filmstrip nötig.');
+      if(el.type==='fader' && el.render==='handle')
+        warn.push('"'+el.name+'": Griff-auf-Bahn-Fader brauchen in Kontakt einen Filmstrip (Bahn+Griff pro Frame).');
+      D('    declare ui_slider $'+id+' (0, '+maxV+')');
+      D('    make_persistent($'+id+')');
+      D('    declare $'+id+'_Id');
+      D('    $'+id+'_Id := get_ui_id($'+id+')');
+      par('$CONTROL_PAR_WIDTH', w); par('$CONTROL_PAR_HEIGHT', h);
+      if(pic) parS('$CONTROL_PAR_PICTURE', pic);
+      par('$CONTROL_PAR_MOUSE_BEHAVIOUR', -500);
+      decl.push(...P);
+      layout.push('    move_control_px($'+id+', '+x+', '+y+')   { '+kspText(el.name)+' }');
+    }
+    else if(el.type==='label'){
+      D('    declare ui_label $'+id+' (1, 1)');
+      D('    set_text($'+id+', "'+kspText(el.text).replace(/"/g,"'").replace(/\n/g,' ')+'")');
+      D('    declare $'+id+'_Id');
+      D('    $'+id+'_Id := get_ui_id($'+id+')');
+      par('$CONTROL_PAR_WIDTH', w); par('$CONTROL_PAR_HEIGHT', h);
+      par('$CONTROL_PAR_HIDE', '$HIDE_PART_BG');
+      decl.push(...P);
+      layout.push('    move_control_px($'+id+', '+x+', '+y+')   { '+kspText(el.name)+' }');
+      warn.push('"'+el.name+'": Schrift/Farbe von Texten lassen sich in KSP nur begrenzt steuern — im Zweifel Text in den Hintergrund/eine Grafik backen.');
+    }
+    else if(el.type==='image'){
+      const pic = el.asset ? regPic(el.asset, 0) : null;
+      D('    declare ui_label $'+id+' (1, 1)');
+      D('    set_text($'+id+', "")');
+      D('    declare $'+id+'_Id');
+      D('    $'+id+'_Id := get_ui_id($'+id+')');
+      par('$CONTROL_PAR_WIDTH', w); par('$CONTROL_PAR_HEIGHT', h);
+      if(pic) parS('$CONTROL_PAR_PICTURE', pic);
+      decl.push(...P);
+      layout.push('    move_control_px($'+id+', '+x+', '+y+')   { '+kspText(el.name)+' }');
+    }
+    else if(el.type==='link'){
+      needEmpty=true;
+      D('    declare ui_button $'+id);
+      D('    set_text($'+id+', "")');
+      D('    declare $'+id+'_Id');
+      D('    $'+id+'_Id := get_ui_id($'+id+')');
+      par('$CONTROL_PAR_WIDTH', w); par('$CONTROL_PAR_HEIGHT', h);
+      parS('$CONTROL_PAR_PICTURE', 'Empty');
+      decl.push(...P);
+      layout.push('    move_control_px($'+id+', '+x+', '+y+')   { '+kspText(el.name)+' }');
+      handlers.push(
+        'on ui_control($'+id+')',
+        '    { KSP kann keine Website oeffnen - Hinweis in der Kontakt-Statuszeile: }',
+        '    message("'+kspText(el.url)+'")',
+        '    $'+id+' := 0',
+        'end on','');
+    }
+  }
+
+  const bgName = project.bg ? regPic(project.bg, 0, false, false) : null;
+
+  const L=[];
+  L.push('{ GENERIERT von Steinbach UI Studio - '+kspText(project.name)+' }');
+  L.push('{ Pictures nach Resources/pictures neben die .nki legen. }');
+  L.push('');
+  L.push('on init');
+  L.push('    message("")');
+  L.push('    make_perfview');
+  L.push('    set_ui_width_px('+Math.min(W,KONTAKT_MAX_W)+')    { Kontakt-Maximum: '+KONTAKT_MAX_W+' px }');
+  L.push('    set_ui_height_px('+Math.min(H,KONTAKT_MAX_H)+')   { Kontakt-Maximum: '+KONTAKT_MAX_H+' px }');
+  if(bgName){
+    L.push('    { Wallpaper: '+KONTAKT_HEADER_PAD+' px Kopfzeilen-Zugabe ist im PNG bereits enthalten }');
+    L.push('    set_control_par_str($INST_WALLPAPER_ID, $CONTROL_PAR_PICTURE, "'+bgName+'")');
+  }
+  L.push('');
+  L.push(...decl);
+  L.push('');
+  L.push('    { ----- LAYOUT ----- }');
+  L.push(...layout);
+  L.push('end on');
+  L.push('');
+  if(handlers.length){ L.push(...handlers); }
+  L.push('{ ----- Hier eigene Klang-Logik ergaenzen (on note / on ui_control) ----- }');
+  const script=L.join('\n');
+
+  const enc=new TextEncoder();
+  const files=[];
+  files.push({name:slug+'/Script.txt', data:enc.encode(script)});
+
+  const readme=[
+    project.name+' — Kontakt-Export aus dem Steinbach UI Studio','',
+    'SO KOMMT ES IN KONTAKT:',
+    '1. Den Ordner "pictures" nach Resources/pictures deiner Library kopieren',
+    '   (neben die .nki, wie bei der originalen Röver-Library).',
+    '2. Instrument in Kontakt öffnen → Schraubenschlüssel → Script Editor →',
+    '   Inhalt von Script.txt einfügen → Apply.','',
+    'KONVENTIONEN:',
+    '- Buttons: Filmstrip mit 6 Frames = Aus / Aus-Hover / Aus-Klick / An / An-Hover / An-Klick',
+    '  (NI-Standard; 2 Frames = nur Aus/An geht auch).',
+    '- Knobs/Fader: vertikaler Filmstrip, Frames laufen mit dem Wert.',
+    '- Jede Grafik hat eine .txt mit gleichem Namen (NI-Metadaten) — mitkopieren!',
+    '- Wallpaper: oben sind '+KONTAKT_HEADER_PAD+' px Zugabe angefügt, weil Kontakt das',
+    '  Wallpaper hinter der Instrument-Kopfzeile beginnt.',
+    '- Links: KSP kann keine Website öffnen; der Klick zeigt die URL als message().','',
+    warn.length?'HINWEISE:\n'+warn.map(w=>'- '+w).join('\n'):'Keine Hinweise — alles Kontakt-kompatibel.'
+  ].join('\n');
+  files.push({name:slug+'/LIESMICH.txt', data:enc.encode(readme)});
+
+  for(const [name,p] of Object.entries(pics)){
+    let du=p.dataUrl;
+    if(name===bgName){
+      du = await padTopPng(du, KONTAKT_HEADER_PAD);
+    }
+    files.push({name:slug+'/Resources/pictures/'+name+'.png', data:dataUrlBytes(du)});
+    files.push({name:slug+'/Resources/pictures/'+name+'.txt',
+                data:enc.encode(kontaktPicTxt(p))});
+  }
+  if(needEmpty){
+    files.push({name:slug+'/Resources/pictures/Empty.png', data:dataUrlBytes(emptyPng())});
+    files.push({name:slug+'/Resources/pictures/Empty.txt',
+                data:enc.encode(kontaktPicTxt({alpha:true,anims:0,rs:true}))});
+  }
+  return {blob:zipStore(files), warn, script};
+}
+
+/* --- Zustaende umsortieren/umbenennen (auch nachtraeglich) ------------------
+   Beim Umsortieren wird das Sprite aus den gespeicherten Quellframes neu
+   gezeichnet, damit Bild und Reihenfolge zusammenpassen. Fehlen die Quellen
+   (aeltere Projekte, fremde Strips), werden nur die Namen getauscht und ein
+   Hinweis gezeigt. */
+function stateEditor(el){
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'margin:6px 0 10px;';
+  const n = Math.max(1, el.frames|0);
+  if(!Array.isArray(el.states) || el.states.length !== n){
+    el.states = (el.states||[]).slice(0,n);
+    const def = defaultStates(n);
+    for(let i=el.states.length;i<n;i++) el.states.push(def[i] || ('State '+i));
+  }
+  const a = el.asset && project.assets[el.asset];
+  const hasSources = !!(a && a.sprite && a.sprite.sources && a.sprite.sources.length === n);
+
+  const head = document.createElement('div');
+  head.style.cssText='font-size:11px;color:var(--dim);margin-bottom:4px;';
+  head.textContent = 'Reihenfolge der Zustände' + (hasSources ? '' : ' (nur Namen — Sprite stammt nicht aus dem Baukasten)');
+  wrap.appendChild(head);
+
+  const move = (from, to) => {
+    if(to < 0 || to >= n) return;
+    pushHistory();
+    const order = Array.from({length:n}, (_,i)=>i);
+    order.splice(to, 0, order.splice(from,1)[0]);
+    const st = order.map(i=>el.states[i]);
+    el.states = st;
+    if(hasSources){
+      spriteRebuild(el.asset, order).then(()=>{ renderAll(); autosave(); });
+    }else{ renderAll(); autosave(); }
+  };
+
+  el.states.forEach((name, i) => {
+    const r = document.createElement('div');
+    r.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:3px;';
+    const num = document.createElement('span');
+    num.style.cssText='font:11px ui-monospace,monospace;color:var(--dim);width:16px;flex:none;';
+    num.textContent = i;
+    const inp = document.createElement('input');
+    inp.type='text'; inp.value=name; inp.style.cssText='flex:1;min-width:0;font-size:12px;';
+    inp.onchange = ()=>{ pushHistory(); el.states[i]=inp.value; autosave(); };
+    const up = iconBtn('up', 'Nach oben'); up.disabled = i===0; up.onclick = ()=>move(i, i-1);
+    const dn = iconBtn('down', 'Nach unten'); dn.disabled = i===n-1; dn.onclick = ()=>move(i, i+1);
+    const show = iconBtn('eye', 'Diesen Zustand auf der Fläche zeigen');
+    show.onclick = ()=>{ el.value = i; renderStage(); autosave(); };
+    r.appendChild(num); r.appendChild(inp); r.appendChild(up); r.appendChild(dn); r.appendChild(show);
+    wrap.appendChild(r);
+  });
+  return wrap;
+}
+
+/* --- Hintergrund als Sprite -------------------------------------------------
+   Bei Orgel und Philicorda ist der wechselnde Teil das Wallpaper selbst. Der
+   Bogen enthaelt alle Zustaende untereinander, sichtbar ist immer einer. */
+function backdropPanel(){
+  const wrap = document.createElement('div');
+  wrap.className = 'group';
+  wrap.style.cssText = 'margin-top:14px;padding-top:12px;border-top:1px solid var(--line);';
+  const h = document.createElement('div');
+  h.style.cssText = 'font-size:11px;color:var(--dim);margin-bottom:8px;letter-spacing:.04em;';
+  h.textContent = 'HINTERGRUND';
+  wrap.appendChild(h);
+
+  if(!project.bg){
+    const p = document.createElement('div');
+    p.style.cssText='font-size:12px;color:var(--dim);line-height:1.6;';
+    p.textContent = 'Noch kein Hintergrundbild. Links bei den Grafiken auf „BG“ klicken.';
+    wrap.appendChild(p);
+    return wrap;
+  }
+
+  const pseudo = {
+    get frames(){ return Math.max(1, project.bgFrames|0 || 1); },
+    set frames(v){ project.bgFrames = Math.max(1, v|0); ausTafelRechnen(true); },
+    get gridCols(){ return Math.max(1, project.bgCols|0 || 1); },
+    set gridCols(v){ project.bgCols = Math.max(1, v|0); ausTafelRechnen(true); },
+    get value(){ return project.bgValue|0; },
+    set value(v){ project.bgValue = v|0; },
+    get states(){ return project.bgStates; },
+    set states(v){ project.bgStates = v; },
+    get top(){ return project.bgTop|0; },
+    set top(v){ project.bgTop = Math.max(0, v|0); ausTafelRechnen(true); },
+    get asset(){ return project.bg; },
+    type:'image',
+    id:'__bg',        /* kein echter Knoten -> updateNode zeichnet die Flaeche neu */
+  };
+  wrap.appendChild(row('Zustände', numIn(pseudo,'frames',{min:1,step:1})));
+  wrap.appendChild(row('Kontakt-Kopfzeile', numIn(pseudo,'top',{min:0,step:1})));
+  wrap.appendChild(passtDieTafel());
+  if(pseudo.frames > 1){
+    wrap.appendChild(row('Spalten', numIn(pseudo,'gridCols',{min:1,step:1})));
+    wrap.appendChild(row('Zeigt Frame', numIn(pseudo,'value',{min:0,step:1})));
+    wrap.appendChild(stateEditor(pseudo));
+  }
+  const hint = document.createElement('div');
+  hint.style.cssText='font-size:11px;color:var(--dim);line-height:1.6;margin-top:6px;';
+  hint.textContent = pseudo.frames > 1
+    ? 'Ein Button kann den Hintergrund umschalten — im Inspektor des Buttons unter „Schaltet mit“.'
+    : 'Enthält der Hintergrund mehrere Zustände untereinander (z. B. Schlüssel gesteckt / gezogen), hier die Anzahl eintragen.';
+  wrap.appendChild(hint);
+  return wrap;
+}
+
+/* --- Button steuert Bilder (Orgelschluessel, Philicorda-Licht) --------------
+   Ein Klick schaltet neben dem Button auch ein oder mehrere Bild-Elemente auf
+   einen anderen Frame. Im Test-Modus laeuft das live, damit man die ganze
+   Mechanik hier schon durchspielen kann. */
+function drivesEditor(el){
+  const wrap = document.createElement('div');
+  wrap.style.cssText='margin:10px 0 4px;padding-top:8px;border-top:1px solid var(--line);';
+  const head = document.createElement('div');
+  head.style.cssText='font-size:11px;color:var(--dim);margin-bottom:6px;letter-spacing:.04em;';
+  head.textContent = 'SCHALTET MIT';
+  wrap.appendChild(head);
+
+  el.drives = Array.isArray(el.drives) ? el.drives : [];
+
+  /* Ziele: der Hintergrund selbst (Kontakt-Prinzip) und alle Bild-Elemente. */
+  const targets = [];
+  if(project.bg){
+    targets.push({ id:'__bg', name:'Hintergrund', frames: Math.max(1, project.bgFrames|0 || 1) });
+  }
+  project.elements.filter(e => e.type==='image' && e.id!==el.id)
+    .forEach(t => targets.push({ id:t.id, name:t.name, frames: Math.max(1, t.frames|0) }));
+
+  if(!targets.length){
+    const p = document.createElement('div');
+    p.style.cssText='font-size:12px;color:var(--dim);line-height:1.6;';
+    p.textContent = 'Es gibt noch nichts zum Umschalten: lege oben ein Bild-Element an oder setze links eine Grafik als Hintergrund („BG“).';
+    wrap.appendChild(p);
+    return wrap;
+  }
+
+  targets.forEach(t => {
+    const on = el.drives.some(d => d.target === t.id);
+    const r = document.createElement('div');
+    r.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px;';
+    const cb = document.createElement('input');
+    cb.type='checkbox'; cb.checked = on;
+    cb.onchange = ()=>{
+      pushHistory();
+      el.drives = el.drives.filter(d => d.target !== t.id);
+      if(cb.checked) el.drives.push({ target: t.id });
+      renderInspector(); autosave();
+    };
+    const lb = document.createElement('span');
+    lb.style.cssText='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    lb.textContent = t.name;
+    const badge = document.createElement('span');
+    badge.className='tag';
+    badge.textContent = t.frames + (t.frames===1 ? ' Frame' : ' Frames');
+    if(t.frames < 2) badge.style.color = '#e2a33c';
+    r.appendChild(cb); r.appendChild(lb); r.appendChild(badge);
+    wrap.appendChild(r);
+  });
+
+  const oneFrame = targets.some(t => el.drives.some(d=>d.target===t.id) && t.frames < 2);
+  const hint = document.createElement('div');
+  hint.style.cssText='font-size:11px;color:' + (oneFrame ? '#e2a33c' : 'var(--dim)') + ';margin-top:6px;line-height:1.5;';
+  hint.textContent = oneFrame
+    ? 'Ein angehaktes Ziel hat nur einen Frame — dort erst die Zustände eintragen, sonst passiert nichts.'
+    : 'Der Zustand des Buttons wird als Frame des Ziels gesetzt. Hat das Ziel weniger Frames, wird der letzte gehalten. Im Modus „Testen“ läuft das live.';
+  wrap.appendChild(hint);
+  return wrap;
+}
+
+/* ============================== Sprite-Baukasten ==============================
+   Mehrere Einzelbilder (An/Aus, Hover, Gedrueckt, Zwischenstufen — oder bis zu
+   ein paar hundert Frames fuer Knobs und Fader) werden hier zu einem Sprite
+   zusammengesetzt. Die Quellbilder bleiben im Asset erhalten, damit sich die
+   Reihenfolge spaeter im Editor noch aendern laesst, ohne Qualitaetsverlust. */
+
+let spriteFrames = [];   // [{name, dataUrl, w, h}]
+
+function openSpriteMaker(purpose){
+  spriteFrames = [];
+  openModal('Sprite bauen', body => {
+    body.innerHTML =
+      '<p style="color:var(--dim);font-size:12px;margin-bottom:10px;">' +
+      (purpose==='motion'
+        ? 'Bilder der Bewegung in der richtigen Reihenfolge laden — von Minimum bis Maximum. Für weiche Regler sind 31–128 Frames üblich.'
+        : 'Ein Bild je Zustand laden. Frame 0 ist immer der Ruhezustand; Reihenfolge und Namen lassen sich unten ändern und später im Editor erneut anpassen.') +
+      '</p>' +
+      '<div class="btns" style="margin:0 0 10px;">' +
+        '<button class="mini" id="spPick">Bilder wählen …</button>' +
+        '<span id="spDrop" style="flex:1;border:1px dashed var(--line);border-radius:6px;padding:6px 10px;color:var(--dim);font-size:12px;">… oder hierher ziehen</span>' +
+      '</div>' +
+      '<div id="spList" style="max-height:44vh;overflow:auto;border:1px solid var(--line);border-radius:6px;"></div>' +
+      '<div class="btns" style="margin-top:10px;align-items:center;">' +
+        '<label style="font-size:12px;color:var(--dim);">Anordnung' +
+          '<select id="spCols" style="margin-left:6px;">' +
+            '<option value="1">1 Spalte (Standard, wie Kontakt)</option>' +
+            '<option value="auto">Raster (bei vielen Frames)</option>' +
+          '</select></label>' +
+        '<span style="flex:1"></span>' +
+        '<span id="spInfo" style="font-size:12px;color:var(--dim);"></span>' +
+      '</div>' +
+      '<div class="btns" style="margin-top:10px;">' +
+        '<button class="primary mini" id="spBuild">Sprite erstellen</button>' +
+        '<button class="mini" id="spBuildAssign">Erstellen und zuweisen</button>' +
+      '</div>';
+
+    const pick = document.createElement('input');
+    pick.type='file'; pick.accept='image/*'; pick.multiple=true; pick.hidden=true;
+    body.appendChild(pick);
+    body.querySelector('#spPick').onclick = ()=> pick.click();
+    pick.onchange = ()=>{ spriteAdd(pick.files, purpose); pick.value=''; };
+
+    const drop = body.querySelector('#spDrop');
+    drop.addEventListener('dragover', e=>{ e.preventDefault(); e.stopPropagation(); drop.style.borderColor='var(--acc)'; });
+    drop.addEventListener('dragleave', ()=>{ drop.style.borderColor='var(--line)'; });
+    drop.addEventListener('drop', e=>{
+      e.preventDefault(); e.stopPropagation(); drop.style.borderColor='var(--line)';
+      spriteAdd(e.dataTransfer.files, purpose);
+    });
+
+    body.querySelector('#spBuild').onclick = ()=> spriteBuild(purpose, false);
+    body.querySelector('#spBuildAssign').onclick = ()=> spriteBuild(purpose, true);
+    spriteRenderList(purpose);
+  });
+}
+
+function spriteAdd(files, purpose){
+  const imgs = [...files].filter(f=>f.type.startsWith('image/'))
+    .sort((a,b)=> a.name.localeCompare(b.name, undefined, {numeric:true}));
+  if(!imgs.length) return;
+  let pending = imgs.length;
+  for(const f of imgs){
+    const rd = new FileReader();
+    rd.onload = ()=>{
+      const im = new Image();
+      im.onload = ()=>{
+        spriteFrames.push({ name:f.name.replace(/\.[a-z0-9]+$/i,''), dataUrl:rd.result,
+                            w:im.naturalWidth, h:im.naturalHeight });
+        if(--pending===0) spriteRenderList(purpose);
+      };
+      im.src = rd.result;
+    };
+    rd.readAsDataURL(f);
+  }
+}
+
+function spriteRenderList(purpose){
+  const box = document.getElementById('spList');
+  if(!box) return;
+  box.innerHTML = '';
+  if(!spriteFrames.length){
+    box.innerHTML = '<div style="padding:12px;color:var(--dim);font-size:12px;">Noch keine Bilder geladen.</div>';
+  }
+  const names = purpose==='motion' ? null : defaultStates(spriteFrames.length);
+  spriteFrames.forEach((fr, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 8px;border-bottom:1px solid var(--line);';
+    row.draggable = true;
+    row.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', String(i)); });
+    row.addEventListener('dragover', e=>e.preventDefault());
+    row.addEventListener('drop', e=>{
+      e.preventDefault();
+      const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+      if(isNaN(from) || from===i) return;
+      const [m] = spriteFrames.splice(from,1);
+      spriteFrames.splice(i,0,m);
+      spriteRenderList(purpose);
+    });
+
+    const num = document.createElement('span');
+    num.style.cssText='font:11px ui-monospace,monospace;color:var(--dim);width:22px;flex:none;';
+    num.textContent = i;
+
+    const img = document.createElement('img');
+    img.src = fr.dataUrl;
+    img.style.cssText='width:40px;height:40px;object-fit:contain;background:#0006;border-radius:4px;flex:none;';
+
+    const nameWrap = document.createElement('div');
+    nameWrap.style.cssText='flex:1;min-width:0;';
+    if(purpose==='motion'){
+      nameWrap.innerHTML = '<div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
+        + esc(fr.name) + '</div><div style="font:11px ui-monospace,monospace;color:var(--dim);">'
+        + fr.w + '×' + fr.h + '</div>';
+    }else{
+      const inp = document.createElement('input');
+      inp.type='text'; inp.value = fr.state || names[i] || ('State '+i);
+      inp.style.cssText='width:100%;font-size:12px;';
+      inp.oninput = ()=>{ fr.state = inp.value; };
+      fr.state = inp.value;
+      const dim = document.createElement('div');
+      dim.style.cssText='font:11px ui-monospace,monospace;color:var(--dim);margin-top:2px;';
+      dim.textContent = fr.w + '×' + fr.h + ' · ' + fr.name;
+      nameWrap.appendChild(inp); nameWrap.appendChild(dim);
+    }
+
+    const up = iconBtn('up', 'Nach oben'); up.disabled = i===0;
+    up.onclick = ()=>{ const [m]=spriteFrames.splice(i,1); spriteFrames.splice(i-1,0,m); spriteRenderList(purpose); };
+    const dn = iconBtn('down', 'Nach unten'); dn.disabled = i===spriteFrames.length-1;
+    dn.onclick = ()=>{ const [m]=spriteFrames.splice(i,1); spriteFrames.splice(i+1,0,m); spriteRenderList(purpose); };
+    const rm = iconBtn('close', 'Frame entfernen');
+    rm.onclick = ()=>{ spriteFrames.splice(i,1); spriteRenderList(purpose); };
+
+    row.appendChild(num); row.appendChild(img); row.appendChild(nameWrap);
+    row.appendChild(up); row.appendChild(dn); row.appendChild(rm);
+    box.appendChild(row);
+  });
+
+  const info = document.getElementById('spInfo');
+  if(info){
+    const n = spriteFrames.length;
+    if(!n){ info.textContent=''; }
+    else{
+      const mism = spriteFrames.some(f=>f.w!==spriteFrames[0].w || f.h!==spriteFrames[0].h);
+      info.textContent = n + ' Frames · ' + spriteFrames[0].w + '×' + spriteFrames[0].h
+        + (mism ? ' · unterschiedliche Größen werden zentriert' : '');
+      info.style.color = mism ? '#e2a33c' : 'var(--dim)';
+    }
+  }
+}
+
+/** Frames zu einem Sprite zeichnen. Liefert {dataUrl, w, h, cols}. */
+function spriteCompose(frames, colsMode){
+  const fw = Math.max(...frames.map(f=>f.w));
+  const fh = Math.max(...frames.map(f=>f.h));
+  const n  = frames.length;
+  // Raster nur, wenn es sonst zu hoch wird (Browser/GPU moegen keine 30k px).
+  let cols = 1;
+  if(colsMode === 'auto' && n * fh > 8192) cols = Math.ceil(Math.sqrt(n));
+  const rows = Math.ceil(n / cols);
+  const cv = document.createElement('canvas');
+  cv.width = fw * cols; cv.height = fh * rows;
+  const ctx = cv.getContext('2d');
+  return Promise.all(frames.map(f => new Promise(res => {
+    const im = new Image();
+    im.onload = ()=>res(im);
+    im.onerror = ()=>res(null);
+    im.src = f.dataUrl;
+  }))).then(imgs => {
+    imgs.forEach((im, i) => {
+      if(!im) return;
+      const c = i % cols, r = Math.floor(i / cols);
+      // Abweichende Groessen mittig in die Zelle setzen statt zu verzerren
+      ctx.drawImage(im, c*fw + (fw-im.naturalWidth)/2, r*fh + (fh-im.naturalHeight)/2);
+    });
+    return { dataUrl: cv.toDataURL('image/png'), w: fw, h: fh, cols };
+  });
+}
+
+function spriteBuild(purpose, assign){
+  if(spriteFrames.length < 2){ alert('Mindestens zwei Bilder laden.'); return; }
+  const colsMode = document.getElementById('spCols').value;
+  const frames = spriteFrames.map(f=>({ ...f }));
+  spriteCompose(frames, colsMode).then(out => {
+    pushHistory();
+    const id = 'as_'+(assetCounter++);
+    const base = (purpose==='motion' ? 'motion' : 'states') + '-' + frames.length;
+    project.assets[id] = {
+      name: base + '.png',
+      dataUrl: out.dataUrl,
+      w: out.w * out.cols,
+      h: out.h * Math.ceil(frames.length / out.cols),
+      /* Quellframes mitspeichern: erlaubt spaeteres Umsortieren ohne Qualitaetsverlust */
+      sprite: { count: frames.length, cols: out.cols, fw: out.w, fh: out.h,
+                states: (()=>{ const def = purpose==='motion' ? null : defaultStates(frames.length);
+                  return frames.map((f,i)=> f.state || (def ? def[i] : 'Frame '+i)); })(),
+                sources: frames.map(f=>({ name:f.name, dataUrl:f.dataUrl, w:f.w, h:f.h })) }
+    };
+    if(assign){
+      const el = byId(sel);
+      if(el && (el.type==='button' || el.type==='knob' || el.type==='fader' || el.type==='image')){
+        el.asset = id;
+        el.frames = frames.length;
+        el.gridCols = out.cols;
+        if(el.type==='button' || el.type==='image'){
+          el.states = project.assets[id].sprite.states.slice();
+          if(el.type==='button') el.value = 0;
+        }
+        if(el.type==='image' && (!el.w || !el.h)){ el.w = out.w; el.h = out.h; }
+      }else{
+        alert('Kein passendes Element ausgewählt — das Sprite liegt jetzt in den Grafiken.');
+      }
+    }
+    $('#modalBack').classList.remove('open');
+    renderAll(); autosave();
+  });
+}
+
+/** Sprite eines Assets aus seinen Quellframes neu bauen (nach Umsortieren). */
+function spriteRebuild(assetId, order){
+  const a = project.assets[assetId];
+  if(!a || !a.sprite || !a.sprite.sources) return Promise.resolve(false);
+  const src = order.map(i => a.sprite.sources[i]);
+  const states = order.map(i => a.sprite.states[i]);
+  return spriteCompose(src, a.sprite.cols > 1 ? 'auto' : '1').then(out => {
+    a.dataUrl = out.dataUrl;
+    a.w = out.w * out.cols;
+    a.h = out.h * Math.ceil(src.length / out.cols);
+    a.sprite = { count: src.length, cols: out.cols, fw: out.w, fh: out.h, states, sources: src };
+    return true;
+  });
+}
+
+/* ============================== Modals ============================== */
+function openModal(title, bodyBuilder){
+  $('#modalTitle').textContent = title;
+  const b = $('#modalBody'); b.innerHTML='';
+  bodyBuilder(b);
+  $('#modalBack').classList.add('open');
+}
+$('#modalClose').onclick = ()=> $('#modalBack').classList.remove('open');
+$('#modalBack').addEventListener('pointerdown', ev=>{ if(ev.target===ev.currentTarget) $('#modalBack').classList.remove('open'); });
+
+function openExport(){
+  const json = JSON.stringify(buildExport(false), null, 2);
+  const rust = buildRust();
+  openModal('Export für Hauke', body=>{
+    const p = document.createElement('p');
+    p.innerHTML = '<b>Komplett-Paket</b> ist der einfachste Weg: eine einzige Datei mit Layout <i>und</i> allen verwendeten Grafiken – mehr braucht Hauke nicht. Alternativ nur die Layout-Daten (dann Grafiken separat als PNG mitschicken).';
+    const ta = document.createElement('textarea'); ta.value = json; ta.readOnly = true;
+    const btns = document.createElement('div'); btns.className='btns';
+    const mk=(t,f,cls='')=>{const x=document.createElement('button'); x.textContent=t; x.className=cls; x.onclick=f; return x;};
+    let showing='json';
+    const toggle = mk('Rust-Konstanten anzeigen', ()=>{
+      showing = showing==='json'?'rust':'json';
+      ta.value = showing==='json'?json:rust;
+      toggle.textContent = showing==='json'?'Rust-Konstanten anzeigen':'JSON anzeigen';
+    });
+    btns.append(
+      mk('Komplett-Paket (inkl. Grafiken)', ()=>download(fileSlug(project.name)+'.uipaket.json',
+        JSON.stringify(buildExport(true), null, 1)), 'primary'),
+      mk('NI-Kontakt-Paket (ZIP)', async ev=>{
+        const b=ev.target; b.disabled=true; b.textContent='Erzeuge ZIP …';
+        try{
+          const {blob,warn}=await buildKontaktZip();
+          downloadBlob(fileSlug(project.name)+'_kontakt.zip', blob);
+          if(warn.length) alert('Kontakt-Export mit Hinweisen (stehen auch in der LIESMICH.txt):\n\n– '+warn.join('\n– '));
+        }catch(e){ alert('Kontakt-Export fehlgeschlagen: '+e.message); }
+        b.disabled=false; b.textContent='NI-Kontakt-Paket (ZIP)';
+      }, 'primary'),
+      mk('Nur Layout-JSON', ()=>download(fileSlug(project.name)+'.layout.json', json)),
+      mk('geometry.rs herunterladen', ()=>download('geometry_'+fileSlug(project.name).replace(/-/g,'_')+'.rs', rust, 'text/plain')),
+      mk('In Zwischenablage', ()=>{ ta.select(); document.execCommand('copy'); }),
+      toggle
+    );
+    body.append(p, ta, btns);
+  });
+}
+
+function openHelp(){
+  openModal('Hilfe', body=>{
+    body.innerHTML = `
+<p><b>Du bestimmst das Design.</b> Dieses Tool zeigt deine Grafiken in exakter Plugin-Größe und macht sie sofort bedienbar – so siehst du, wie sich dein Entwurf im fertigen Plugin anfühlt.</p>
+<h4>Typischer Ablauf</h4>
+<ul>
+<li>Preset <b>„NI Kontakt — Größe aus der Tafel rechnen“</b> wählen. Danach
+bestimmt die Tafel die Fenstergröße, nicht umgekehrt: neue Tafel einsetzen,
+Ansichtszahl oder Kopfzeile ändern – die Fenstergröße zieht jedes Mal mit. In der
+Werkzeugleiste steht die Rechnung dauerhaft: <b>Tafel 636 = 68 + 568</b>, grün wenn
+sie aufgeht. Die festen Presets darunter tun dasselbe für bekannte Tafelhöhen. Kontakt legt oben eine <b>68 px hohe eigene Leiste</b> über das Bild:
+<b>Tafelhöhe = 68 + Fensterhöhe</b>. Jakobs Tafel ist 636 hoch, das Fenster also 568.
+Stimmt das nicht, sagt es der Baukasten im Hintergrund-Feld und bietet die passende
+Höhe zum Anklicken an – sonst hat Kontakt unten kein Wallpaper und zeichnet Schwarz.</li>
+<li>Oben rechts neben der Fenstergröße lässt sich zwischen <b>Entwurf</b> und
+<b>Kontakt</b> umschalten: Entwurf zeigt die verdeckten Zeilen schraffiert,
+Kontakt setzt die echte Kopfleiste darüber – so sieht man den Entwurf so, wie er
+im Plugin ankommt.</li>
+<li>Deine Grafiken links per Drag&nbsp;&amp;&nbsp;Drop hineinziehen. Hintergrundbild mit <kbd>BG</kbd> setzen.</li>
+<li>Elemente anlegen (+ Knob, + Fader …), Grafik zuweisen, frei platzieren. Ohne Grafik zeigt jedes Element einen neutralen Platzhalter – du kannst also auch erst layouten und später gestalten.</li>
+<li>Modus <b>Testen</b>: bedient sich wie das fertige Plugin – nur ohne Ton. Knobs drehen (vertikal ziehen), Fader schieben, Buttons klicken, Tasten spielen.</li>
+<li><b>Speichern</b> sichert dein komplettes Projekt als Datei (inkl. Bilder) – die kannst du jederzeit wieder öffnen und auch an Hauke schicken.</li>
+<li><b>Export für Hauke</b> → „Komplett-Paket“: eine Datei mit Layout und allen Grafiken – die schickst du Hauke, fertig.</li>
+<li><b>NI-Kontakt-Paket</b>: ZIP mit fertigem KSP-Script und Resources/pictures (PNG + NI-Metadaten) – direkt in Kontakt einsetzbar. Buttons brauchen 6-Frame-Strips (Aus/Aus-Hover/Aus-Klick/An/An-Hover/An-Klick), Knobs vertikale Strips.</li>
+<li><b>Röver-Vorlage</b> (Toolbar): lädt die komplette Röver-Orgel als Ausgangspunkt – Fenster 1000×568 im Kontakt-Raster, alle 17 Registerzüge, Website-Link auf dem „Steinbach“-Schriftzug.</li>
+<li><b>+ Link</b>: unsichtbare Klickfläche, die im Testen-Modus (und im fertigen Plugin) eine Website öffnet.</li>
+</ul>
+<h4>Knobs &amp; Filmstrips</h4>
+<ul>
+<li><b>Filmstrip</b>: ein Bild mit allen Drehstellungen untereinander (oder als Raster – dann „Spalten“ setzen). „Frames“ = Anzahl Stellungen.</li>
+<li><b>Bild rotieren</b>: ein einzelnes Knopf-Bild (Zeiger nach oben zeichnen), das Tool dreht es. Standard-Drehweg: −135° bis +135°.</li>
+<li><b>Rastung</b>: z. B. 6 für einen Schalter mit 6 festen Positionen.</li>
+</ul>
+<h4>Klaviatur spielen (Modus Testen)</h4>
+<ul>
+<li><b>Mit der Maus</b>: Taste gedrückt halten – sie bleibt unten, solange die Maus unten ist. Beim Ziehen über die Klaviatur läuft ein Glissando.</li>
+<li><b>Mit der Rechnertastatur</b>, Belegung wie in Ableton Live:<br>
+<kbd>A</kbd><kbd>W</kbd><kbd>S</kbd><kbd>E</kbd><kbd>D</kbd><kbd>F</kbd><kbd>T</kbd><kbd>G</kbd><kbd>Y</kbd><kbd>H</kbd><kbd>U</kbd><kbd>J</kbd><kbd>K</kbd><kbd>O</kbd><kbd>L</kbd><kbd>P</kbd> ab dem Grundton aufwärts.
+Mehrere Tasten zugleich ergeben einen Akkord.</li>
+<li><kbd>Y</kbd>/<kbd>X</kbd> Oktave tiefer/höher · <kbd>C</kbd>/<kbd>V</kbd> Anschlagstärke</li>
+<li>Gelesen wird die Taste an ihrer <i>Stelle</i>, nicht ihr Zeichen – auf deutscher und englischer Tastatur greift dieselbe Hand.</li>
+</ul>
+<h4>Treffer und Zoom</h4>
+<ul>
+<li>Getroffen wird am <b>Bild</b>, nicht am Rechteck: Bei einer Klaviatur in Perspektive überlappen sich die Rechtecke stark, das Bild aber trifft die Taste, die man sieht. Pro Element abschaltbar über „Treffer nur auf sichtbaren Pixeln“.</li>
+<li>Ein Bild mit mehreren Frames lässt sich im Testen direkt drücken, auch ohne eigene Klickfläche.</li>
+<li>Ein Knopf mit wenigen Rastungen (2–6) rastet auf Klick eine Stellung weiter – wie ein Drehschalter am Gerät. Ziehen dreht ihn weiterhin frei.</li>
+<li><kbd>⌘</kbd>+<kbd>Mausrad</kbd> zoomt auf den Zeiger. Beim Stufenwechsel bleibt die Bildmitte stehen; „Einpassen“ legt die ganze Fläche ins Fenster.</li>
+</ul>
+<h4>Tastatur (Bearbeiten)</h4>
+<ul>
+<li><kbd>Pfeile</kbd> 1&nbsp;px verschieben, <kbd>⇧</kbd>+<kbd>Pfeile</kbd> 10&nbsp;px</li>
+<li><kbd>⌘D</kbd> duplizieren · <kbd>⌫</kbd> löschen · <kbd>⌘Z</kbd> rückgängig · <kbd>⌘S</kbd> speichern</li>
+<li>Größe ziehen mit <kbd>⇧</kbd> = Seitenverhältnis halten</li>
+</ul>
+<p style="color:var(--dim)">Das Tool speichert automatisch im Browser zwischen – trotzdem regelmäßig „Speichern“ nutzen, das ist die verlässliche Kopie.</p>`;
+  });
+}
+
+/* ============================== Start ============================== */
+(function init(){
+  try{
+    const saved = localStorage.getItem('sus_autosave');
+    if(saved){
+      const p = JSON.parse(saved);
+      if(p && p.win && p.elements){ project = p; recountIds(); }
+    }
+  }catch(e){}
+  renderAll();
+})();
+</script>
+</body>
+</html>

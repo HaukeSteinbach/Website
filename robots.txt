@@ -7,4 +7,9 @@ Disallow: /admin.html
 Disallow: /release-links.html
 Disallow: /d/
 
+# Interne Bereiche. Beide tragen zusätzlich noindex im Kopf — das hier hält
+# den Crawler schon vor dem Abruf fern.
+Disallow: /werbung.html
+Disallow: /uistudio.html
+
 Sitemap: https://haukesteinbach.de/sitemap.xml

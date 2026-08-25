@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UI Studio | Steinbach Audio</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="assets/css/steinbach.css">
+    <link rel="preload" href="assets/fonts/archivo-black-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/jetbrains-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body>
+
+<div class="rail" aria-hidden="true"></div>
+
+<div class="wrap">
+
+    <header class="bar">
+        <a class="mark" href="index.html">Steinbach</a>
+        <button class="burger" type="button" aria-expanded="false" aria-controls="nav" aria-label="Menü">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav" id="nav">
+            <a class="nav-item" href="index.html">Home</a>
+            <a class="nav-item" href="steinbach-eq.html">Steinbach EQ</a>
+            <a class="nav-item" href="werbung.html">Werbung</a>
+            <button type="button" class="nav-item" id="studio-abmelden" hidden>Abmelden</button>
+        </nav>
+    </header>
+
+    <section class="page-head">
+        <p class="kicker">Steinbach Audio &middot; Intern</p>
+        <h1 class="fat">UI Studio</h1>
+        <p class="page-deck">Die Oberflächen der Plug-ins &mdash; entworfen, ausprobiert
+            und zu zweit bearbeitet. Die Projekte liegen im Team-Speicher, getrennt
+            von denen der Instrumente.</p>
+    </section>
+
+    <main>
+        <p id="studio-laden" class="page-deck">Zugang wird geprüft &hellip;</p>
+
+        <section id="studio-anmelden" class="handoff-card admin-signin" hidden>
+            <form id="studio-mail-form" class="handoff-form">
+                <div class="form-group">
+                    <label for="studio-mail">E-Mail-Adresse</label>
+                    <input id="studio-mail" type="email" required autocomplete="email">
+                </div>
+                <div class="handoff-actions"><button type="submit" class="btn fill">Code senden</button></div>
+            </form>
+            <form id="studio-code-form" class="handoff-form" hidden>
+                <div class="form-group">
+                    <label for="studio-code">Login-Code</label>
+                    <input id="studio-code" inputmode="numeric" autocomplete="one-time-code" required>
+                </div>
+                <div class="handoff-actions"><button type="submit" class="btn fill">Anmelden</button></div>
+            </form>
+            <p class="handoff-status" id="studio-fehler" role="status" aria-live="polite"></p>
+        </section>
+
+        <section id="studio-abgelehnt" hidden>
+            <p class="page-deck">Dieses Konto hat keinen Zugang zum UI Studio.</p>
+        </section>
+    </main>
+
+</div>
+
+<script src="assets/js/steinbach-ui.js"></script>
+<script src="assets/js/ads/store-config.js"></script>
+<script src="assets/js/ads/store.js"></script>
+<script src="assets/js/uistudio-gate.js"></script>
+
+</body>
+</html>

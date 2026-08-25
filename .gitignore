@@ -20,3 +20,4 @@ assets/audio/ScoresArchive/*.wav
 # Created at import time by release-pages.js when UPLOAD_DIR is unset;
 # on a server this lives in the mounted volume, never in the repo.
 backend/storage/
+tools/uistudio/uistudio-audio.VORHER.html

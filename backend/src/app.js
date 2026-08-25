@@ -65,6 +65,38 @@ app.use(helmet({
   }
 }));
 
+/**
+ * Ausnahme für das UI Studio.
+ *
+ * Das Werkzeug ist eine einzige HTML-Datei mit dem gesamten Programm in
+ * <script>-Blöcken darin; sie wird von uistudio.html aus dem privaten
+ * Supabase-Storage geholt und in die Seite geschrieben. Gegen die
+ * `script-src 'self'` oben startet davon nichts.
+ *
+ * Statt die Regel für die ganze Seite aufzuweichen, gilt sie hier nur für
+ * diesen einen Pfad. Die Seite ist intern, noindex, und ihr Inhalt kommt aus
+ * unserem eigenen privaten Speicher — kein fremder Code, nur eben Code, den
+ * die Datei mitbringt statt nachzuladen.
+ *
+ * Ein Hash statt 'unsafe-inline' wäre enger, ginge aber nur, wenn die
+ * Studio-Datei hier läge. Sie liegt bewusst nicht hier: sie wird oft und ohne
+ * Deploy ausgetauscht, und jeder Austausch würde den Hash brechen.
+ */
+app.use('/uistudio.html', (_request, response, next) => {
+  response.setHeader('Content-Security-Policy', [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://eojchbkieeqyfgfazydk.supabase.co wss://eojchbkieeqyfgfazydk.supabase.co",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'"
+  ].join('; '));
+  next();
+});
+
 app.use((request, response, next) => {
   const forwardedProtocol = request.get('x-forwarded-proto');
   const forwardedHost = request.get('x-forwarded-host');

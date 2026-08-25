@@ -193,6 +193,13 @@
 
 * { box-sizing: border-box; }
 
+/* Das hidden-Attribut setzt im Browser nur `display: block` — jede eigene
+   display-Regel schlaegt es. Das ist hier fuenfmal einzeln nachgebessert
+   worden (.cookie-banner, .cookie-settings, .cookie-reopen, .handoff-status,
+   .admin-signout), und beim sechsten Mal stand das Feld wieder offen da.
+   Einmal grundsaetzlich statt bei jedem neuen Baustein von Hand. */
+[hidden] { display: none !important; }
+
 html { scroll-behavior: smooth; }
 
 body {
