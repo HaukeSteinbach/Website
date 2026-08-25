@@ -45,6 +45,9 @@ app.use(helmet({
       'connect-src': [
         "'self'",
         'https://formspree.io',
+        /* werbung.html spricht mit dem Anzeigen-Dienst und der Anmeldung bei
+           Supabase. Ohne diesen Eintrag blockt die CSP die Aufrufe. */
+        'https://eojchbkieeqyfgfazydk.supabase.co',
         'https://www.youtube.com',
         'https://s.ytimg.com'
       ],

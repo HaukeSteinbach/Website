@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Werbung | Steinbach Audio</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="assets/css/steinbach.css">
+    <link rel="preload" href="assets/fonts/archivo-black-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/jetbrains-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  /* Die Anzeigen-Oberfläche (assets/js/ads/ads.js) wird von beiden Marken
+     benutzt und ist in den Namen von Steinbach Instruments geschrieben.
+     Hier werden diese Namen auf die Sprache dieser Seite umgelegt, damit
+     dasselbe Skript ohne Änderung im richtigen Gewand erscheint. */
+  #ads-inhalt {
+    --void:            var(--black);
+    --void-2:          var(--panel);
+    --void-3:          #141414;
+    --parchment:       var(--grey);
+    --parchment-dim:   var(--grey-2);
+    --parchment-faint: var(--grey-3);
+    --brass:           var(--accent);
+    --brass-bright:    #FF6B84;
+    --line:            var(--hair);
+    --line-strong:     #2E2E2E;
+    --font-display:    var(--fat);
+    --font-body:       var(--geo);
+    --font-mono:       var(--mono);
+  }
+
+  /* Bausteine, die ads.js voraussetzt. Auf der Instruments-Seite stehen sie
+     in admin.html; hier in der Sprache dieser Seite noch einmal. */
+  #ads-inhalt .panel { background: var(--panel); border: 1px solid var(--hair);
+    border-radius: 4px; padding: clamp(18px, 3vw, 30px); margin-bottom: 26px; }
+  #ads-inhalt .panel h2 { font-family: var(--mono); font-size: 0.68rem;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin: 0 0 18px; }
+  #ads-inhalt .hint { font-family: var(--mono); font-size: 0.68rem; line-height: 1.7;
+    color: var(--grey-3); }
+  #ads-inhalt .btn { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 11px 20px; border-radius: 2px;
+    border: 1px solid var(--accent); background: none; color: var(--grey-2);
+    cursor: pointer; transition: all .2s ease; text-decoration: none; display: inline-block; }
+  #ads-inhalt .btn:hover { background: none; border-color: #FF6B84; color: #FF6B84; }
+  #ads-inhalt .btn-fill { background: var(--accent); border-color: var(--accent);
+    color: var(--on-accent); }
+  #ads-inhalt .btn-fill:hover { filter: brightness(1.1); color: var(--on-accent); }
+  #ads-inhalt .btn-ghost { color: var(--grey-2); }
+  #ads-inhalt .btn-mini { padding: 6px 12px; font-size: 0.62rem; }
+  #ads-inhalt .btn-danger { border-color: #8a4636; color: var(--bad); }
+  #ads-inhalt table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  #ads-inhalt th { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--grey-3); text-align: left; padding: 8px 10px;
+    border-bottom: 1px solid #2E2E2E; }
+  #ads-inhalt td { padding: 10px; border-bottom: 1px solid var(--hair); color: var(--grey-2);
+    vertical-align: top; }
+  #ads-inhalt td.num, #ads-inhalt th.num { text-align: right; font-family: var(--mono); }
+  #ads-inhalt td .em { color: var(--grey); }
+  #ads-inhalt .tablewrap { overflow-x: auto; }
+  #ads-inhalt input[type=text], #ads-inhalt input[type=email], #ads-inhalt input[type=number],
+  #ads-inhalt textarea, #ads-inhalt select { width: 100%; padding: 11px 13px;
+    background: #141414; border: 1px solid #2E2E2E; border-radius: 2px; color: var(--grey);
+    font-family: var(--mono); font-size: 0.82rem; outline: none; box-sizing: border-box; }
+  #ads-inhalt input:focus, #ads-inhalt textarea:focus, #ads-inhalt select:focus {
+    border-color: var(--accent); }
+  #ads-inhalt textarea { min-height: 90px; resize: vertical; }
+  #ads-inhalt label { display: block; font-family: var(--mono); font-size: 0.62rem;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 16px 0 8px; }
+  #ads-inhalt .formrow { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  #ads-inhalt .formrow > div { flex: 1; min-width: 160px; }
+  #ads-inhalt .checkrow { display: flex; align-items: center; gap: 8px; font-size: 0.8rem;
+    color: var(--grey-2); margin-top: 16px; text-transform: none; letter-spacing: 0; }
+  #ads-inhalt .checkrow input { width: auto; accent-color: var(--accent); }
+  #ads-inhalt .msg { margin-top: 14px; font-family: var(--mono); font-size: 0.7rem;
+    line-height: 1.7; color: var(--grey-2); }
+  #ads-inhalt .msg.err { color: var(--bad); }
+  #ads-inhalt .msg.ok { color: var(--ok); }
+
+  .ads-gate { max-width: 420px; margin: 0 auto; }
+  .ads-gate label { display: block; font-family: var(--mono); font-size: 0.7rem;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--grey-2); margin: 18px 0 8px; }
+  .ads-gate input { width: 100%; padding: 12px 14px; background: #141414;
+    border: 1px solid #2E2E2E; border-radius: 2px; color: var(--grey);
+    font-family: var(--mono); font-size: 0.9rem; box-sizing: border-box; }
+  .ads-fehler { margin-top: 14px; font-family: var(--mono); font-size: 0.72rem; color: var(--bad); }
+</style>
+</head>
+<body>
+
+<div class="rail" aria-hidden="true"></div>
+
+<div class="wrap">
+
+    <header class="bar">
+        <a class="mark" href="index.html">Steinbach</a>
+        <button class="burger" type="button" aria-expanded="false" aria-controls="nav" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav" id="nav">
+            <a class="nav-item" href="index.html">Home</a>
+            <a class="nav-item" href="mixing.html">Mixing</a>
+            <a class="nav-item" href="mastering.html">Mastering</a>
+            <a class="nav-item" href="recordings.html">Studio</a>
+            <button type="button" class="nav-item" id="ads-abmelden" hidden>Abmelden</button>
+        </nav>
+    </header>
+
+    <section class="page-head">
+        <p class="kicker">Steinbach Audio &middot; Intern</p>
+        <h1 class="fat">Werbung</h1>
+        <p class="page-deck">Anzeigen für Steinbach EQ, Head Tracker, RecLight und
+            IR Maker &mdash; angelegt, gestartet und angehalten von hier aus.
+            Steinbach Instruments hat einen eigenen Bereich auf der anderen Seite.</p>
+    </section>
+
+    <main>
+        <p id="ads-laden" class="page-deck">Zugang wird geprüft &hellip;</p>
+
+        <section id="ads-anmelden" class="ads-gate" hidden>
+            <form id="ads-mail-form">
+                <label for="ads-mail">E-Mail-Adresse</label>
+                <input id="ads-mail" type="email" required autocomplete="email">
+                <div class="btn-row"><button type="submit" class="btn fill">Code senden</button></div>
+            </form>
+            <form id="ads-code-form" hidden>
+                <label for="ads-code">Login-Code</label>
+                <input id="ads-code" inputmode="numeric" autocomplete="one-time-code" required>
+                <div class="btn-row"><button type="submit" class="btn fill">Anmelden</button></div>
+            </form>
+            <p class="ads-fehler" id="ads-fehler"></p>
+        </section>
+
+        <section id="ads-abgelehnt" hidden>
+            <p class="page-deck">Dieses Konto hat keinen Zugang zur Werbung.</p>
+        </section>
+
+        <section id="ads-inhalt" hidden>
+            <div id="ads-behaelter"></div>
+        </section>
+    </main>
+
+</div>
+
+<script src="assets/js/steinbach-ui.js"></script>
+<script src="assets/js/ads/store-config.js"></script>
+<script src="assets/js/ads/store.js"></script>
+<script src="assets/js/ads/ads.js"></script>
+<script src="assets/js/ads/werbung.js"></script>
+
+</body>
+</html>
