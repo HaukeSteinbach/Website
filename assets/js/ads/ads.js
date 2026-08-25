@@ -117,12 +117,23 @@
         + 'data-prop="' + esc(p.slug) + '">' + esc(p.label) + '</button>';
     }).join(' ');
 
+    /* Wer die Oberflaeche lokal ausprobiert, sieht sonst nicht, dass die
+       Knoepfe echtes Geld bewegen: der Dienst dahinter ist derselbe wie
+       online. Ein Hinweis, der nicht zu uebersehen ist. */
+    var lokal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+      ? '<div style="margin:0 0 16px;padding:9px 13px;border:1px solid var(--brass);'
+        + 'border-radius:2px;font-family:var(--font-mono);font-size:0.62rem;'
+        + 'letter-spacing:0.1em;text-transform:uppercase;color:var(--brass-bright);">'
+        + 'Lokale Oberfläche · echter Dienst · echtes Geld</div>'
+      : '';
+
     var kopf = presets.properties.length > 1
       ? '<h2>Marke</h2><div style="display:flex;gap:8px;flex-wrap:wrap;">' + props + '</div>'
       : '<h2>' + esc(prop().label) + '</h2>';
 
     root.innerHTML =
-      '<div class="panel">'
+      lokal
+      + '<div class="panel">'
       + kopf
       + '<div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:18px;">'
       + statusChip(presets.platforms.meta.connected, 'Meta')
