@@ -16,14 +16,22 @@
     var nav = document.getElementById('nav');
     if (!burger || !nav) return;
 
+    /* The tick rail is position:fixed on the body, so the panel — absolute
+       inside the bar — sits in a stacking context that cannot reach over it,
+       whatever z-index it carries. Marking the body instead lets the
+       stylesheet take the rail out of the way while the panel is open. */
+    function setOpen(open) {
+      nav.classList.toggle('open', open);
+      document.body.classList.toggle('nav-open', open);
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
     function close() {
-      nav.classList.remove('open');
-      burger.setAttribute('aria-expanded', 'false');
+      setOpen(false);
     }
 
     burger.addEventListener('click', function () {
-      var open = nav.classList.toggle('open');
-      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      setOpen(!nav.classList.contains('open'));
     });
 
     /* tapping a destination closes the panel */

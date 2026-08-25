@@ -58,10 +58,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(buildApiUrl('/api/v1/public/release-pages'), {
                 method: 'POST',
                 body: payload,
+                /* Creating a release page needs the admin session now — without
+                   this the cookie is not sent and the request comes back 401. */
+                credentials: 'same-origin',
                 headers: {
                     'Accept': 'application/json'
                 }
             });
+
+            if (response.status === 401) {
+                throw new Error('Sign in on the projects page first, then come back to this tab.');
+            }
 
             if (!response.ok) {
                 throw new Error(await getApiErrorMessage(response, 'Unable to create the release page right now.'));

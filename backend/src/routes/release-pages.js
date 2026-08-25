@@ -5,6 +5,7 @@ import express from 'express';
 import multer from 'multer';
 
 import { fail, ok } from '../lib/http.js';
+import { requireAdmin } from '../middleware/auth.js';
 import {
   ReleasePageError,
   createReleasePage,
@@ -40,7 +41,16 @@ const artworkUpload = multer({
   }
 });
 
-router.post('/api/v1/public/release-pages', (request, response) => {
+/**
+ * Creating a release page is a studio action, not a public one.
+ *
+ * It sat open on a live domain: anyone who knew the path could publish a page
+ * under haukesteinbach.de/listen-to-<anything> with their own artwork and
+ * their own title. The path keeps the /public/ prefix so the existing tool at
+ * release-links.html does not have to change, but it is behind the same
+ * session as everything else in the admin area now.
+ */
+router.post('/api/v1/public/release-pages', requireAdmin, (request, response) => {
   artworkUpload.single('artwork')(request, response, async (error) => {
     if (error) {
       removeTemporaryFile(request.file);

@@ -3335,7 +3335,21 @@ fieldset.form-group > legend {
   }
   .nav.open { display: flex; }
 
-  .nav-item { padding: 1rem 1.1rem; border-bottom: 1px solid var(--hair); }
+  /* Out of the way while the panel is open: the ticks ran straight through the
+     menu items, and a scroll indicator has nothing to indicate when the page
+     behind it cannot be scrolled anyway. */
+  body.nav-open .rail { display: none; }
+
+  /* Never taller than the screen below the bar. The list grew past the
+     viewport once the submenu was added, which put the last entries out of
+     reach on a phone. */
+  .nav.open {
+    max-height: calc(100vh - var(--bar-h));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .nav-item { padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--hair); }
   .nav-group { display: block; }
   /* the More trigger has no destination of its own, so on touch it is only a
      group label rather than a dead tap target */
@@ -3352,7 +3366,11 @@ fieldset.form-group > legend {
     transform: none;
     transition: none;
   }
-  .drop a { padding: 0.85rem 1.1rem 0.9rem 1.9rem; }
+  .drop a { padding: 0.7rem 1.1rem 0.7rem 1.9rem; }
+  /* The one-line descriptions help when a pointer hovers and there is room.
+     On a phone they double the height of every submenu row for wording the
+     titles already carry. */
+  .drop .drop-s { display: none; }
 }
 
 /* ---------- phone ---------- */

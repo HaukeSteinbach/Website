@@ -420,6 +420,36 @@ function writeReleasePageIndex(index) {
   }
 }
 
+/**
+ * Hosts this server is willing to fetch a release page from.
+ *
+ * The server requests whatever URL it is handed, which without a list like
+ * this is a way to make it reach addresses only it can see — a metadata
+ * endpoint, something else on the same machine, anything on the private
+ * network. Even a refused request answers a question, because the error says
+ * whether something was listening.
+ *
+ * These are the services a release actually comes from. Add to the list rather
+ * than loosening the check.
+ */
+const ALLOWED_SOURCE_HOSTS = [
+  'music-hub.com',
+  'listen.music-hub.com',
+  'distrokid.com',
+  'hyperfollow.com',
+  'ffm.to',
+  'lnk.to',
+  'orcd.co',
+  'push.fm',
+  'linktr.ee'
+];
+
+function isAllowedHost(hostname) {
+  const host = hostname.toLowerCase();
+
+  return ALLOWED_SOURCE_HOSTS.some((allowed) => host === allowed || host.endsWith(`.${allowed}`));
+}
+
 function validateSourceUrl(value) {
   const sourceUrl = String(value || '').trim();
 
@@ -435,8 +465,18 @@ function validateSourceUrl(value) {
     throw new ReleasePageError(422, 'validation_error', 'Enter a valid Music Hub link.');
   }
 
-  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-    throw new ReleasePageError(422, 'validation_error', 'Only http and https links are supported.');
+  /* https only: over http the page could be swapped in transit for one that
+     names a different artist, and the result is published under our domain. */
+  if (parsedUrl.protocol !== 'https:') {
+    throw new ReleasePageError(422, 'validation_error', 'The link has to start with https.');
+  }
+
+  if (!isAllowedHost(parsedUrl.hostname)) {
+    throw new ReleasePageError(
+      422,
+      'host_not_allowed',
+      `Release pages can only be built from: ${ALLOWED_SOURCE_HOSTS.join(', ')}.`
+    );
   }
 
   return parsedUrl.toString();

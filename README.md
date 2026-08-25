@@ -1,694 +1,164 @@
-# Steinbach – Audio Engineering & Instruments
+# Steinbach — haukesteinbach.de
 
-A plain HTML, CSS, and JavaScript portfolio site with a small Node/Express backend for upload, delivery, and revision workflows, plus an interactive instrument showcase built with the Web Audio API.
+Studio site for Hauke Steinbach: mixing, mastering and production in Hamburg,
+plus the plugins and tools that come out of the studio.
 
-In the repository, the frontend and backend live side by side.
-In production, both are bundled into one Docker image so the server only has to run a single container.
+Plain HTML, CSS and JavaScript with no build step, and an Express backend for
+the file handoff. Both are bundled into one Docker image.
 
 ## Pages
 
-### Portfolio & Services
-- **Homepage** – Introduction with selected work and service overview
-- **Mixing** – Mixing portfolio with A/B audio comparison
-- **Mastering** – Mastering demos with A/B switch and blend slider
-- **Release Link Builder** – Branded release landing pages from a Music Hub link
+### Services and work
+| | |
+|---|---|
+| `index.html` | landing page |
+| `mixing.html` · `mastering.html` | A/B comparisons, built by `portfolio.js` |
+| `productions.html` | released work |
+| `recordings.html` | the studio itself |
 
-### Steinbach Instruments – Multisampler
-- **Multisampler** (`multisampler.html`) – Instrument overview page
-- **Historic Organ** (`orgel.html`) – Full product showcase for the Heinrich Röver & Söhne pipe organ sampled at Heilig-Kreuz-Kirche Bevern. Includes an interactive browser console using the real plugin sprite assets, Web Audio API engine, and a complete product page (hero, features, story, gallery, specs, download CTA).
-- **Fender Rhodes** – Coming soon
+### Products
+| | |
+|---|---|
+| `steinbach-eq.html` | EQ, saturator, transient shaper, clipper — AU/VST3 |
+| `steinbach-head-tracker.html` | head tracking for binaural mixing |
+| `reclight.html` | studio status light, pre-order |
+| `orgel.html` | sampled Röver pipe organ, with a playable console |
+| `ir-maker.html` | impulse response generator, runs in the browser |
+| `scores-archive.html` | non-exclusive score archive |
 
-### File Handoff Workflow
-- **Upload** (`upload.html`) – client sends their files in
-- **Projects** (`admin.html`) – the studio's own list: every project, its
-  version, and whether a change is waiting. Password protected.
-- **Delivery** (`/d/<token>`) – rendered per delivery; the client downloads
-  there and asks for a change on the same page
+### File handoff
+| | |
+|---|---|
+| `upload.html` | clients send their files in |
+| `admin.html` | the studio's project list — password protected |
+| `/d/<token>` | rendered per delivery: downloads and the revision form |
 
-See `backend/README.md` for how it works and what has to be configured.
+Set up on the server with `./setup.sh` — one command, it asks for what it
+needs and deploys at the end. If someone else operates the server, run
+`./prepare.sh` on your own machine first; it writes a single file to hand over.
+`backend/README.md` describes the whole flow.
 
-## Multisampler – Technical Overview
-
-### Audio Engine (`assets/js/orgel.js`)
-- All 17 organ stops are preloaded via `fetch` and decoded into `AudioBuffer` objects
-- On Play, all 17 samples start at exactly the same scheduled `AudioContext` timestamp
-- Each stop has its own `GainNode` (gain 1 = audible, gain 0 = muted)
-- Clicking a stop knob during playback cross-fades the gain in 40 ms – no restart, no timing drift
-- Pause applies a 70 ms exponential gain ramp before stopping sources to prevent the click artifact
-- Master volume is routed through a shared `GainNode`
-
-### Organ UI
-- Background: `Organ_Wallpaper.png` cropped to the same viewport as the standalone plugin (`BG_SHIFT = 95 px`)
-- Stop knobs positioned at the exact Kontakt coordinates from `roever-organ/src/stop_def.rs`
-- Sprite sheets: 43 × 330 px, 6 frames × 55 px. Frame 0 = off (brightness 0.55), frame 5 = on (full brightness)
-- Canvas scales responsively via `transform: scale()` with JS, preserving all pixel-exact positions
-- Available as KONTAKT 8+ instrument, VST3, Audio Unit, and macOS Standalone (Apple Silicon)
-
-## Architecture
-
-The project has two parts:
-
-- Static frontend at the repository root (`index.html`, `orgel.html`, `multisampler.html`, `assets/`)
-- Express backend in `backend/` providing `/api/v1/...` routes for uploads, revisions, deliveries, and admin endpoints
-
-There is no frontend build step. HTML, CSS, JavaScript, and assets are committed directly.
-
-For production, the Docker image copies both parts into one Node runtime:
-
-- Express serves the API routes
-- Express also serves the static frontend files
-- Server starts from `backend/package.json` via `npm start`
-
-## Project Structure
+## Structure
 
 ```
-.
-├── index.html                 # Homepage
-├── mixing.html                # Mixing portfolio
-├── mastering.html             # Mastering with audio comparison
-├── multisampler.html          # Instrument overview
-├── orgel.html                 # Historic Organ showcase + interactive console
-├── release-links.html         # Short branded release page generator
-├── upload.html                # Client file submission
-├── admin.html                 # Studio project list (password protected)
-├── assets/
-│   ├── css/styles.css         # Global styling
-│   ├── js/
-│   │   ├── navbar.js          # Navbar scroll + hide-on-scroll + dropdown
-│   │   ├── orgel.js           # Organ Web Audio engine
-│   │   └── ...                # Other frontend modules
-│   ├── audio/
-│   │   └── ORGEL/             # 17 organ stop samples (.mp3)
-│   └── images/
-│       └── ORGEL/             # Organ wallpaper + 17 stop sprite sheets + session photos
-├── backend/
-│   ├── package.json
-│   ├── src/                   # Express app and API routes
-│   └── migrations/
-├── Dockerfile
-├── docker-compose.yml
-├── docker-compose.runtime.yml
-└── README.md
+index.html, mixing.html, …      one file per page, no templating
+admin.html                      project list (fetches /api/v1/admin)
+assets/
+  css/steinbach.css             the entire stylesheet, in numbered sections
+  fonts/                        Archivo Black, Poppins, JetBrains Mono
+  js/
+    steinbach-ui.js             navigation, sticky bar, tick rail — every page
+    portfolio.js                builds the cards on mixing/mastering/productions
+    audio-comparison.js         the A/B player
+    scores-archive.js           waveform player for the archive
+    ir-maker.js                 the IR tool
+    orgel.js                    the organ sample engine
+    admin.js                    the project list
+    cookie-consent.js           consent gate for YouTube embeds
+  audio/, images/, Video/       media
+backend/
+  src/                          Express: routes, storage, projects, mail
+  scripts/                      setup helpers and the flow test
+setup.sh, prepare.sh            configure and deploy
+Dockerfile                      frontend and backend in one image
 ```
 
-## Getting Started
+## Running it locally
 
-### Static Frontend Preview
+### Pages only
 
 ```bash
-python3 -m http.server 8000
-# Visit: http://localhost:8000
+python3 -m http.server 8391
 ```
 
-The interactive organ, multisampler, and all static pages work with this setup.
-API-driven upload/delivery workflows require the full backend.
+Everything renders. The API routes answer 404, so the upload page, the admin
+area and delivery links do not work — for those you need the backend.
 
-### Full Production Runtime
-
-The Docker image serves both the static site and the API:
+### With the backend
 
 ```bash
-docker compose -f docker-compose.runtime.yml pull
-docker compose -f docker-compose.runtime.yml up -d
+cd backend && npm install && npm run dev
 ```
 
-### Backend Development Only
+Without R2 credentials the file routes return 503 and say why. To exercise the
+whole handoff without a Cloudflare account:
 
 ```bash
-cd backend
-npm install
-npm start
+cd backend && npm run dev-seeded     # :8392, two projects already in it
+cd backend && npm run flow-test      # walks the whole flow, 29 checks
 ```
 
-## Audio Comparison (Mastering Page)
+Both run against an S3 server held in memory. `dev-seeded` signs in with
+`dev-password-1234`.
 
-### A/B Mode
-Toggle between mix and master instantly. Both tracks stay synchronized.
+## The A/B comparison
 
-### Blend Slider Mode
-Smoothly crossfade between mix and master using volume-based blending:
-- 0% = original mix only
-- 100% = mastered version only
+Both versions are fetched and decoded up front, started on the same sample,
+and left running in parallel. Switching only crossfades two gain nodes over
+20 ms — nothing reloads and nothing drifts. Touch devices fall back to two
+`<audio>` elements kept in step by a timer.
 
-Audio files must be identical in duration and start point for accurate comparison.
+All sixteen files sit at −18 LUFS so the comparison is decided by the sound
+rather than by level. Re-exporting any of them means matching that, and
+keeping true peak under −1 dBTP.
 
-## Customization
+## The stylesheet
 
-### Colors
-```css
-:root {
-    --primary-color:   #1a1a2e;
-    --secondary-color: #16213e;
-    --highlight-color: #e94560;
-    --text-color:      #eaeaea;
-}
-```
+One file, `assets/css/steinbach.css`, in numbered sections with a table of
+contents at the top. Page-specific rules go into a section there rather than
+into a `<style>` block, so nothing is defined twice.
 
-### Adding Organ Samples
-Drop `.mp3` files into `assets/audio/ORGEL/` matching the `data-file` attributes on `.organ-stop-btn` elements in `orgel.html`.
+The design: pure black ground, Archivo Black at poster scale, one flat accent
+(`--accent`, `#E94560`) used as a solid block, hard-cut greyscale photography,
+an amplitude tick rail down the right edge. Colours come from tokens under
+`:root`; the accent and `--on-accent` always change together.
+
+Fonts are self-hosted under `assets/fonts/`. Loading them from Google would
+send every visitor's IP address to Google on every page view.
 
 ## Deployment
 
-### Docker Image
-
-A GitHub Actions workflow builds and pushes the image on every push to `main`:
-
-```
-ghcr.io/haukesteinbach/haukesteinbach:latest
-ghcr.io/haukesteinbach/haukesteinbach:<commit-sha>
-```
-
-### Server Start
+Pushing to `main` builds a multi-arch image and publishes it to
+`ghcr.io/haukesteinbach/haukesteinbach`, tagged `latest` and with the commit
+SHA. The server pins a SHA in `.env` and pulls it:
 
 ```bash
-docker run -d \
-    --name steinbachapp \
-    -p 3000:3000 \
-    --env-file backend/.env.runtime \
-    -v steinbach_uploads:/var/lib/steinbach/uploads \
-    ghcr.io/haukesteinbach/haukesteinbach:<commit-sha>
+./setup.sh            # configures what is missing, then deploys
 ```
 
-Use the immutable commit SHA tag in production, not `latest`.
+Secrets live in `backend/.env.runtime` on the server and never in this
+repository. `backend/.env.example` lists what goes there.
 
-### Runtime Variables
+`GET /health` reports whether storage and the admin password are actually
+configured, not just that the process is alive.
 
-| Variable | Required | Notes |
-|---|---|---|
-| `APP_ORIGIN` | Yes | e.g. `https://haukesteinbach.de` |
-| `SESSION_SECRET` | Yes | `openssl rand -hex 32` |
-| `CORS_ALLOWED_ORIGINS` | No | Additional allowed origins |
-| `FORMSPREE_UPLOAD_ENDPOINT` | No | Upload notifications |
-| `MAIL_FROM_EMAIL` | No | Direct delivery emails |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` | No | SMTP delivery |
-| `NOTIFICATION_EMAIL` | No | Internal confirmations |
-| `PORT` | No | Default `3000` |
+## Contact forms
+
+The contact forms post to Formspree (`https://formspree.io/f/xgopedgb`) over
+`fetch`, so they work from the static preview as well as from the container.
+This is separate from the file handoff, which sends its own mail over SMTP.
 
 ## Troubleshooting
 
-**Organ audio not loading** – Run through a local server (`python3 -m http.server`), not `file://`. Web Audio API requires HTTP.
+**API routes answer 404 locally** — `python3 -m http.server` only serves files.
+Start the backend, or use `npm run dev-seeded`.
 
-**API routes not responding locally** – The Node backend is needed. Use the Docker image or start `backend/` separately.
+**File routes answer 503** — no bucket configured. `GET /health` names the
+reason. Run `./setup.sh`.
 
-**Audio comparison not syncing** – Ensure mix and master files have identical duration and start time.
+**The admin area will not open** — `"admin":"not_configured"` in `/health`
+means `ADMIN_PASSWORD_HASH` or `SESSION_SECRET` is missing on the server.
+
+**A delivery was created but no mail went out** — no SMTP configured. The admin
+area shows the link to send by hand. Add SMTP with `./setup.sh`.
+
+**Audio does not play** — check the paths in `assets/js/portfolio.js` against
+`assets/audio/`, and serve over http rather than `file://`.
+
+**Styling looks stale** — the stylesheet is served without a cache-busting
+name; a hard reload picks up changes.
 
 ## License
 
-Working repository for the Steinbach website.
-
-
-In the repository, the frontend and backend live side by side.
-In production, both are bundled into one Docker image so the server only has to run a single container.
-
-## Features
-
-### 🎵 Core Pages
-- **Homepage**: Clean introduction with overview of all services
-- **Productions**: Portfolio showcase for original compositions and produced tracks
-- **Mixing**: Display your mixing projects and client work
-- **Mastering**: Interactive mastering demos with A/B comparison and blend slider
-- **Release Link Builder**: Generate short branded release pages from a Music Hub link plus uploaded artwork
-
-### ✨ Interactive Audio Comparison (Mastering Page)
-- **A/B Switching**: Instantly toggle between mix and master versions
-- **Audio Blend Slider**: Smoothly blend from original mix to master for subtle comparisons
-- **Synchronized Playback**: Mix and master tracks play in perfect sync for accurate comparison
-- **Volume-Based Blending**: Smooth crossfade between versions using volume control
-
-### 🎨 Design
-- **Professional Dark Theme**: Clean, modern interface focused on content
-- **Fully Responsive**: Mobile, tablet, and desktop optimized
-- **Lightweight & Fast**: No frameworks, just HTML/CSS/JS
-- **Accessible**: Semantic HTML and proper contrast ratios
-
-## Architecture
-
-The project currently has two parts:
-
-- Static frontend pages at the repository root such as `index.html`, `mixing.html`, `mastering.html`, and the files in `assets/`
-- An Express backend in `backend/` that provides `/api/v1/...` routes for uploads, revisions, deliveries, and admin endpoints
-
-There is no frontend build step.
-The HTML, CSS, JavaScript, and assets are committed directly.
-
-For production, the Docker image copies both parts into one Node runtime:
-
-- Express serves the API routes
-- Express also serves the static frontend files
-- the server starts from `backend/package.json` via `npm start`
-
-## Project Structure
-
-```
-.
-├── index.html                 # Homepage
-├── productions.html           # Productions portfolio
-├── mixing.html                # Mixing portfolio
-├── mastering.html             # Mastering with audio comparison
-├── release-links.html         # Short branded release page generator
-├── upload.html                # Client file submission
-├── admin.html                 # Studio project list (password protected)
-├── assets/
-│   ├── css/styles.css         # Main styling
-│   ├── js/                    # Frontend behavior
-│   ├── audio/                 # Demo audio assets
-│   └── images/                # Site imagery
-├── backend/
-│   ├── package.json           # Node runtime entry and dependencies
-│   ├── src/                   # Express app and API routes
-│   └── migrations/            # Backend workflow scaffolding
-├── Dockerfile                 # Single-image production runtime
-├── docker-compose.yml         # Simple single-container compose
-├── docker-compose.runtime.yml # Pinned-tag runtime compose
-└── README.md
-```
-
-## Getting Started
-
-### 1. Static Frontend Preview
-
-If you only want to preview the visible site and static media, no build tools are required.
-Use a simple local web server:
-
-```bash
-python3 -m http.server 8000
-
-# Then visit: http://localhost:8000
-```
-
-This is only a frontend preview.
-API-driven pages and upload workflows are not fully represented by that static server alone.
-
-### 2. Full Production Runtime
-
-The actual deployed application is the Docker image described below in the deployment section.
-
-That runtime serves:
-
-- the static website
-- the API routes
-- file uploads from a mounted upload directory
-
-If you want the same integration model as production, use the Docker image or Docker Compose runtime setup.
-
-### 3. Backend Development
-
-The `backend/` directory contains the Express API service.
-
-For backend-only development:
-
-```bash
-cd backend
-npm install
-npm start
-```
-
-That starts the Node service itself.
-In production, those backend files are bundled together with the frontend into one container.
-
-### 5. Release Link Builder
-
-Open `release-links.html` to generate branded release landing pages from a Music Hub page.
-
-The flow is:
-
-1. Paste the Music Hub URL
-2. Upload the artwork you want to show on your domain
-3. Optionally override title, artist, or the URL ending
-4. Create a short page such as `/listen-to-mommark`
-
-The backend extracts the outbound platform links from the source page, stores the uploaded artwork, and serves the finished landing page directly from your own domain.
-
-### 4. Adding Your Content
-
-#### Portfolio Data (Productions & Mixing)
-Edit `assets/js/portfolio.js` and update the `portfolioData` object:
-
-```javascript
-const portfolioData = {
-    productions: [
-        {
-            id: 'prod-001',
-            title: 'Your Track Title',
-            artist: 'Your Name',
-            date: '2024',
-            description: 'Brief description...',
-            tags: ['Tag1', 'Tag2'],
-            links: {
-                spotify: 'https://spotify.com/...',
-                soundcloud: 'https://soundcloud.com/...',
-                youtube: 'https://youtube.com/...'
-            }
-        },
-        // Add more items...
-    ],
-    // ... similar structure for mixing and mastering
-};
-```
-
-#### Audio Files for Mastering
-Place your aligned MP3 audio files in `assets/audio/`:
-- `track1-mix.mp3` and `track1-master.mp3`
-- `track2-mix.mp3` and `track2-master.mp3`
-- etc.
-
-**Important**: Ensure mix and master files are:
-- Same duration
-- Aligned start times
-- Exported consistently from the same source session
-- Properly normalized for fair comparison
-
-#### Site Metadata
-Update the site name and branding in:
-- `index.html`, `productions.html`, `mixing.html`, `mastering.html` - Page titles and hero text
-- `assets/css/styles.css` - Color scheme via CSS variables (see `:root { --primary-color: ... }`)
-
-## Audio Comparison Features
-
-### A/B Button Mode
-Click "Mix" or "Master" buttons to instantly switch between versions:
-- Both tracks are synchronized
-- Playback position stays aligned
-- One audio plays at a time
-
-### Blend Slider Mode
-Click "Toggle Blend Mode" to activate smooth blending:
-- Left side (0%) = Original Mix only
-- Center (50%) = Balanced mix of both
-- Right side (100%) = Mastered version only
-- Both tracks play simultaneously with crossfading volumes
-
-### Technical Details
-- **Alignment**: Tracks must have identical duration and start times for comparison accuracy
-- **Sync**: JavaScript keeps playback position synchronized to ±0.1 seconds
-- **Blend**: Volume-based crossfade provides smooth transitions without re-encoding
-
-## Customization
-
-### Colors & Theme
-Edit CSS variables in `assets/css/styles.css`:
-
-```css
-:root {
-    --primary-color: #1a1a2e;      /* Background */
-    --secondary-color: #16213e;    /* Cards */
-    --accent-color: #0f3460;       /* Accents */
-    --highlight-color: #e94560;    /* Buttons & Links */
-    --text-color: #eaeaea;         /* Main text */
-    --text-secondary: #b0b0b0;     /* Secondary text */
-}
-```
-
-### Fonts
-Default uses system fonts. To use custom fonts:
-
-```css
-@import url('https://fonts.googleapis.com/css2?family=Your+Font:wght@400;600;700&display=swap');
-
-body {
-    font-family: 'Your Font', sans-serif;
-}
-```
-
-### Layout
-Adjust grid spacing in `assets/css/styles.css`:
-
-```css
-.portfolio-grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem; /* Adjust spacing here */
-}
-```
-
-## Browser Support
-
-- ✅ Chrome/Edge (latest)
-- ✅ Firefox (latest)
-- ✅ Safari (latest)
-- ✅ Mobile browsers (iOS Safari, Chrome Mobile)
-
-**Audio Support**: WAV, MP3, OGG (depends on browser)
-
-## Performance Tips
-
-1. **Optimize Audio Files**
-   - Use WAV format for highest quality
-   - Ensure consistent sample rates (44.1kHz or 48kHz)
-   - Keep files under 30MB each for optimal streaming
-
-2. **Image Optimization**
-   - Use modern formats (WebP with fallbacks)
-   - Optimize dimensions (max 600px for portfolio cards)
-   - Compress before uploading
-
-3. **Hosting**
-    - For the complete application, use the Docker image runtime described below
-    - CDN delivery can still make sense for large media assets
-    - Enable compression on the serving layer in front of the app if your infrastructure provides it
-
-4. **Server Configuration**
-    - Set proper MIME types for audio assets
-    - Mount a persistent upload directory for workflow files
-    - Use runtime environment variables instead of editing code per environment
-    - If you use the nginx split frontend/backend setup, keep `/listen-to-*` and `/release-artwork/*` proxied to the backend
-
-## Deployment
-
-### Docker Image Build And Publish
-
-This repository includes a GitHub Actions workflow at `.github/workflows/docker-image.yml`.
-
-On every push to `main`, it:
-- builds one runnable application image
-- logs in to GitHub Container Registry with `GITHUB_TOKEN`
-- pushes `ghcr.io/haukesteinbach/haukesteinbach:latest`
-- pushes `ghcr.io/haukesteinbach/haukesteinbach:<commit-sha>`
-
-For production deployment, use the immutable `<commit-sha>` tags instead of `latest`.
-
-### Runtime Model
-
-The published image already contains:
-- the static website
-- the Express backend API
-- the upload handling logic
-
-That means the server only has to pull one image and start one container. No Watchtower, no reverse proxy assumptions, no second backend container.
-
-### Server Deployment With Docker Run
-
-The simplest production start command is:
-
-```bash
-docker run -d \
-    --name steinbachapp \
-    -p 3000:3000 \
-    --env-file backend/.env.runtime \
-    -v steinbach_uploads:/var/lib/steinbach/uploads \
-    ghcr.io/haukesteinbach/haukesteinbach:<commit-sha>
-```
-
-If you want to pin the image tag in files instead of in the command line, use `docker-compose.runtime.yml` plus a root `.env` file.
-
-The compose file expects a root `.env` file with a fixed `IMAGE_TAG`. That tag is used for both the website and backend image so the deployment always runs a consistent release.
-
-It runs:
-- `steinbachapp` from `ghcr.io/haukesteinbach/haukesteinbach:${IMAGE_TAG}`
-- on host port `${HOST_PORT:-3000}`
-
-Start the stack on the server:
-
-```bash
-docker compose -f docker-compose.runtime.yml pull
-docker compose -f docker-compose.runtime.yml up -d
-```
-
-Update manually if needed:
-
-```bash
-docker compose -f docker-compose.runtime.yml pull
-docker compose -f docker-compose.runtime.yml up -d
-```
-
-Do not use `--build` on the server. That would switch the deployment flow back to local image builds, which is not needed here.
-
-Do not use `latest` for production rollouts. Update `IMAGE_TAG` to the published commit SHA you want to deploy, then run `pull` and `up -d`.
-
-If the GHCR package is private, log in first:
-
-```bash
-echo "YOUR_GHCR_PAT" | docker login ghcr.io -u HaukeSteinbach --password-stdin
-```
-
-If the GHCR package is public, no login is required for pulling.
-
-### Runtime Secrets
-
-Keep real credentials out of git.
-
-- Commit only placeholder files such as `backend/.env.example`
-- Create a real `backend/.env.runtime` only on the server
-- Pass secrets to containers at runtime through `env_file`, environment variables, or Docker secrets
-- Configure `FORMSPREE_UPLOAD_ENDPOINT` if uploads should forward project details and the secure source download link through Formspree
-- Configure SMTP and `MAIL_FROM_EMAIL` if direct delivery emails should be sent from the backend
-
-### Runtime Variables
-
-These variables are read when the container starts.
-
-Required for a real production setup:
-- `APP_ORIGIN` example `https://haukesteinbach.de`
-- `SESSION_SECRET` example `openssl rand -hex 32`
-
-Useful when frontend preview and backend run on different origins locally:
-- `CORS_ALLOWED_ORIGINS` example `https://haukesteinbach.de,http://localhost:8000,http://127.0.0.1:8000`
-
-The backend always allows its own request origin automatically.
-`CORS_ALLOWED_ORIGINS` is only for additional origins such as local preview servers.
-
-Required if you want upload completion notifications through Formspree:
-- `FORMSPREE_UPLOAD_ENDPOINT` default `https://formspree.io/f/xgopedgb`
-
-The same Formspree endpoint is also used for the first-download confirmation mail for direct deliveries.
-
-Required if you want direct delivery emails through SMTP:
-- `MAIL_FROM_EMAIL` example `mail@haukesteinbach.de`
-- `MAIL_REPLY_TO` optional, otherwise `NOTIFICATION_EMAIL` is used as Reply-To
-- `SMTP_HOST`
-- `SMTP_PORT` default `587`
-- `SMTP_SECURE` set `true` for implicit TLS, usually `false` on port `587`
-- `SMTP_USER`
-- `SMTP_PASSWORD`
-- `NOTIFICATION_EMAIL` for internal first-download confirmations
-
-Required only if you use object storage instead of local disk later:
-- `S3_ENDPOINT`
-- `S3_REGION`
-- `S3_BUCKET`
-- `S3_ACCESS_KEY`
-- `S3_SECRET_KEY`
-
-Optional with sane defaults:
-- `PORT` default `3000`
-- `NODE_ENV` default `production` in deployment
-- `HOST_PORT` default `3000` in `.env` for Docker Compose
-- `SOURCE_DOWNLOAD_LINK_TTL_HOURS` default `168`
-- `TURNSTILE_SECRET`
-- `UPLOAD_DIR` default `/var/lib/steinbach/uploads` in deployment
-- `DATABASE_URL` reserved for future persistence work
-
-Example server workflow:
-
-```bash
-cp .env.example .env
-cp backend/.env.example backend/.env.runtime
-# set IMAGE_TAG in .env to the published commit SHA you want to deploy
-# edit backend/.env.runtime on the server only
-docker compose -f docker-compose.runtime.yml pull
-docker compose -f docker-compose.runtime.yml up -d
-```
-
-## File handoff
-
-Set it up on the server with `./setup.sh` — one command, it asks for what it
-needs and deploys at the end.
-
-Built and running. `backend/README.md` documents the flow, the routes and the
-environment it needs — Cloudflare R2 for storage, an admin password, and SMTP
-to reach clients.
-
-The planning documents that used to sit in `docs/` described a different
-design (a Postgres schema, an Uppy uploader, separate delivery and revision
-pages) and were removed rather than left to contradict the code.
-
-## Static Contact Form Setup
-
-The contact forms are configured for a static hosting flow and submit via JavaScript to a hosted form endpoint.
-
-### How it works
-- The frontend form submits via `fetch()` to `https://formspree.io/f/xgopedgb`
-- No PHP runtime is required, so the form works in both the static preview and the bundled Node container
-
-### Important for local testing
-- `python3 -m http.server` can serve the frontend and the form will submit to Formspree when the browser has network access
-
-## JavaScript API
-
-### AudioComparison Class
-Manual initialization if needed:
-
-```javascript
-const comparison = new AudioComparison('container-id');
-comparison.init('track-id', 'mix.mp3', 'master.mp3');
-comparison.playMix();
-comparison.playMaster();
-comparison.handleBlend(sliderEvent, cardElement);
-```
-
-### Portfolio Functions
-```javascript
-loadPortfolioItems('productions');  // Load productions
-loadPortfolioItems('mixing');       // Load mixing
-loadMasteringItems();               // Load mastering with audio
-```
-
-## Troubleshooting
-
-### API Routes Not Responding Locally
-- `python3 -m http.server` only serves the frontend files
-- The real API lives in the Node backend or the production Docker image
-- If you need the integrated runtime, use the Docker image or start the backend separately
-
-### Audio Files Not Playing
-- Check file paths in `portfolio.js`
-- Ensure files exist in `assets/audio/`
-- Use browser DevTools console for errors
-- Try a local server instead of file:// protocol
-
-### Blend Slider Not Working
-- Ensure audio files are loaded
-- Check browser console for JavaScript errors
-- Verify audio elements have `controls` attribute
-
-### Styling Issues
-- Clear browser cache (Ctrl+Shift+Delete or Cmd+Shift+Delete)
-- Check CSS file is loaded (Network tab in DevTools)
-- Verify CSS color variable names match
-
-### Navigation Active State Not Updating
-- Confirm page filenames match navigation links
-- Check file paths (case-sensitive on some servers)
-
-## License
-
-This repository is intended as the working project for the Steinbach website.
-
-## Tips for Best Results
-
-1. **Audio Quality**
-   - Ensure mastered version is noticeably better
-   - Use professional-quality audio files
-   - Normalize levels for fair A/B comparison
-
-2. **Portfolio Curation**
-   - Show your best work
-   - Include diverse projects
-   - Keep descriptions concise but informative
-
-3. **Professional Presentation**
-   - Use clear project titles
-   - Include artist/client names
-   - Add relevant links (Spotify, SoundCloud, etc.)
-   - Keep the site updated regularly
-
-## Support & Questions
-
-For customization help or issues:
-1. Check the code comments in HTML/CSS/JS files
-2. Review browser console for errors
-3. Validate HTML/CSS at w3.org
-4. Test audio files in external player first
-
----
-
-**Happy showcasing! 🎵**
+All rights reserved. Audio, images and text are the property of
+Hauke Steinbach.
