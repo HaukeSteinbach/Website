@@ -119,6 +119,8 @@
       + statusChip(presets.platforms.google.connected, 'Google Ads')
       + '</div>'
       + '<div class="hint" id="ads-cap" style="margin-top:14px;"></div>'
+      + '<button class="btn btn-mini" id="ads-test" style="margin-top:14px;">Verbindung prüfen</button>'
+      + '<div id="ads-test-out"></div>'
       + '</div>'
       + '<div class="panel"><h2>Kampagnen</h2><div id="ads-list"><p class="hint">Lade …</p></div></div>'
       + formPanel();
@@ -132,6 +134,33 @@
       });
     });
     wireForm();
+
+    /* Die Punkte oben sagen nur, ob Zugangsdaten hinterlegt sind. Ob sie
+       auch taugen, weiß erst der Server, nachdem er Meta gefragt hat. */
+    document.getElementById('ads-test').addEventListener('click', function () {
+      var b = this, out = document.getElementById('ads-test-out');
+      b.disabled = true; b.textContent = 'Frage nach …';
+      api('selftest', { property: property }).then(function (r) {
+        b.disabled = false; b.textContent = 'Verbindung prüfen';
+        out.innerHTML = ['meta', 'google'].map(function (k) {
+          var t = r[k];
+          if (!t) return '';
+          return '<div style="margin-top:14px;">'
+            + '<div style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.12em;'
+            + 'text-transform:uppercase;color:var(--brass);margin-bottom:6px;">'
+            + (k === 'meta' ? 'Meta' : 'Google Ads') + '</div>'
+            + t.zeilen.map(function (z) {
+                return '<div style="font-family:var(--font-mono);font-size:0.68rem;'
+                  + 'line-height:1.8;color:' + (z.gut ? 'var(--parchment-dim)' : '#c96f5a') + ';">'
+                  + (z.gut ? '✓' : '✗') + ' ' + esc(z.was) + ': ' + esc(z.wert) + '</div>';
+              }).join('')
+            + '</div>';
+        }).join('');
+      }).catch(function (err) {
+        b.disabled = false; b.textContent = 'Verbindung prüfen';
+        out.innerHTML = '<p class="msg err">' + esc(err.message) + '</p>';
+      });
+    });
   }
 
   /* ── Kampagnenliste ───────────────────────────────────────────────── */
