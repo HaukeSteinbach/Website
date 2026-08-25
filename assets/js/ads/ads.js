@@ -245,14 +245,39 @@
 
   /* ── Bilder ───────────────────────────────────────────────────────── */
 
-  /** Liegend, quadratisch oder keines von beidem — Google verlangt je eines
-   *  der ersten beiden, und man sollte es sehen, bevor man anlegt. */
+  /**
+   * Welches Seitenverhältnis, und wofür es taugt.
+   *
+   * Nicht "richtig oder falsch", sondern wo es ausgespielt wird: 9:16 ist
+   * für Reels und Stories die wichtigste Fläche, für Google dagegen
+   * unbrauchbar. Google nimmt bei einer Responsive Display Ad ausschließlich
+   * 1,91:1 und 1:1 — 16:9 sieht liegend aus, wird dort aber abgelehnt.
+   */
+  var FORMATE = [
+    { v: 1.91,   kurz: '1,91:1',  fuer: 'Meta-Feed · Google',       google: 'quer' },
+    { v: 16 / 9, kurz: '16:9',    fuer: 'Meta-Feed',                google: null  },
+    { v: 1,      kurz: '1:1',     fuer: 'Meta-Feed · Google',       google: 'quadrat' },
+    { v: 4 / 5,  kurz: '4:5',     fuer: 'Meta-Feed (nimmt am meisten Platz)', google: null },
+    { v: 9 / 16, kurz: '9:16',    fuer: 'Reels und Stories',        google: null }
+  ];
+
   function format(i) {
-    if (!i.width || !i.height) return { kurz: '?', lang: 'Maße unbekannt', ok: false };
+    if (!i.width || !i.height) {
+      return { kurz: '?', lang: 'Maße unbekannt', ton: 'warn', google: null };
+    }
     var v = i.width / i.height;
-    if (v > 1.5) return { kurz: 'liegend', lang: i.width + ' × ' + i.height, ok: true };
-    if (Math.abs(v - 1) < 0.15) return { kurz: 'quadrat', lang: i.width + ' × ' + i.height, ok: true };
-    return { kurz: 'anderes', lang: i.width + ' × ' + i.height + ' — Google nimmt das nicht', ok: false };
+    var masse = i.width + ' × ' + i.height;
+    for (var n = 0; n < FORMATE.length; n++) {
+      var f = FORMATE[n];
+      if (Math.abs(v / f.v - 1) < 0.03) {
+        return { kurz: f.kurz, lang: masse + ' · ' + f.fuer, ton: 'ok', google: f.google };
+      }
+    }
+    return {
+      kurz: (v > 1 ? 'quer' : 'hoch') + ' ?',
+      lang: masse + ' — kein gängiges Verhältnis, Meta beschneidet selbst',
+      ton: 'warn', google: null
+    };
   }
 
   var bilderCache = [];
@@ -281,7 +306,8 @@
         + '</button>'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;">'
         + '<span style="font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.08em;'
-        + 'text-transform:uppercase;color:' + (f.ok ? 'var(--parchment-faint)' : '#c96f5a') + ';" '
+        + 'text-transform:uppercase;color:'
+        + (f.ton === 'ok' ? 'var(--parchment-dim)' : 'var(--brass)') + ';" '
         + 'title="' + esc(f.lang) + '">' + esc(f.kurz) + '</span>'
         + '<button data-del="' + esc(i.key) + '" title="Bild löschen" '
         + 'style="background:none;border:0;color:var(--parchment-faint);cursor:pointer;'
@@ -398,9 +424,20 @@
       + '<textarea id="ad-body" maxlength="300" style="min-height:90px;"></textarea>'
       + '<label>Bilder</label>'
       + '<div id="ads-images"><p class="hint">Lade …</p></div>'
-      + '<div style="margin-top:12px;"><input type="file" id="ad-file" accept="image/png,image/jpeg" multiple></div>'
-      + '<p class="hint">Google verlangt beides: ein liegendes Bild (etwa 1200 × 628) und ein '
-      + 'quadratisches (etwa 1200 × 1200). Meta kommt mit einem aus.</p>'
+      /* Das native Dateifeld bringt einen Systemknopf mit ("Datei auswählen",
+         Grau, Systemschrift). Es wird versteckt und über ein Label bedient,
+         das wie jeder andere Knopf hier aussieht. */
+      + '<div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
+      + '<label for="ad-file" class="btn btn-ghost btn-mini" '
+      + 'style="margin:0;cursor:pointer;">Bilder hinzufügen</label>'
+      + '<input type="file" id="ad-file" accept="image/png,image/jpeg" multiple '
+      + 'style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;">'
+      + '<span class="hint" id="ad-file-name">PNG oder JPEG, mehrere möglich</span>'
+      + '</div>'
+      + '<p class="hint">Für Meta: <b>9:16</b> (1080 × 1920) ist die wichtigste Fläche — '
+      + 'Reels und Stories. <b>4:5</b> (1080 × 1350) nimmt im Feed am meisten Platz ein. '
+      + 'Für Google zusätzlich <b>1,91:1</b> (1200 × 628) <i>und</i> <b>1:1</b> (1200 × 1200); '
+      + 'beide zusammen, sonst legt Google nichts an. 16:9 nimmt Google nicht.</p>'
       + '<label>Vorschau</label>'
       + '<div id="ad-preview"></div>'
       + '<button class="btn btn-fill" id="ad-create" style="margin-top:20px;">Anlegen (pausiert)</button>'
@@ -441,8 +478,14 @@
       var files = Array.prototype.slice.call(ev.target.files || []);
       if (!files.length) return;
       var msg = document.getElementById('ad-msg');
+      var name = document.getElementById('ad-file-name');
       msg.className = 'msg';
       msg.textContent = 'Lade ' + files.length + ' Bild(er) hoch …';
+      if (name) {
+        name.textContent = files.length === 1
+          ? files[0].name
+          : files.length + ' Dateien gewählt';
+      }
       var kette = Promise.resolve();
       files.forEach(function (f) {
         kette = kette.then(function () {
@@ -459,6 +502,7 @@
         msg.className = 'msg ok';
         msg.textContent = 'Hochgeladen.';
         ev.target.value = '';
+        if (name) name.textContent = 'PNG oder JPEG, mehrere möglich';
         refresh();
       }).catch(function (err) {
         msg.className = 'msg err';
