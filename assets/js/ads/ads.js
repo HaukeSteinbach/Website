@@ -40,7 +40,17 @@
       });
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (body) {
-        if (!res.ok) { var e = new Error(body.error || ('HTTP ' + res.status)); e.code = res.status; throw e; }
+        if (!res.ok) {
+          var text = body.error || ('HTTP ' + res.status);
+          /* Der Server kennt die Aktion nicht — das heißt fast immer, dass er
+             älter ist als die Oberfläche, und nicht, dass etwas kaputt ist. */
+          if (/Unbekannte Aktion/.test(text)) {
+            text = 'Der Dienst kennt diese Funktion noch nicht — er ist älter als '
+                 + 'diese Oberfläche. Einmal neu ausrollen (ads-assistent.command, '
+                 + 'Menüpunkt 3), dann geht es.';
+          }
+          var e = new Error(text); e.code = res.status; throw e;
+        }
         return body;
       });
     });
@@ -120,6 +130,7 @@
       + '</div>'
       + '<div class="hint" id="ads-cap" style="margin-top:14px;"></div>'
       + '<button class="btn btn-mini" id="ads-test" style="margin-top:14px;">Verbindung prüfen</button>'
+      + '<div class="hint" id="ads-veraltet" style="margin-top:8px;"></div>'
       + '<div id="ads-test-out"></div>'
       + '</div>'
       + '<div class="panel"><h2>Kampagnen</h2><div id="ads-list"><p class="hint">Lade …</p></div></div>'
@@ -137,6 +148,20 @@
 
     /* Die Punkte oben sagen nur, ob Zugangsdaten hinterlegt sind. Ob sie
        auch taugen, weiß erst der Server, nachdem er Meta gefragt hat. */
+    /* Kennt der Dienst diese Aktion überhaupt? Die Oberfläche liegt auf der
+       Website und ist nach jedem Push da; die Funktion muss eigens ausgerollt
+       werden. Läuft beides auseinander, sagt es das hier — statt später ein
+       „Unbekannte Aktion" zu zeigen, mit dem niemand etwas anfangen kann. */
+    if (presets.actions && presets.actions.indexOf('selftest') < 0) {
+      var t = document.getElementById('ads-test');
+      t.disabled = true;
+      t.style.opacity = '0.5';
+      document.getElementById('ads-veraltet').innerHTML =
+        'Der Dienst ist älter als diese Oberfläche. Zum Prüfen einmal neu '
+        + 'ausrollen: <span style="color:var(--brass);">ads-assistent.command '
+        + '→ Menüpunkt 3</span>.';
+    }
+
     document.getElementById('ads-test').addEventListener('click', function () {
       var b = this, out = document.getElementById('ads-test-out');
       b.disabled = true; b.textContent = 'Frage nach …';
