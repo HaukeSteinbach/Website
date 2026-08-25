@@ -33,7 +33,8 @@ fi
 
 if [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
   echo "SUPABASE_SERVICE_ROLE_KEY fehlt. Entweder exportieren oder in" >&2
-  echo "steinbach-instruments/.env.local hinterlegen." >&2
+  echo "steinbach-instruments/.env.local hinterlegen. Der Schlüssel steht in" >&2
+  echo "https://supabase.com/dashboard/project/$PROJEKT/settings/api-keys" >&2
   exit 1
 fi
 
@@ -41,20 +42,26 @@ test -f "$QUELLE" || { echo "Nicht gefunden: $QUELLE" >&2; exit 1; }
 
 BASIS="https://$PROJEKT.supabase.co/storage/v1/object"
 
+# Der Schlüssel geht über eine curl-Konfigurationsdatei mit 600-Rechten, nicht
+# als -H auf der Kommandozeile: Argumente stehen in der Prozessliste und sind
+# damit für jeden auf dem Rechner lesbar.
+KONF="$(mktemp)"
+chmod 600 "$KONF"
+trap 'rm -f "$KONF"' EXIT INT TERM
+{
+  printf 'header = "apikey: %s"\n' "$SUPABASE_SERVICE_ROLE_KEY"
+  printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_SERVICE_ROLE_KEY"
+} > "$KONF"
+
 echo "→ alten Stand sichern …"
-if curl -fsS "$BASIS/$BUCKET/$ZIEL" \
-     -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-     -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-     -o "$SICHERUNG"; then
+if curl -fsS -K "$KONF" "$BASIS/$BUCKET/$ZIEL" -o "$SICHERUNG"; then
   echo "  ✓ $SICHERUNG ($(wc -c < "$SICHERUNG" | tr -d ' ') Bytes)"
 else
   echo "  · noch nichts da — erste Veröffentlichung"
 fi
 
 echo "→ hochladen ($(wc -c < "$QUELLE" | tr -d ' ') Bytes) …"
-curl -fsS -X POST "$BASIS/$BUCKET/$ZIEL" \
-  -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-  -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+curl -fsS -K "$KONF" -X POST "$BASIS/$BUCKET/$ZIEL" \
   -H "Content-Type: text/html" \
   -H "x-upsert: true" \
   --data-binary "@$QUELLE" > /dev/null

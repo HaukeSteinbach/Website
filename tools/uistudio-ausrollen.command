@@ -49,6 +49,18 @@ frage() {
 
 pause() { printf '\n    %s' "$(grau '[Enter] weiter ')"; read -r _; }
 
+# lauf <befehl…> — fuehrt aus, zeigt die Ausgabe eingerueckt und behaelt den
+# Status. Vorher stand hier `befehl | sed`; in einer Pipe zaehlt aber der
+# Status des LETZTEN Befehls, und sed gelingt immer. Ein fehlgeschlagenes
+# Veroeffentlichen wurde dadurch als Erfolg gemeldet — genau der Fehler, der
+# das Werkzeug beim ersten Ausrollen nie in den Speicher gebracht hat.
+lauf() {
+  local aus status
+  aus="$("$@" 2>&1)"; status=$?
+  [ -n "$aus" ] && printf '%s\n' "$aus" | sed 's/^/      /'
+  return $status
+}
+
 # ablage <text> — in die Zwischenablage, ohne es auf den Bildschirm zu werfen
 ablage() { printf '%s' "$1" | pbcopy; }
 
@@ -209,7 +221,7 @@ info "                    liefert das neue uistudio-audio.html aus."
 info "Der geteilte Code in _shared/ geht automatisch mit."
 
 if frage "Jetzt ausrollen?"; then
-  if (cd "$INSTRUMENTS" && supabase functions deploy uistudio-api cockpit-content 2>&1 | sed 's/^/      /'); then
+  if (cd "$INSTRUMENTS" && lauf supabase functions deploy uistudio-api cockpit-content); then
     ok "Beide Funktionen sind draußen."
   else
     err "Ausrollen fehlgeschlagen — Ausgabe oben."
@@ -231,13 +243,14 @@ printf '\n'
 info "Der alte Stand wird vorher heruntergeladen und daneben gelegt."
 
 if frage "Studio veröffentlichen?"; then
-  if "$WEBSITE/tools-publish-uistudio.sh" 2>&1 | sed 's/^/      /'; then
+  if lauf "$WEBSITE/tools-publish-uistudio.sh"; then
     ok "Veröffentlicht."
   else
-    err "Fehlgeschlagen. Meist fehlt der Service-Role-Key."
-    info "Er wird aus steinbach-instruments/.env.local gelesen, oder:"
+    err "Fehlgeschlagen — ohne diesen Schritt gibt es kein Werkzeug."
+    info "Meist fehlt der Service-Role-Key. Er wird aus der Umgebung gelesen"
+    info "oder aus steinbach-instruments/.env.local:"
     info "  export SUPABASE_SERVICE_ROLE_KEY=…   und noch einmal"
-    merke_aus "Schritt 5 — ./tools-publish-uistudio.sh"
+    merke_aus "Schritt 5 — ./tools-publish-uistudio.sh (FEHLGESCHLAGEN)"
   fi
 else
   merke_aus "Schritt 5 — ./tools-publish-uistudio.sh"

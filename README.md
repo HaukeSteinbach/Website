@@ -147,6 +147,26 @@ Graphics are the exception — embedded as base64, they are larger than a
 Realtime message may be, so adding one prompts everybody else to reload from
 the team store instead of travelling live.
 
+**The EQ curve** is an element type of its own, because it is not a picture:
+it computes its response from its eight bands. The filter maths in
+`assets/js/uistudio-eqcurve.js` is a line-by-line port of the plugin's
+`Source/DSP/EQBand.h`, the look and the mouse behaviour follow
+`Source/GUI/EQDisplay.cpp`. Dragging a node moves frequency and gain — slope
+for cut filters — and Cmd/Ctrl held changes Q, exactly as in the plugin.
+
+That means the maths now exists three times: in the plugin, in the Max device
+and here. Change `EQBand.h` and this has to follow; the tests will say so.
+
+```bash
+node tools/uistudio/eqcurve-test.mjs   # 34 checks against filter theory
+```
+
+Two limits worth knowing: the FFT spectrum, the Aurora overlay and the dynamic
+EQ's ghost range need running audio and are not here. And a curve's eight
+bands travel as one field, so two people editing different bands of the *same*
+curve at the same time will overwrite each other — everywhere else the sync is
+per field.
+
 Undo is personal: it merges its snapshot back in while leaving the fields the
 other person touched alone. Alone in a project it behaves exactly as before.
 

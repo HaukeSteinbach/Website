@@ -167,7 +167,7 @@ label{color:var(--dim)}
 <body>
 
 <div id="toolbar">
-  <span class="brand">Steinbach UI Studio · Audio</span><span class="tag" id="buildTag" title="Baustand dieser Datei — bei Problemen zuerst vergleichen">2026-08-25 · Audio</span>
+  <span class="brand">Steinbach UI Studio · Audio</span><span class="tag" id="buildTag" title="Baustand dieser Datei — bei Problemen zuerst vergleichen">2026-08-25 · EQ-Kurve</span>
   <input id="projName" type="text" title="Projektname">
   <div class="sep"></div>
   <div id="modeSwitch">
@@ -181,6 +181,7 @@ label{color:var(--dim)}
   <button class="mini" data-add="label">+ Text</button>
   <button class="mini" data-add="image">+ Bild</button>
   <button class="mini" data-add="link">+ Link</button>
+  <button class="mini" data-add="eqcurve" title="Anzeigeflaeche mit ziehbaren Bandpunkten">+ EQ-Kurve</button>
   <div class="sep"></div>
   <label>Fenster</label>
   <select id="preset">
@@ -259,6 +260,7 @@ label{color:var(--dim)}
 <script src="/assets/js/ads/store-config.js"></script>
 <script src="/assets/js/ads/store.js"></script>
 <script src="/assets/js/uistudio-live.js"></script>
+<script src="/assets/js/uistudio-eqcurve.js"></script>
 <script>
 'use strict';
 /* ============================== State ============================== */
@@ -377,7 +379,7 @@ function autosave(){
 }
 
 /* ============================== Elemente ============================== */
-const TYPE_NAMES = {knob:'Knob', fader:'Fader', button:'Button', label:'Text', image:'Bild', link:'Link'};
+const TYPE_NAMES = {knob:'Knob', fader:'Fader', button:'Button', label:'Text', image:'Bild', link:'Link', eqcurve:'EQ-Kurve'};
 
 /* ============================== Icons ==============================
    Schlanke Inline-SVGs statt Emoji: gleiche Strichstaerke, faerben sich
@@ -432,6 +434,16 @@ function addElement(type){
      (Orgelschluessel, Philicorda-Licht) einfach auf einen anderen Frame um. */
   if(type==='image') Object.assign(base,{asset:null, w:120, h:120, frames:1, gridCols:1, states:['Standard']});
   if(type==='link') Object.assign(base,{url:'https://steinbach-instruments.de', w:120, h:40});
+  /* Die EQ-Kurve ist keine Grafik, sondern rechnet ihren Verlauf aus den
+     Baendern — deshalb traegt sie die Bandwerte selbst. Voreinstellung wie im
+     Plug-in (PluginProcessor.cpp, createParameterLayout). */
+  if(type==='eqcurve') Object.assign(base,{
+    w: Math.min(w, 720), h: Math.min(h - 60, 300),
+    x: Math.round((w - Math.min(w,720))/2), y: Math.round((h - Math.min(h-60,300))/2),
+    sr: 48000,
+    baender: window.SteinbachEQKurve ? window.SteinbachEQKurve.neueBaender() : [],
+    gewaehlt: -1
+  });
   project.elements.push(base);
   sel = base.id;
   renderAll();
@@ -589,7 +601,7 @@ function renderStage(){
 function elementNode(el){
   const d = document.createElement('div');
   d.className = 'el t-'+el.type+' '+(mode==='edit'?'edit':'test')+(el.id===sel?' sel':'');
-  if(mode==='test'&&(el.type==='knob'||el.type==='fader')) d.classList.add('grab');
+  if(mode==='test'&&(el.type==='knob'||el.type==='fader'||el.type==='eqcurve')) d.classList.add('grab');
   d.dataset.id = el.id;
   d.style.left = el.x+'px'; d.style.top = el.y+'px';
   d.style.width = el.w+'px'; d.style.height = el.h+'px';
@@ -795,8 +807,38 @@ function applyDrives(el){
   }
 }
 
+/* Zeichnet nur die Kurve neu, ohne den Knoten aufzubauen. Beim Ziehen
+   laeuft das sechzigmal je Sekunde — updateNode() wuerfe dabei jedes Mal
+   die Leinwand weg und legte eine neue an. */
+/* `knoten` wird uebergeben, wenn der Knoten noch nicht in der Seite haengt —
+   beim Aufbau der Buehne ist er das naemlich nicht, und die Suche darueber
+   ginge ins Leere. Genau daran blieb die Leinwand zuerst auf ihren 300x150
+   Standardpunkten stehen und es war nichts zu sehen. */
+function zeichneKurve(el, knoten){
+  const d = knoten || $('#stage').querySelector('.el[data-id="'+el.id+'"]');
+  const c = d && d.querySelector('canvas.eqkurve');
+  if(!c || !window.SteinbachEQKurve) return;
+  const dpr = window.devicePixelRatio || 1;
+  if(c.width !== Math.round(el.w*dpr) || c.height !== Math.round(el.h*dpr)){
+    c.width = Math.round(el.w*dpr); c.height = Math.round(el.h*dpr);
+    c.style.width = el.w+'px'; c.style.height = el.h+'px';
+  }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  window.SteinbachEQKurve.zeichnen(ctx, el.w, el.h, el.baender || [], el.sr || 48000,
+    {gewaehlt: el.gewaehlt, drueber: el.drueber});
+}
+
 function renderContent(d, el){
   const a = el.asset ? project.assets[el.asset] : null;
+  if(el.type==='eqcurve'){
+    const c = document.createElement('canvas');
+    c.className = 'eqkurve';
+    c.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';
+    d.appendChild(c);
+    zeichneKurve(el, d);
+    return;
+  }
   if(el.type==='knob'){
     const v = snapSteps(el.value, el.steps);
     const deg = el.startDeg + v*el.sweep;
@@ -1243,6 +1285,65 @@ function renderInspector(){
   box.appendChild(g1);
 
   const g2 = document.createElement('div'); g2.className='group';
+  if(el.type==='eqcurve'){
+    const K = window.SteinbachEQKurve;
+    g2.appendChild(row('Abtastrate', numIn(el,'sr',{min:8000,step:100})));
+    const hin = document.createElement('div');
+    hin.style.cssText='font:11px/1.6 ui-monospace,monospace;color:#8a8378;margin:6px 0 10px;';
+    hin.textContent = 'Im Modus Testen: Punkt ziehen = Frequenz und Gain (bei Cut-Filtern '
+      + 'die Flankensteilheit), mit Cmd/Strg die Güte.';
+    g2.appendChild(hin);
+
+    /* Eine Zeile je Band. Der Filtertyp ist hier und nicht auf der Flaeche,
+       weil ein Rechtsklick-Menue im Studio mit dem Auswaehlen kollidierte. */
+    (el.baender||[]).forEach((b, i) => {
+      const z = document.createElement('div');
+      z.style.cssText='display:flex;gap:4px;align-items:center;margin-bottom:4px;';
+
+      const punkt = document.createElement('span');
+      punkt.style.cssText='width:14px;height:14px;border-radius:50%;flex:0 0 auto;'
+        + 'font:9px/14px Arial;text-align:center;color:#111;background:'
+        + (K ? K.TYP_FARBEN[b.type] : '#888') + ';opacity:' + (b.on ? 1 : 0.4);
+      punkt.textContent = String(i+1);
+      punkt.title = 'Band ' + (i+1) + ' ein- oder ausschalten';
+      punkt.style.cursor='pointer';
+      punkt.onclick = () => { pushHistory(); b.on = !b.on; renderInspector(); zeichneKurve(el); autosave(); };
+
+      const typ = document.createElement('select');
+      (K ? K.TYP_NAMEN : []).forEach((n, t) => {
+        const o = document.createElement('option'); o.value=t; o.textContent=n;
+        if(t === b.type) o.selected = true; typ.appendChild(o);
+      });
+      typ.style.flex='1';
+      typ.onchange = () => { pushHistory(); b.type = +typ.value; renderInspector(); zeichneKurve(el); autosave(); };
+
+      const zahl = (feld, schritt, min, max, breite) => {
+        const n = document.createElement('input');
+        n.type='number'; n.step=schritt; n.min=min; n.max=max; n.value=b[feld];
+        n.style.width=breite;
+        n.title = feld;
+        n.oninput = () => { b[feld] = +n.value; zeichneKurve(el); autosave(); };
+        n.onfocus = () => pushHistory();
+        return n;
+      };
+      z.append(punkt, typ,
+        zahl('freq', 1, 20, 20000, '62px'),
+        zahl(K && K.hatGain(b.type) ? 'gain' : 'slope', K && K.hatGain(b.type) ? 0.1 : 6,
+             K && K.hatGain(b.type) ? -18 : 6, K && K.hatGain(b.type) ? 18 : 48, '48px'),
+        zahl('q', 0.01, 0.025, 40, '52px'));
+      g2.appendChild(z);
+    });
+
+    const zurueck = document.createElement('button');
+    zurueck.className='mini'; zurueck.textContent='Werkseinstellung';
+    zurueck.title='Die acht Bänder wie im Plug-in beim ersten Start';
+    zurueck.onclick = () => {
+      pushHistory();
+      el.baender = K ? K.neueBaender() : [];
+      renderInspector(); zeichneKurve(el); autosave();
+    };
+    g2.appendChild(zurueck);
+  }
   if(el.type==='knob'){
     g2.appendChild(row('Grafik', assetSelect(el,'asset')));
     g2.appendChild(row('Darstellung', selectIn(el,'render',[['auto','Automatisch'],['strip','Filmstrip'],['rotate','Bild rotieren']])));
@@ -1648,6 +1749,29 @@ stage.addEventListener('pointerdown', ev=>{
       }
     }else if(el.type==='link'){
       if(el.url) window.open(el.url, '_blank');
+    }else if(el.type==='eqcurve'){
+      /* Genau wie im Plug-in: ziehen bewegt Frequenz und Gain (bei
+         Cut-Filtern die Flankensteilheit), mit Cmd/Strg die Guete. Ein Punkt,
+         dessen Band aus ist, schaltet es beim Anfassen ein — sonst aendert
+         man Werte, die weder Kurve noch Klang bewegen (EQBandProcessor::
+         magnitudeAt liefert fuer ein ausgeschaltetes Band immer 1,0). */
+      const K = window.SteinbachEQKurve;
+      /* `target` und nicht ev.currentTarget: der Zuhoerer haengt an der
+         Buehne, currentTarget waere also die ganze Flaeche und der Punkt
+         landete um den Elementversatz daneben. */
+      const r = target.getBoundingClientRect();
+      const lx = (ev.clientX - r.left)/zoom, ly = (ev.clientY - r.top)/zoom;
+      const i = K ? K.treffer(el.baender||[], lx, ly, el.w, el.h) : -1;
+      el.gewaehlt = i;
+      if(i < 0){ zeichneKurve(el); return; }
+      pushHistory();
+      const b = el.baender[i];
+      if(!b.on) b.on = true;
+      dragState = {kind:'eqkurve', el, band:i, sx:ev.clientX, sy:ev.clientY,
+                   anker:{y: ly, q: b.q, slope: b.slope},
+                   qModus: !!(ev.metaKey || ev.ctrlKey)};
+      zeichneKurve(el);
+      startWindowDrag(); ev.preventDefault();
     }else if(el.type==='knob'||el.type==='fader'){
       dragState = {kind:'value', el, sx:ev.clientX, sy:ev.clientY, ov:el.value,
                    bewegt:false};
@@ -1698,6 +1822,27 @@ function onDragMove(ev){
     if(grid.on && !ev.altKey){ nw = Math.round(nw/grid.size)*grid.size; nh = Math.round(nh/grid.size)*grid.size; }
     el.w = Math.round(nw); el.h = Math.round(Math.max(4,nh));
     updateNode(el); syncPosInputs(el);
+  }
+  else if(d.kind==='eqkurve'){
+    const K = window.SteinbachEQKurve;
+    const node = $('#stage').querySelector('.el[data-id="'+el.id+'"]');
+    if(!K || !node) return;
+    const r = node.getBoundingClientRect();
+    const lx = (ev.clientX - r.left)/zoom, ly = (ev.clientY - r.top)/zoom;
+    const jetztQ = !!(ev.metaKey || ev.ctrlKey);
+    if(jetztQ !== d.qModus){   // Taste mitten im Zug gedrueckt: neu ankern
+      d.qModus = jetztQ;
+      d.anker = {y: ly, q: el.baender[d.band].q, slope: el.baender[d.band].slope};
+    }
+    Object.assign(el.baender[d.band], K.ziehen(el.baender[d.band], lx, ly, el.w, el.h, d.anker, d.qModus));
+    zeichneKurve(el);
+    const b = el.baender[d.band];
+    $('#selInfo').textContent = 'Band '+(d.band+1)+' · '+
+      (b.freq<1000 ? Math.round(b.freq)+' Hz' : (b.freq/1000).toFixed(2)+' kHz')+
+      (K.hatGain(b.type) ? ' · '+b.gain.toFixed(1)+' dB' : '')+
+      (K.istCut(b.type) ? ' · '+b.slope+' dB/oct' : '')+
+      ' · Q '+b.q.toFixed(2);
+    autosave();
   }
   else if(d.kind==='value'){
     const range = ev.shiftKey ? 600 : 150;
@@ -2591,6 +2736,20 @@ function buildExport(withAssets){
         alphaHit: el.alphaHit !== false,
       };
       if(el.type==='link') out.link = { url:el.url||'' };
+      /* Die EQ-Kurve ist keine Grafik: was sie zeigt, steckt in den
+         Bandwerten. Sie gehen vollstaendig mit, damit der Export dieselbe
+         Kurve beschreibt, die im Studio zu sehen war. */
+      if(el.type==='eqcurve') out.eqcurve = {
+        sampleRate: el.sr || 48000,
+        gainRangeDb: window.SteinbachEQKurve ? window.SteinbachEQKurve.GAIN_RANGE_DB : 24,
+        bands: (el.baender||[]).map((b,i) => ({
+          index: i, paramPrefix: 'b' + (i<9?'0':'') + (i+1) + '_',
+          on: !!b.on, type: b.type, typeName: window.SteinbachEQKurve
+            ? window.SteinbachEQKurve.TYP_NAMEN[b.type] : String(b.type),
+          freq: +b.freq.toFixed(2), gain: +b.gain.toFixed(2),
+          q: +b.q.toFixed(4), slopeDb: b.slope
+        }))
+      };
       return out;
     })
   };

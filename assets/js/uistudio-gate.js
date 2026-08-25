@@ -82,7 +82,19 @@
           return null;
         }
         if (!res.ok) {
-          aufgeben('Die Anmeldung ist abgelaufen. Bitte noch einmal anmelden.');
+          /* Nicht jeder Fehlschlag ist eine abgelaufene Anmeldung. Genau das
+             stand hier vorher für alles, und beim ersten Ausrollen las sich
+             eine fehlende Datei im Speicher als „bitte neu anmelden" — man
+             meldet sich dann wieder und wieder an und sucht an der falschen
+             Stelle. */
+          if (res.status === 401) {
+            aufgeben('Die Anmeldung ist abgelaufen. Bitte noch einmal anmelden.');
+          } else if (res.status === 500 || res.status === 404) {
+            aufgeben('Das Werkzeug liegt nicht im Team-Speicher. '
+              + 'Es muss mit ./tools-publish-uistudio.sh veröffentlicht werden.');
+          } else {
+            aufgeben('Unerwartete Antwort vom Server (Status ' + res.status + ').');
+          }
           return null;
         }
         return res.text();
