@@ -193,9 +193,16 @@
             + 'text-transform:uppercase;color:var(--brass);margin-bottom:6px;">'
             + (k === 'meta' ? 'Meta' : 'Google Ads') + '</div>'
             + t.zeilen.map(function (z) {
+                /* Adressen anklickbar machen — die Verbindungspruefung nennt
+                   unter anderem den Weg zu den App-Einstellungen, und den
+                   abzutippen waere albern. */
+                var wert = /^https?:\/\//.test(z.wert)
+                  ? '<a href="' + esc(z.wert) + '" target="_blank" rel="noopener" '
+                    + 'style="color:var(--brass-bright);">' + esc(z.wert) + '</a>'
+                  : esc(z.wert);
                 return '<div style="font-family:var(--font-mono);font-size:0.68rem;'
                   + 'line-height:1.8;color:' + (z.gut ? 'var(--parchment-dim)' : '#c96f5a') + ';">'
-                  + (z.gut ? '✓' : '✗') + ' ' + esc(z.was) + ': ' + esc(z.wert) + '</div>';
+                  + (z.gut ? '✓' : '✗') + ' ' + esc(z.was) + ': ' + wert + '</div>';
               }).join('')
             + '</div>';
         }).join('');
