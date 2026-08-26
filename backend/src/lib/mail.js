@@ -177,6 +177,33 @@ function isSmtpConfigured() {
   return Boolean(config.smtpHost && config.mailFromEmail);
 }
 
+/**
+ * What /health reports about mail.
+ *
+ * Without SMTP the studio still gets its notifications through Formspree, so
+ * everything looks fine from the inside — while deliveries to clients quietly
+ * never go out, because Formspree can only ever reach its own form owner.
+ * That difference is worth naming before a client is waiting on a link.
+ */
+export function describeMailSetup() {
+  if (isSmtpConfigured()) {
+    return { ok: true, transport: 'smtp', host: config.smtpHost, reachesClients: true };
+  }
+
+  const fehlt = [
+    !config.smtpHost ? 'SMTP_HOST' : null,
+    !config.mailFromEmail ? 'MAIL_FROM_EMAIL' : null
+  ].filter(Boolean);
+
+  return {
+    ok: false,
+    transport: config.formspreeUploadEndpoint ? 'formspree' : 'none',
+    reachesClients: false,
+    missing: fehlt,
+    note: 'Notifications to the studio work; deliveries to clients do not go out.'
+  };
+}
+
 async function sendSmtp({ to, subject, text, html, replyTo }) {
   try {
     const response = await getSmtpTransporter().sendMail({

@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import path from 'path';
 
 import { config } from './lib/config.js';
+import { describeMailSetup } from './lib/mail.js';
 import { checkStorage, isStorageConfigured } from './lib/storage.js';
 import { errorHandler, notFoundHandler } from './middleware/errors.js';
 import { isAdminConfigured } from './middleware/auth.js';
@@ -136,12 +137,14 @@ app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
  */
 app.get('/health', async (_request, response) => {
   const storage = await checkStorage();
+  const mail = describeMailSetup();
 
   response.status(storage.ok ? 200 : 503).json({
     ok: storage.ok,
     service: 'steinbach-file-handoff-backend',
     storage,
-    admin: isAdminConfigured() ? 'configured' : 'not_configured'
+    admin: isAdminConfigured() ? 'configured' : 'not_configured',
+    mail
   });
 });
 
@@ -183,6 +186,10 @@ if (!isStorageConfigured()) {
 
 if (!isAdminConfigured()) {
   console.warn('[admin] No admin password configured — the admin area is locked. Set ADMIN_PASSWORD_HASH and SESSION_SECRET.');
+}
+
+if (!describeMailSetup().ok) {
+  console.warn(`[mail] No SMTP configured (missing ${describeMailSetup().missing.join(', ')}). Studio notifications fall back to Formspree; deliveries to clients will NOT be sent.`);
 }
 
 export default app;

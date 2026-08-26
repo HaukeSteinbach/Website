@@ -1,0 +1,100 @@
+# Steinbach — haukesteinbach.de, als Portainer-Stack.
+#
+# Für Hosts, auf denen fremde Skripte nichts zu suchen haben: hier läuft
+# nichts außerhalb des Containers, es liegt keine Datei auf dem Host, und die
+# Zugangsdaten stehen als Stack-Variablen in Portainer statt in einer
+# .env.runtime. Die Alternative im Repo — ./setup.sh — schreibt Dateien und
+# ruft docker compose auf; das ist für einen Server gedacht, auf dem nur diese
+# eine Sache läuft.
+#
+# EINRICHTEN
+#   Portainer → Stacks → Add stack → Web editor, diesen Inhalt einfügen.
+#   Darunter unter "Environment variables" die Werte eintragen (Liste unten).
+#   Deploy.
+#
+# AKTUALISIEREN
+#   Portainer → Stacks → steinbach → Editor → "Pull and redeploy".
+#   Mit IMAGE_TAG=latest holt das die neueste gebaute Fassung. Wer lieber
+#   festnagelt, trägt statt "latest" die Commit-Kennung ein; sie steht unter
+#   github.com/HaukeSteinbach/Website/commits/main.
+#
+# Das Image ist öffentlich lesbar — Portainer braucht keine Registry-Zugangsdaten.
+
+services:
+  app:
+    image: ghcr.io/haukesteinbach/haukesteinbach:${IMAGE_TAG:-latest}
+    container_name: steinbachapp
+    restart: unless-stopped
+    ports:
+      # Davor gehört ein Reverse Proxy mit dem Zertifikat für
+      # haukesteinbach.de. Der Container spricht nur HTTP auf 3000.
+      - "${HOST_PORT:-3000}:3000"
+    volumes:
+      # Nur die Release-Seiten schreiben noch hierhin; Kundendateien liegen
+      # in R2. Das Volume darf beim Aktualisieren nicht wegfallen.
+      - uploads-data:/var/lib/steinbach/uploads
+    environment:
+      # ── läuft auch ohne alles Weitere ──────────────────────────────────
+      # Die Website, der interne Werbe-Bereich und das UI Studio brauchen
+      # keine der Variablen darunter: sie hängen an Supabase, nicht an
+      # diesem Container. Fehlt der Rest, schreibt der Container beim Start
+      # eine Warnung und liefert die Seiten trotzdem aus.
+      NODE_ENV: production
+      PORT: "3000"
+      APP_ORIGIN: https://haukesteinbach.de
+      CORS_ALLOWED_ORIGINS: https://haukesteinbach.de
+
+      # ── für die Projektübersicht (/admin.html) ─────────────────────────
+      # ADMIN_PASSWORD_HASH ist ein scrypt-Hash, kein Passwort — daraus
+      # lässt sich nichts zurückrechnen. SESSION_SECRET ist eine zufällige
+      # Zeichenkette; wird sie geändert, sind alle Anmeldungen ungültig.
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+
+      # ── für die Dateiübergabe (Cloudflare R2) ──────────────────────────
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_BUCKET: ${S3_BUCKET:-steinbach-filehandoff}
+      S3_REGION: auto
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      UPLOAD_DIR: /var/lib/steinbach/uploads
+      SOURCE_DOWNLOAD_LINK_TTL_HOURS: "168"
+
+      # ── für Kundenmails ────────────────────────────────────────────────
+      # Ohne SMTP entsteht die Lieferung trotzdem; die Projektübersicht sagt
+      # dann, dass die Mail nicht rausging, und zeigt den Link zum selbst
+      # Verschicken.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM_EMAIL: mail@haukesteinbach.de
+      NOTIFICATION_EMAIL: ${NOTIFICATION_EMAIL:-mail@haukesteinbach.de}
+      FORMSPREE_UPLOAD_ENDPOINT: https://formspree.io/f/xgopedgb
+
+volumes:
+  uploads-data:
+
+# ── Stack-Variablen in Portainer ────────────────────────────────────────────
+#
+# Pflicht: keine. Ohne alles Weitere laufen Website und UI Studio.
+#
+#   IMAGE_TAG            latest, oder eine Commit-Kennung
+#   HOST_PORT            3000, falls der Proxy woanders hinhört
+#
+# Für die Projektübersicht:
+#   ADMIN_PASSWORD_HASH  kommt von Hauke, Form scrypt$<salt>$<hash>
+#   SESSION_SECRET       64 Hex-Zeichen, einmal erzeugen und liegen lassen
+#
+# Für die Dateiübergabe:
+#   S3_ENDPOINT          https://<konto>.r2.cloudflarestorage.com
+#   S3_ACCESS_KEY        Cloudflare R2, Object Read & Write
+#   S3_SECRET_KEY        dito
+#
+# Für Kundenmails:
+#   SMTP_HOST, SMTP_USER, SMTP_PASSWORD, SMTP_PORT, SMTP_SECURE
+#
+# Ob es steht, sagt der Container selbst:
+#   curl -s http://127.0.0.1:3000/health
+#   {"ok":true,"storage":{"ok":true},"admin":"configured"}
