@@ -173,8 +173,25 @@ async function sendToStudio({ subject, text, replyTo }) {
   return sendFormspree({ subject, text, replyTo, recipient });
 }
 
+/**
+ * The address mail goes out as.
+ *
+ * MAIL_FROM_EMAIL if it is set. Otherwise SMTP_USER, which at nearly every
+ * provider is the mailbox address anyway — leaving a working mail server
+ * unused over a missing second line is the worse outcome. Only when the user
+ * is not an address (some providers use an account number) is there nothing
+ * to fall back to.
+ */
+function fromAddress() {
+  if (config.mailFromEmail) {
+    return config.mailFromEmail;
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(config.smtpUser || '') ? config.smtpUser : '';
+}
+
 function isSmtpConfigured() {
-  return Boolean(config.smtpHost && config.mailFromEmail);
+  return Boolean(config.smtpHost && fromAddress());
 }
 
 /**
@@ -187,12 +204,21 @@ function isSmtpConfigured() {
  */
 export function describeMailSetup() {
   if (isSmtpConfigured()) {
-    return { ok: true, transport: 'smtp', host: config.smtpHost, reachesClients: true };
+    return {
+      ok: true,
+      transport: 'smtp',
+      host: config.smtpHost,
+      from: fromAddress(),
+      /* worth seeing, so a surprising sender address is noticed here rather
+         than in a client's inbox */
+      fromSource: config.mailFromEmail ? 'MAIL_FROM_EMAIL' : 'SMTP_USER',
+      reachesClients: true
+    };
   }
 
   const fehlt = [
     !config.smtpHost ? 'SMTP_HOST' : null,
-    !config.mailFromEmail ? 'MAIL_FROM_EMAIL' : null
+    !fromAddress() ? 'MAIL_FROM_EMAIL' : null
   ].filter(Boolean);
 
   return {
@@ -207,7 +233,7 @@ export function describeMailSetup() {
 async function sendSmtp({ to, subject, text, html, replyTo }) {
   try {
     const response = await getSmtpTransporter().sendMail({
-      from: config.mailFromEmail,
+      from: fromAddress(),
       to,
       subject,
       text,

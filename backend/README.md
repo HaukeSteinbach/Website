@@ -81,6 +81,9 @@ SMTP_PASSWORD=...
 MAIL_FROM_EMAIL=mail@haukesteinbach.de
 ```
 
+`MAIL_FROM_EMAIL` may be left out when `SMTP_USER` is itself an address — then
+that is used as the sender. `/health` reports which of the two it took.
+
 Without it, deliveries are still created — the admin area simply tells you the
 mail did not go out and gives you the link to send yourself. Notifications *to
 you* fall back to Formspree, which can only ever reach your own inbox and so
