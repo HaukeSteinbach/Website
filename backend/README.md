@@ -126,6 +126,13 @@ whether the key is a test key.
 
 Nothing else is needed — no product or price has to be created in Stripe.
 
+**One Stripe account, two shops.** steinbach-instruments.de sells from the same
+account, and Stripe delivers `checkout.session.completed` to *every* endpoint
+subscribed to it — so each shop's webhook also sees the other's purchases. Both
+sides ignore what is not in their own catalogue; there is no fallback product
+on either. Adding a product here means adding it to `PRODUCTS` in
+`src/lib/shop.js`, and nothing else changes.
+
 ```bash
 npm run shop-test    # the whole purchase, without a Stripe account
 ```

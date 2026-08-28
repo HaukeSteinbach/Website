@@ -157,8 +157,11 @@ router.post('/webhook', async (request, response) => {
       return ok(response, { received: true, ignored: 'unpaid' });
     }
 
-    await recordPaidSession(session);
-    return ok(response, { received: true });
+    const order = await recordPaidSession(session);
+
+    /* 200 either way: a purchase from the other shop is handled correctly by
+       being ignored, and a retry would change nothing. */
+    return ok(response, order ? { received: true } : { received: true, ignored: 'other_shop' });
   } catch (error) {
     /* A 500 makes Stripe retry, which is what we want for a transient storage
        failure — createOrder is idempotent, so a repeat is harmless. */
@@ -174,7 +177,17 @@ router.post('/webhook', async (request, response) => {
  * after it is skipped when the order already existed.
  */
 async function recordPaidSession(session) {
-  const product = getProduct(session.metadata?.product_slug) || getProduct('reclight');
+  /* This Stripe account also serves steinbach-instruments.de, and Stripe
+     delivers checkout.session.completed to every endpoint subscribed to it.
+     A purchase from the other shop therefore arrives here too. Anything not in
+     this catalogue is not ours: falling back to a default product would invent
+     an order, issue an invoice in our number sequence and tell that buyer a
+     parcel was on its way. */
+  const product = getProduct(session.metadata?.product_slug);
+
+  if (!product) {
+    return null;
+  }
   const shippingCents = session.total_details?.amount_shipping || 0;
   const totalCents = session.amount_total || 0;
 
@@ -247,6 +260,11 @@ router.get('/order/:sessionId', requireShop, async (request, response, next) => 
 
       if (session?.payment_status === 'paid') {
         order = await recordPaidSession(session);
+      }
+
+      /* Not one of ours — someone pasted a session id from the other shop. */
+      if (!order) {
+        return fail(response, 404, 'not_found', 'No order found for this link.');
       }
     }
 

@@ -145,6 +145,25 @@ try {
   });
   check('Wiederholung erzeugt keine zweite Bestellung', () => assert.equal(nochmal.status, 200));
 
+  /* ---- ein Kauf aus dem anderen Shop ---- */
+  const FREMD = {
+    ...SESSION,
+    id: 'cs_test_instruments',
+    amount_total: 4900,
+    total_details: { amount_shipping: 0 },
+    metadata: { product_slug: 'historic-organ' }
+  };
+  const fremdBody = JSON.stringify({ type: 'checkout.session.completed', data: { object: FREMD } });
+  const fremdAntwort = await call('/api/v1/public/shop/webhook', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'stripe-signature': signed(fremdBody) },
+    body: fremdBody
+  });
+  check('ein Kauf aus dem Instruments-Shop wird angenommen und ignoriert', () => {
+    assert.equal(fremdAntwort.status, 200);
+    assert.equal(fremdAntwort.payload.ignored, 'other_shop');
+  });
+
   /* ---- was gespeichert wurde ---- */
   const keys = [...objects.keys()];
   check('Bestellung und Rechnung liegen im Bucket', () => {
@@ -154,6 +173,10 @@ try {
 
   const index = JSON.parse(objects.get('orders/index.json').body.toString());
   check('genau eine Bestellung trotz zweier Webhooks', () => assert.equal(index.orders.length, 1));
+  check('der fremde Kauf hat keine Bestellung und keine Rechnungsnummer erzeugt', () => {
+    assert.ok(!index.orders.some((o) => o.stripeSessionId === 'cs_test_instruments'));
+    assert.equal(Object.values(index.invoiceCounters).reduce((a, b) => a + b, 0), 1);
+  });
 
   const order = index.orders[0];
   check('Beträge stimmen', () => {
