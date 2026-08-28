@@ -130,6 +130,18 @@ Nothing else is needed — no product or price has to be created in Stripe.
 npm run shop-test    # the whole purchase, without a Stripe account
 ```
 
+To try it by hand against Stripe's real test mode — the actual checkout page,
+a real test card, a real invoice — with nothing else real:
+
+```bash
+npm run shop-sandbox
+```
+
+It asks for a `sk_test_` key and refuses anything else, storage is in memory
+and gone when you stop it. Stripe cannot call a webhook on localhost, so the
+order gets recorded by the buyer's return page instead — which is the same path
+that covers the race in production.
+
 ## Routes
 
 ### Customer
