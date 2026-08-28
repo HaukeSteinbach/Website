@@ -251,13 +251,11 @@ ok "eingetragen"
 # ── 5. Ausrollen ─────────────────────────────────────────────────────────────
 schritt "5 von 5 · Ausrollen"
 
-TAG="${1:-}"
-if [ -z "$TAG" ]; then
-  hinweis "Neueste Fassung wird geholt…"
-  TAG=$(curl -fsSL "https://api.github.com/repos/HaukeSteinbach/Website/commits/main" 2>/dev/null \
-        | grep -m1 '"sha"' | cut -d'"' -f4) || true
-  [ -n "$TAG" ] || TAG="latest"
-fi
+# Ohne Argument laeuft der Server auf :latest und bleibt damit von allein
+# aktuell. Der neueste Commit auf main taugt hier nicht als Vorgabe: sein
+# Image wird erst ein paar Minuten spaeter gebaut, und bis dahin zeigt das
+# Tag ins Leere. Ein Argument setzt eine feste Fassung, etwa zum Zurueckgehen.
+TAG="${1:-latest}"
 
 printf 'IMAGE_TAG=%s\nHOST_PORT=%s\n' "$TAG" "${HOST_PORT:-3000}" > .env
 ok "Fassung ${TAG:0:12}"

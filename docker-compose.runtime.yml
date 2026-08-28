@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/haukesteinbach/haukesteinbach:${IMAGE_TAG:?set IMAGE_TAG in .env}
+    image: ghcr.io/haukesteinbach/haukesteinbach:${IMAGE_TAG:-latest}
     pull_policy: always
     container_name: steinbachapp
     restart: unless-stopped
