@@ -54,12 +54,17 @@ async function writeIndex(index, etag) {
 /* ---------------------------------------------------------------------------
    Invoice numbers
    ---------------------------------------------------------------------------
-   YYYY-MM-DD-NNNN, counted per day in Europe/Berlin — the same format the
-   instruments shop uses, so both sets of books read alike. The counter lives
+   HS-YYYY-MM-DD-NNNN, counted per day in Europe/Berlin. The prefix is not
+   decoration: steinbach-instruments.de issues YYYY-MM-DD-NNNN from its own
+   counter under the same tax number, and § 14 UStG wants every invoice number
+   the issuer hands out to be unique. Without the prefix both shops would print
+   2026-08-28-0001 on the same day. The counter lives
    in the same object as the orders, so drawing a number and storing the order
    it belongs to is one atomic write: a number can never be issued twice, and
    none can go missing between two writes.
    --------------------------------------------------------------------------- */
+
+const INVOICE_PREFIX = 'HS-';
 
 function berlinDate(now = new Date()) {
   /* en-CA gives YYYY-MM-DD, which is what the number wants. */
@@ -70,7 +75,7 @@ function nextInvoiceNumber(index, now) {
   const day = berlinDate(now);
   const next = (index.invoiceCounters[day] || 0) + 1;
   index.invoiceCounters[day] = next;
-  return `${day}-${String(next).padStart(4, '0')}`;
+  return `${INVOICE_PREFIX}${day}-${String(next).padStart(4, '0')}`;
 }
 
 /* ---------------------------------------------------------------------------

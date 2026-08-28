@@ -185,7 +185,7 @@ try {
     assert.equal(order.totalCents, 3490);
   });
   check('Rechnungsnummer im Format YYYY-MM-DD-NNNN', () =>
-    assert.match(order.invoiceNumber, /^\d{4}-\d{2}-\d{2}-\d{4}$/));
+    assert.match(order.invoiceNumber, /^HS-\d{4}-\d{2}-\d{2}-\d{4}$/));
   check('Lieferadresse ist vollständig', () => {
     assert.equal(order.buyer.name, 'Jette Julia Müller-Groß');
     assert.equal(order.buyer.postalCode, '20095');
