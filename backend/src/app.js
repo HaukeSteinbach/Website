@@ -8,10 +8,12 @@ import path from 'path';
 import { config } from './lib/config.js';
 import { describeMailSetup } from './lib/mail.js';
 import { checkStorage, isStorageConfigured } from './lib/storage.js';
+import { describeShopSetup } from './lib/stripe.js';
 import { errorHandler, notFoundHandler } from './middleware/errors.js';
 import { isAdminConfigured } from './middleware/auth.js';
 import adminRoutes from './routes/admin.js';
 import publicRoutes, { deliveryPageHandler } from './routes/public.js';
+import shopRoutes from './routes/shop.js';
 import releasePageRoutes from './routes/release-pages.js';
 
 const app = express();
@@ -125,6 +127,10 @@ app.use((request, response, next) => {
   })(request, response, next);
 });
 
+/* Stripe signs the exact bytes it sent, so this one route has to see them
+   untouched — express.json() below would re-serialise and break the check. */
+app.use('/api/v1/public/shop/webhook', express.raw({ type: 'application/json' }));
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -138,16 +144,19 @@ app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.get('/health', async (_request, response) => {
   const storage = await checkStorage();
   const mail = describeMailSetup();
+  const shop = describeShopSetup();
 
   response.status(storage.ok ? 200 : 503).json({
     ok: storage.ok,
     service: 'steinbach-file-handoff-backend',
     storage,
     admin: isAdminConfigured() ? 'configured' : 'not_configured',
-    mail
+    mail,
+    shop
   });
 });
 
+app.use('/api/v1/public/shop', shopRoutes);
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
@@ -186,6 +195,16 @@ if (!isStorageConfigured()) {
 
 if (!isAdminConfigured()) {
   console.warn('[admin] No admin password configured — the admin area is locked. Set ADMIN_PASSWORD_HASH and SESSION_SECRET.');
+}
+
+if (!describeShopSetup().ok) {
+  console.warn(`[shop] Not configured (missing ${describeShopSetup().missing.join(', ')}). reclight.html falls back to the pre-order form.`);
+} else if (describeShopSetup().mode === 'test') {
+  console.warn('[shop] Running in Stripe TEST mode — no real money moves.');
+}
+
+if (process.env.STRIPE_API_BASE) {
+  console.warn(`[shop] STRIPE_API_BASE is set to ${process.env.STRIPE_API_BASE} — Stripe calls do NOT reach Stripe. Unset it in production.`);
 }
 
 if (!describeMailSetup().ok) {

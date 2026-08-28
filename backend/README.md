@@ -89,6 +89,47 @@ mail did not go out and gives you the link to send yourself. Notifications *to
 you* fall back to Formspree, which can only ever reach your own inbox and so
 cannot stand in for the customer mail.
 
+## The shop
+
+One product, RecLight, sold as hardware and posted from Hamburg. No accounts:
+the buyer pays on Stripe's own page, Stripe collects the delivery address, and
+the order is found again afterwards only by the session id in the return URL.
+
+1. `reclight.html` asks whether the shop is open. Without a Stripe key it stays
+   shut and the pre-order form is shown instead — a working thing to offer
+   rather than a button that fails.
+2. Buy → a Stripe Checkout session, with the price built here rather than
+   referenced from the dashboard, so what is charged lives in this repository.
+3. Paid → the webhook records the order, issues an invoice PDF into R2 and
+   sends it to the buyer. Idempotent on the session id, because Stripe retries.
+4. `admin.html` → the Orders tab: the address to post to, the invoice, and one
+   button that marks it shipped and tells the buyer.
+
+Invoice numbers are `YYYY-MM-DD-NNNN`, counted per day in Europe/Berlin — the
+same format the instruments shop uses. The counter lives in the same object as
+the orders, so drawing a number and storing its order is a single atomic write.
+
+No VAT is charged or shown (§ 19 UStG). Prices, shipping rates and the list of
+countries are in `src/lib/shop.js`.
+
+### Setting it up
+
+```
+STRIPE_SECRET_KEY=sk_live_...          # sk_test_... first
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+The webhook secret comes from an endpoint created in the Stripe dashboard
+pointing at `https://haukesteinbach.de/api/v1/public/shop/webhook`, subscribed
+to `checkout.session.completed`. `/health` reports whether both are set and
+whether the key is a test key.
+
+Nothing else is needed — no product or price has to be created in Stripe.
+
+```bash
+npm run shop-test    # the whole purchase, without a Stripe account
+```
+
 ## Routes
 
 ### Customer
@@ -99,6 +140,10 @@ cannot stand in for the customer mail.
 | `GET /d/<token>` | the delivery page — downloads and the revision form |
 | `GET /api/v1/public/d/<token>/files/<id>` | 302 to a signed R2 link |
 | `POST /api/v1/public/d/<token>/revisions` | ask for a change |
+| `GET /api/v1/public/shop/products/<slug>` | price, and whether the shop is open |
+| `POST /api/v1/public/shop/checkout` | start a Stripe Checkout session |
+| `POST /api/v1/public/shop/webhook` | Stripe reports a payment (raw body) |
+| `GET /api/v1/public/shop/order/<session>` | the thin summary order.html shows |
 
 ### Admin — all behind the session cookie
 
@@ -112,6 +157,9 @@ cannot stand in for the customer mail.
 | `GET …/files/<id>` | signed link to any file on the project |
 | `POST …/revisions/<id>/acknowledge` | tell the customer it arrived |
 | `POST …/close` | mark done or reopen |
+| `GET /api/v1/admin/orders[/<id>]` | the order list, or one order |
+| `GET …/orders/<id>/invoice` | signed link to the invoice PDF |
+| `POST …/orders/<id>/shipped` | mark posted and tell the buyer |
 
 ### Also
 
@@ -135,8 +183,11 @@ whole flow can be exercised without Cloudflare credentials:
 
 ```
 npm run flow-test     # walks upload → deliver → download → revise → deliver v2
-npm run dev-seeded    # the same, but left running with two projects already in
-                      # it, on :8392. Sign in with dev-password-1234.
+npm run shop-test     # walks a purchase: checkout, webhook, invoice, shipping
+npm run sec-test      # the two closed security holes
+npm run mail-test     # which sender address is chosen when
+npm run dev-seeded    # the file handoff, running with two projects, on :8392.
+                      # Sign in with dev-password-1234.
 ```
 
 `flow-test` is the one to run after touching anything in the handoff.

@@ -68,7 +68,7 @@
                     </a>
                     <a href="reclight.html">
                         <span class="drop-t">RecLight</span>
-                        <span class="drop-s">Studio Status LED &middot; Pre-order</span>
+                        <span class="drop-s">Studio Status LED &middot; 30 &euro;</span>
                     </a>
                     <a href="ir-maker.html">
                         <span class="drop-t">IR Maker</span>
@@ -172,15 +172,38 @@
 
         <!-- ================= PRE-ORDER ================= -->
         <section class="sec" id="order" aria-labelledby="order-title">
-            <p class="kicker">Pre-order</p>
-            <h2 class="fat sec-h2" id="order-title">Reserve one <br class="br-lg">from the first batch</h2>
+            <p class="kicker">Order</p>
+            <h2 class="fat sec-h2" id="order-title">One light, <br class="br-lg">posted to your door</h2>
 
             <p class="price">
                 <span class="price-value">30 &euro;</span>
-                <span class="price-sub">First batch, limited &middot; No payment now</span>
+                <span class="price-sub">plus shipping &middot; 4,90 &euro; Germany &middot; 9,90 &euro; Europe</span>
             </p>
 
-            <p class="copy">You get an email when the batch is confirmed, and you can still back out at that point.</p>
+            <p class="copy">Built in small batches in Hamburg. Payment runs on Stripe&rsquo;s own page &mdash; your card details never touch this site. The invoice arrives by email straight after.</p>
+
+            <div class="shop-buy" id="shop-buy" hidden>
+                <div class="btn-row">
+                    <button type="button" class="btn fill" id="buy-button" data-product="reclight">Buy for 30 &euro;</button>
+                </div>
+                <p class="shop-note mono" id="shop-test-note" hidden>Test mode &mdash; no real payment is taken.</p>
+                <div class="handoff-status" id="shop-status" role="status" aria-live="polite"></div>
+
+                <ul class="checklist shop-terms">
+                    <li>No VAT is charged under &sect; 19 UStG (German small business rule)</li>
+                    <li>14-day right of withdrawal &mdash; one email is enough</li>
+                    <li>Ships within Germany and the EU</li>
+                </ul>
+                <p class="shop-legal">
+                    By ordering you agree to the <a href="agb.html">terms</a> and confirm you have read the
+                    <a href="widerruf.html">withdrawal policy</a> and the <a href="datenschutz.html">privacy policy</a>.
+                </p>
+            </div>
+
+            <!-- Falls der Shop nicht konfiguriert ist, bleibt die Vorbestellung
+                 stehen: lieber eine Reservierung als eine tote Seite. -->
+            <div id="shop-fallback">
+                <p class="copy">Ordering is being set up. Leave your details and you get a mail the moment it opens &mdash; nothing is charged now.</p>
 
             <form class="contact-form form-col" id="reclight-form" action="https://formspree.io/f/xgopedgb" method="POST" novalidate>
                 <input type="hidden" name="form_source" value="RecLight pre-order">
@@ -258,6 +281,7 @@
                 <button type="submit" class="btn fill" id="rl-submit">Reserve my RecLight</button>
                 <div class="form-status" id="rl-form-status" role="status" aria-live="polite"></div>
             </form>
+            </div>
         </section>
 
         <!-- ================= FAQ ================= -->
@@ -336,5 +360,6 @@
 <script src="assets/js/cookie-consent.js"></script>
 <script src="assets/js/steinbach-ui.js"></script>
 <script src="assets/js/reclight.js"></script>
+<script src="assets/js/shop.js"></script>
 </body>
 </html>

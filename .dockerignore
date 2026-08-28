@@ -11,5 +11,7 @@
 !backend/src/**
 !backend/scripts/
 !backend/scripts/**
+!backend/assets/
+!backend/assets/**
 !robots.txt
 !sitemap.xml

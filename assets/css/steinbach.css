@@ -29,6 +29,7 @@
     18  IR Maker tool
     22  Historic organ
     23  Delivery page + admin
+    24  Shop
     19  Responsive
    ========================================================================== */
 
@@ -3245,6 +3246,110 @@ fieldset.form-group > legend {
 @media (max-width: 640px) {
   .admin-counts > div { flex-basis: 100%; }
   .admin-delivery { flex-direction: column; align-items: flex-start; }
+}
+
+
+/* ==========================================================================
+   24  SHOP
+   --------------------------------------------------------------------------
+   The buy button on reclight.html, the confirmation at order.html, the order
+   list in the admin area, and the few things the legal pages need beyond the
+   prose section.
+
+   The shop is one product deep on purpose, so there is no cart, no grid and no
+   product template — a price, a button, and what a buyer needs to read before
+   pressing it.
+   ========================================================================== */
+
+.shop-buy { margin-top: clamp(1.75rem, 4vh, 2.5rem); }
+
+.shop-note {
+  margin: 0.9rem 0 0;
+  padding: 0.5rem 0.8rem;
+  display: inline-block;
+  border: 1px solid var(--warn, #dfae5e);
+  color: var(--warn, #dfae5e);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* the three facts that decide a purchase, not a wall of terms */
+.shop-terms { margin-top: 1.6rem; }
+
+.shop-legal {
+  margin-top: 1.2rem;
+  max-width: 56ch;
+  font-size: 0.8125rem;
+  color: var(--grey-3);
+}
+.shop-legal a { color: var(--grey-2); border-bottom: 1px solid var(--grey-3); }
+.shop-legal a:hover { color: var(--accent); border-color: var(--accent); }
+
+/* --- legal pages ------------------------------------------------------- */
+.prose-address {
+  margin: 1.2rem 0;
+  padding-left: 1.1rem;
+  border-left: 2px solid var(--hair);
+  font-style: normal;
+  line-height: 1.8;
+  color: var(--grey-2);
+}
+.prose-address a { color: var(--grey-2); border-bottom: 1px solid var(--grey-3); }
+.prose-address a:hover { color: var(--accent); border-color: var(--accent); }
+
+/* the model withdrawal form: a document inside a document, so it is set apart
+   rather than styled as more body copy */
+.prose-quote {
+  margin: 1.6rem 0;
+  padding: 1.4rem 1.5rem;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+}
+.prose-quote p { margin: 0 0 0.9rem; color: var(--grey-2); }
+.prose-quote p:last-child { margin-bottom: 0; }
+
+.prose-note { color: var(--grey-3); font-size: 0.875rem; }
+
+/* --- orders in the admin area ------------------------------------------ */
+.admin-chip.is-paid { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.admin-chip.is-shipped { border-color: var(--ok); color: var(--ok); }
+.admin-chip.is-refunded,
+.admin-chip.is-cancelled { border-color: var(--hair); color: var(--grey-3); }
+
+.admin-tabs {
+  display: flex;
+  gap: 1px;
+  margin: 1.75rem 0 0;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+}
+.admin-tab {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: var(--black);
+  border: 0;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-3);
+}
+.admin-tab:hover { color: var(--grey); }
+.admin-tab.on { background: var(--panel); color: var(--accent); }
+.admin-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* the address a parcel goes to, in the shape it gets written on the label */
+.admin-address {
+  margin: 1.2rem 0 0;
+  padding: 1rem 1.1rem;
+  background: var(--black);
+  border: 1px solid var(--hair);
+  font-style: normal;
+  line-height: 1.7;
+  color: var(--grey);
+  white-space: pre-line;
 }
 
 

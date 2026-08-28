@@ -91,9 +91,115 @@ export async function sendRevisionAcknowledgementEmail({ project, revision }) {
   });
 }
 
+export async function sendOrderConfirmationEmail({ order, invoicePdf }) {
+  const buyer = order.buyer || {};
+  const anschrift = [
+    buyer.name,
+    buyer.line1,
+    buyer.line2,
+    [buyer.postalCode, buyer.city].filter(Boolean).join(' '),
+    buyer.country
+  ].filter(Boolean).join('\n');
+
+  const text = [
+    `Hallo${buyer.name ? ` ${buyer.name.split(' ')[0]}` : ''},`,
+    '',
+    `vielen Dank für deine Bestellung. Die Rechnung ${order.invoiceNumber} liegt dieser Mail bei.`,
+    '',
+    `${order.product?.name} — ${euro(order.itemCents)}`,
+    order.shippingCents ? `Versand — ${euro(order.shippingCents)}` : '',
+    `Gesamt — ${euro(order.totalCents)}`,
+    '',
+    'Lieferadresse:',
+    anschrift,
+    '',
+    'Sobald das Paket rausgeht, bekommst du noch eine Nachricht.',
+    '',
+    'Widerrufsrecht: 14 Tage, eine E-Mail an mail@haukesteinbach.de genügt.',
+    '',
+    'Hauke Steinbach',
+    'haukesteinbach.de'
+  ].filter((line) => line !== '').join('\n');
+
+  return sendToCustomer({
+    to: buyer.email,
+    subject: `Bestellung bestätigt — ${order.product?.name || 'Steinbach'} (${order.invoiceNumber})`,
+    text,
+    html: buildHtml({
+      heading: 'Bestellung bestätigt',
+      lead: `Rechnung ${escapeHtml(order.invoiceNumber)}`,
+      lines: [
+        `${escapeHtml(order.product?.name)} &mdash; ${euro(order.itemCents)}`,
+        order.shippingCents ? `Versand &mdash; ${euro(order.shippingCents)}` : '',
+        `<strong style="color:#D6D6D6">Gesamt &mdash; ${euro(order.totalCents)}</strong>`,
+        '',
+        'Die Rechnung liegt dieser Mail als PDF bei.',
+        'Sobald das Paket rausgeht, bekommst du noch eine Nachricht.',
+        '',
+        'Widerrufsrecht: 14 Tage, eine E-Mail genügt.'
+      ]
+    }),
+    attachments: invoicePdf
+      ? [{
+          filename: `Rechnung-${order.invoiceNumber}.pdf`,
+          content: Buffer.from(invoicePdf),
+          contentType: 'application/pdf'
+        }]
+      : undefined
+  });
+}
+
+export async function sendShippedEmail({ order }) {
+  const buyer = order.buyer || {};
+
+  return sendToCustomer({
+    to: buyer.email,
+    subject: `Unterwegs — ${order.product?.name || 'deine Bestellung'}`,
+    text: [
+      `Hallo${buyer.name ? ` ${buyer.name.split(' ')[0]}` : ''},`,
+      '',
+      `dein ${order.product?.name} ist heute rausgegangen.`,
+      order.trackingNote ? `\n${order.trackingNote}` : '',
+      '',
+      'Viel Freude damit.',
+      '',
+      'Hauke Steinbach'
+    ].filter((line) => line !== '').join('\n'),
+    html: buildHtml({
+      heading: 'Unterwegs',
+      lead: escapeHtml(order.product?.name || ''),
+      note: order.trackingNote || null,
+      lines: ['Viel Freude damit.']
+    })
+  });
+}
+
 /* --------------------------------------------------------------------------
    To the studio
    -------------------------------------------------------------------------- */
+
+export async function sendOrderNoticeEmail({ order }) {
+  const buyer = order.buyer || {};
+
+  return sendToStudio({
+    subject: `Bestellung — ${order.product?.name} (${order.invoiceNumber})`,
+    text: [
+      `${buyer.name || 'Jemand'} hat ${order.product?.name} gekauft.`,
+      '',
+      `Rechnung: ${order.invoiceNumber}`,
+      `Betrag:   ${euro(order.totalCents)} (davon Versand ${euro(order.shippingCents)})`,
+      '',
+      'Versand an:',
+      [buyer.name, buyer.line1, buyer.line2, [buyer.postalCode, buyer.city].filter(Boolean).join(' '), buyer.country]
+        .filter(Boolean).join('\n'),
+      '',
+      buyer.email,
+      '',
+      `${adminUrl()}#orders`
+    ].join('\n'),
+    replyTo: buyer.email
+  });
+}
 
 export async function sendUploadReceivedEmail({ project }) {
   const files = (project.sourceFiles || []).map((file) => `- ${file.name}`).join('\n');
@@ -146,7 +252,7 @@ export async function sendRevisionRequestEmail({ project, revision }) {
    Transport
    -------------------------------------------------------------------------- */
 
-async function sendToCustomer({ to, subject, text, html }) {
+async function sendToCustomer({ to, subject, text, html, attachments }) {
   if (!to) {
     return { sent: false, reason: 'no_recipient', message: 'No client email address on this project.' };
   }
@@ -160,7 +266,7 @@ async function sendToCustomer({ to, subject, text, html }) {
     };
   }
 
-  return sendSmtp({ to, subject, text, html });
+  return sendSmtp({ to, subject, text, html, attachments });
 }
 
 async function sendToStudio({ subject, text, replyTo }) {
@@ -230,7 +336,7 @@ export function describeMailSetup() {
   };
 }
 
-async function sendSmtp({ to, subject, text, html, replyTo }) {
+async function sendSmtp({ to, subject, text, html, replyTo, attachments }) {
   try {
     const response = await getSmtpTransporter().sendMail({
       from: fromAddress(),
@@ -238,6 +344,7 @@ async function sendSmtp({ to, subject, text, html, replyTo }) {
       subject,
       text,
       html,
+      attachments,
       replyTo: replyTo || config.mailReplyTo || undefined
     });
 
@@ -322,6 +429,10 @@ function buildHtml({ heading, lead, note, buttonUrl, buttonLabel, lines }) {
 
 function adminUrl() {
   return `${config.appOrigin.replace(/\/$/, '')}/admin.html`;
+}
+
+function euro(cents) {
+  return `${((cents || 0) / 100).toFixed(2).replace('.', ',')} €`;
 }
 
 function formatDate(value) {

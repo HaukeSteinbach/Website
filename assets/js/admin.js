@@ -13,7 +13,20 @@
   var views = {
     signin: document.getElementById('signin-view'),
     list: document.getElementById('list-view'),
-    detail: document.getElementById('detail-view')
+    detail: document.getElementById('detail-view'),
+    order: document.getElementById('order-view')
+  };
+
+  /* Which tab the list is showing. Projects and orders share the page because
+     they are both "what is on my plate", but they have nothing else in common
+     — separate calls, separate tables, separate detail views. */
+  var tab = 'projects';
+
+  var ORDER_STATUS = {
+    paid: 'To ship',
+    shipped: 'Shipped',
+    cancelled: 'Cancelled',
+    refunded: 'Refunded'
   };
 
   var STATUS_LABELS = {
@@ -152,6 +165,8 @@
         data.counts.awaitingRevision + '</dd></div>' +
       '<div><dt>Total</dt><dd>' + data.counts.total + '</dd></div>';
 
+    document.getElementById('orders-wrap').hidden = true;
+    document.getElementById('orders-empty').hidden = true;
     document.getElementById('list-empty').hidden = projects.length > 0;
     document.querySelector('.admin-table-wrap').hidden = projects.length === 0;
 
@@ -188,8 +203,196 @@
     return '<span class="admin-chip is-' + escapeHtml(project.status) + '">' + escapeHtml(label) + '</span>';
   }
 
-  document.getElementById('refresh').addEventListener('click', loadList);
+  document.getElementById('refresh').addEventListener('click', function () {
+    return tab === 'orders' ? loadOrders() : loadList();
+  });
   document.getElementById('back').addEventListener('click', loadList);
+  document.getElementById('order-back').addEventListener('click', loadOrders);
+
+  document.getElementById('tab-projects').addEventListener('click', function () { switchTab('projects'); });
+  document.getElementById('tab-orders').addEventListener('click', function () { switchTab('orders'); });
+
+  function switchTab(which) {
+    tab = which;
+    /* the heading is the only thing that says which list this is once you have
+       scrolled past the tabs */
+    document.getElementById('list-heading').textContent = which === 'orders' ? 'Orders' : 'Projects';
+    document.getElementById('tab-projects').classList.toggle('on', which === 'projects');
+    document.getElementById('tab-orders').classList.toggle('on', which === 'orders');
+    document.getElementById('tab-projects').setAttribute('aria-selected', String(which === 'projects'));
+    document.getElementById('tab-orders').setAttribute('aria-selected', String(which === 'orders'));
+    document.getElementById('project-actions').hidden = which !== 'projects';
+    newCard.hidden = true;
+    return which === 'orders' ? loadOrders() : loadList();
+  }
+
+  /* ----------------------------------------------------------------------
+     Orders
+     ---------------------------------------------------------------------- */
+
+  function loadOrders() {
+    setStatus(listStatus, 'Loading…');
+
+    return api('/orders')
+      .then(function (data) {
+        setStatus(listStatus, '');
+        renderOrders(data);
+        show('list');
+      })
+      .catch(function (error) {
+        if (error.message.indexOf('session') === -1) setStatus(listStatus, error.message, 'error');
+      });
+  }
+
+  function euro(cents) {
+    return ((cents || 0) / 100).toFixed(2).replace('.', ',') + ' €';
+  }
+
+  function renderOrders(data) {
+    document.querySelector('.admin-table-wrap').hidden = true;
+    document.getElementById('list-empty').hidden = true;
+
+    var orders = data.orders || [];
+    document.getElementById('counts').innerHTML =
+      '<div><dt>To ship</dt><dd class="' + (data.counts.toShip ? 'is-alert' : '') + '">' + data.counts.toShip + '</dd></div>' +
+      '<div><dt>Orders</dt><dd>' + data.counts.total + '</dd></div>' +
+      '<div><dt>Taken</dt><dd>' + euro(data.counts.revenueCents) + '</dd></div>';
+
+    document.getElementById('orders-empty').hidden = orders.length > 0;
+    document.getElementById('orders-wrap').hidden = orders.length === 0;
+
+    var body = document.getElementById('orders-body');
+    body.innerHTML = orders.map(function (o) {
+      return '<tr tabindex="0" role="button" data-id="' + escapeHtml(o.id) + '">' +
+        '<td class="mono">' + escapeHtml(o.invoiceNumber) + '</td>' +
+        '<td>' + escapeHtml(o.buyerName || o.buyerEmail || '—') + '<br>' +
+          '<span class="mono" style="font-size:.7rem;color:var(--grey-3)">' +
+          escapeHtml([o.city, o.country].filter(Boolean).join(', ')) + '</span></td>' +
+        '<td>' + escapeHtml(o.product && o.product.name ? o.product.name : '—') + '</td>' +
+        '<td class="num mono">' + euro(o.totalCents) + '</td>' +
+        '<td><span class="admin-chip is-' + escapeHtml(o.status) + '">' +
+          escapeHtml(ORDER_STATUS[o.status] || o.status) + '</span></td>' +
+        '<td class="mono">' + formatDate(o.createdAt) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    Array.prototype.forEach.call(body.querySelectorAll('tr'), function (row) {
+      row.addEventListener('click', function () { openOrder(row.dataset.id); });
+      row.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openOrder(row.dataset.id); }
+      });
+    });
+  }
+
+  function openOrder(id) {
+    return api('/orders/' + id)
+      .then(function (data) { renderOrderDetail(data.order); show('order'); window.scrollTo(0, 0); })
+      .catch(function (error) { setStatus(listStatus, error.message, 'error'); });
+  }
+
+  function renderOrderDetail(o) {
+    var b = o.buyer || {};
+    document.getElementById('order-detail-reference').textContent =
+      o.invoiceNumber + ' · ' + (ORDER_STATUS[o.status] || o.status);
+    document.getElementById('order-detail-title').textContent = o.product ? o.product.name : 'Order';
+    document.getElementById('order-detail-buyer').textContent =
+      (b.name || '') + (b.email ? ' · ' + b.email : '');
+
+    var anschrift = [b.name, b.line1, b.line2,
+      [b.postalCode, b.city].filter(Boolean).join(' '), b.country]
+      .filter(Boolean).map(escapeHtml).join('\n');
+
+    document.getElementById('order-detail-body').innerHTML = [
+      /* the address first: it is the reason this page gets opened */
+      '<section class="handoff-card">' +
+        '<h2>Post it to</h2>' +
+        '<address class="admin-address">' + anschrift + '</address>' +
+        '<div class="btn-row" style="margin-top:1.2rem">' +
+          '<button type="button" class="btn btn-secondary admin-copy" data-url="' +
+            escapeHtml([b.name, b.line1, b.line2, [b.postalCode, b.city].filter(Boolean).join(' '), b.country].filter(Boolean).join('\n')) +
+          '">Copy address</button>' +
+          (o.hasInvoice ? '<button type="button" class="btn btn-secondary" id="order-invoice">Invoice PDF</button>' : '') +
+        '</div>' +
+      '</section>',
+
+      '<section class="handoff-card">' +
+        '<h2>What was paid</h2>' +
+        '<dl class="handoff-summary-list">' +
+          '<div><dt>Item</dt><dd>' + euro(o.itemCents) + '</dd></div>' +
+          '<div><dt>Shipping</dt><dd>' + euro(o.shippingCents) + '</dd></div>' +
+          '<div><dt>Total</dt><dd>' + euro(o.totalCents) + '</dd></div>' +
+        '</dl>' +
+        (o.mailSent ? '' : '<p class="mono" style="color:var(--bad);margin-top:1rem">' +
+          'The confirmation email did not go out. Send the invoice by hand.</p>') +
+      '</section>',
+
+      o.status === 'paid' ? '<section class="handoff-card">' +
+        '<h2>Mark as posted</h2>' +
+        '<p>Tells the buyer it is on its way.</p>' +
+        '<form class="handoff-form" id="ship-form">' +
+          '<div class="handoff-fieldset"><div class="form-group">' +
+            '<label for="ship-note">Tracking or a note (optional)</label>' +
+            '<input type="text" id="ship-note" name="note" placeholder="DHL 00340434161094042557">' +
+          '</div></div>' +
+          '<div class="handoff-actions"><button type="submit" class="btn fill">Posted</button></div>' +
+          '<div class="handoff-status" id="ship-status" role="status" aria-live="polite"></div>' +
+        '</form>' +
+      '</section>' : '<section class="handoff-card"><h2>Posted</h2><p>' +
+        formatDateTime(o.shippedAt) + (o.trackingNote ? ' · ' + escapeHtml(o.trackingNote) : '') + '</p></section>',
+
+      (o.events || []).length ? '<section class="handoff-card"><h2>History</h2><ol class="admin-history">' +
+        o.events.slice().reverse().map(function (e) {
+          return '<li><span class="mono">' + formatDateTime(e.at) + '</span> ' + escapeHtml(e.type.replace(/_/g, ' ')) + '</li>';
+        }).join('') + '</ol></section>' : ''
+    ].join('');
+
+    wireOrderDetail(o);
+  }
+
+  function wireOrderDetail(o) {
+    var invoice = document.getElementById('order-invoice');
+    if (invoice) {
+      invoice.addEventListener('click', function () {
+        api('/orders/' + o.id + '/invoice')
+          .then(function (data) { window.location.href = data.url; })
+          .catch(function (error) { window.alert(error.message); });
+      });
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll('.admin-copy'), function (button) {
+      button.addEventListener('click', function () {
+        navigator.clipboard.writeText(button.dataset.url).then(function () {
+          var original = button.textContent;
+          button.textContent = 'Copied';
+          window.setTimeout(function () { button.textContent = original; }, 1500);
+        });
+      });
+    });
+
+    var form = document.getElementById('ship-form');
+    if (form) {
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var shipStatus = document.getElementById('ship-status');
+        setStatus(shipStatus, 'Sending…');
+
+        api('/orders/' + o.id + '/shipped', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ note: document.getElementById('ship-note').value })
+        })
+          .then(function (data) {
+            if (!data.notification || !data.notification.sent) {
+              setStatus(shipStatus, 'Marked as posted, but the email did not go out.', 'error');
+              window.setTimeout(function () { openOrder(o.id); }, 2500);
+              return;
+            }
+            return openOrder(o.id);
+          })
+          .catch(function (error) { setStatus(shipStatus, error.message, 'error'); });
+      });
+    }
+  }
 
   /* --- new project --- */
 

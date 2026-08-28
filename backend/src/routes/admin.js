@@ -14,7 +14,8 @@ import { config } from '../lib/config.js';
 import { fail, ok } from '../lib/http.js';
 import {
   sendDeliveryEmail,
-  sendRevisionAcknowledgementEmail
+  sendRevisionAcknowledgementEmail,
+  sendShippedEmail
 } from '../lib/mail.js';
 import {
   addEvent,
@@ -25,6 +26,12 @@ import {
   SERVICES,
   updateProject
 } from '../lib/projects.js';
+import {
+  addOrderEvent,
+  getOrder,
+  listOrders,
+  updateOrder
+} from '../lib/orders.js';
 import { getDownloadUrl, isStorageConfigured } from '../lib/storage.js';
 import {
   deliveryUpload,
@@ -332,8 +339,108 @@ router.post('/projects/:id/revisions/:revisionId/acknowledge', requireAdmin, asy
 });
 
 /* --------------------------------------------------------------------------
+   Orders
+   --------------------------------------------------------------------------
+   The shop side. Deliberately separate from projects: a sale and a mixing job
+   have nothing to do with each other beyond both being work.
+   -------------------------------------------------------------------------- */
+
+router.get('/orders', requireAdmin, async (_request, response, next) => {
+  try {
+    const orders = await listOrders();
+
+    return ok(response, {
+      orders: orders.map(toOrderEntry),
+      counts: {
+        total: orders.length,
+        toShip: orders.filter((order) => order.status === 'paid').length,
+        revenueCents: orders
+          .filter((order) => order.status !== 'refunded' && order.status !== 'cancelled')
+          .reduce((sum, order) => sum + (order.totalCents || 0), 0)
+      }
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/orders/:id', requireAdmin, async (request, response, next) => {
+  try {
+    const order = await getOrder(request.params.id);
+
+    if (!order) {
+      return fail(response, 404, 'not_found', 'Order not found.');
+    }
+
+    return ok(response, { order: { ...toOrderEntry(order), buyer: order.buyer, events: order.events || [] } });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/** The invoice PDF, as a short-lived direct link. */
+router.get('/orders/:id/invoice', requireAdmin, async (request, response, next) => {
+  try {
+    const order = await getOrder(request.params.id);
+
+    if (!order?.invoiceKey) {
+      return fail(response, 404, 'not_found', 'No invoice on this order.');
+    }
+
+    return ok(response, {
+      url: await getDownloadUrl(order.invoiceKey, `Rechnung-${order.invoiceNumber}.pdf`)
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/** Mark as posted and tell the buyer. */
+router.post('/orders/:id/shipped', requireAdmin, async (request, response, next) => {
+  try {
+    const note = String(request.body?.note || '').trim();
+
+    const { order } = await updateOrder(request.params.id, (draft) => {
+      draft.status = 'shipped';
+      draft.shippedAt = new Date().toISOString();
+      draft.trackingNote = note || null;
+      addOrderEvent(draft, 'shipped', note ? { note } : null);
+    });
+
+    const mail = await sendShippedEmail({ order });
+
+    return ok(response, { order: toOrderEntry(order), notification: mail });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/* --------------------------------------------------------------------------
    Shaping
    -------------------------------------------------------------------------- */
+
+function toOrderEntry(order) {
+  return {
+    id: order.id,
+    invoiceNumber: order.invoiceNumber,
+    product: order.product,
+    quantity: order.quantity,
+    itemCents: order.itemCents,
+    shippingCents: order.shippingCents,
+    totalCents: order.totalCents,
+    currency: order.currency,
+    status: order.status,
+    buyerName: order.buyer?.name || '',
+    buyerEmail: order.buyer?.email || '',
+    city: order.buyer?.city || '',
+    country: order.buyer?.country || '',
+    shippedAt: order.shippedAt,
+    trackingNote: order.trackingNote,
+    mailSent: Boolean(order.mailSentAt),
+    hasInvoice: Boolean(order.invoiceKey),
+    createdAt: order.createdAt
+  };
+}
 
 function toListEntry(project) {
   return {

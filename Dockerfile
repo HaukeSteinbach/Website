@@ -11,6 +11,8 @@ COPY backend/src ./src
 # Needed to run `npm run admin-password` inside the running container, which is
 # where the password has to be set — the hash never lives in this repository.
 COPY backend/scripts ./scripts
+# The invoice PDF embeds these; without them no invoice can be issued.
+COPY backend/assets ./assets
 COPY assets ./public/assets
 COPY *.html ./public/
 # Search engines fetch these two by exact filename at the site root.

@@ -3,16 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legal Notice | Steinbach</title>
-    <meta name="description" content="Legal notice and provider information.">
-    <link rel="canonical" href="">
-    <meta name="robots" content="index, follow">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Steinbach">
-    <meta property="og:locale" content="en_GB">
-    <meta property="og:title" content="Legal Notice | Steinbach">
-    <meta property="og:description" content="Legal notice and provider information.">
-    <meta property="og:url" content="">
+    <title>Order confirmed | Steinbach</title>
+    <meta name="description" content="Confirmation of your Steinbach order.">
+    <meta name=robots content=noindex,nofollow>
     <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
     <link rel="stylesheet" href="assets/css/steinbach.css">
     <link rel="preload" href="assets/fonts/archivo-black-400-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -21,7 +14,6 @@
 </head>
 <body>
 
-<!-- amplitude tick rail, filled by assets/js/steinbach-ui.js -->
 <div class="rail" aria-hidden="true"></div>
 
 <div class="wrap">
@@ -72,53 +64,29 @@
     </header>
 
     <header class="page-head">
-        <p class="kicker">Legal</p>
-        <h1>Legal Notice</h1>
-        <p class="page-deck">Information pursuant to Section 5 DDG</p>
+        <p class="kicker" id="order-reference">Order</p>
+        <h1>Thank you</h1>
+        <p class="page-deck" id="order-deck">Checking your order…</p>
         <div class="page-head-rule" aria-hidden="true"></div>
     </header>
 
-    <main class="reading">
+    <main class="handoff-layout">
+        <section class="handoff-card" id="order-card" hidden>
+            <h2>What you ordered</h2>
+            <dl class="handoff-summary-list" id="order-summary"></dl>
+            <p id="order-mail-note"></p>
+        </section>
 
-            <section class="prose-block">
-                <h2>Responsible for Content</h2>
-                <address>
-                Hauke Steinbach<br>
-                Eppendorfer Stieg 1<br>
-                22299 Hamburg<br>
-                Germany
-                </address>
-                <p>
-                E-Mail: <a href="mailto:mail@haukesteinbach.de">mail@haukesteinbach.de</a>
-                </p>
-                <div class="prose-nav">
-                <a href="datenschutz.html">Go to the Privacy Policy</a>
-                </div>
-            </section>
-            <section class="prose-block">
-                <h2>Liability for Content</h2>
-                <p>
-                As a service provider, I am responsible for my own content on these pages in accordance with general law. However, I am not obliged to monitor transmitted or stored third-party information or to investigate circumstances indicating unlawful activity.
-                </p>
-            </section>
-            <section class="prose-block">
-                <h2>Liability for Links</h2>
-                <p>
-                This website contains links to external third-party websites. I have no influence over their content. The respective provider or operator is always responsible for the content of the linked pages.
-                </p>
-            </section>
-            <section class="prose-block">
-                <h2>Copyright</h2>
-                <p>
-                The content and works created by the site operator on these pages are subject to German copyright law. Any reproduction, editing, or distribution beyond the limits of copyright law requires the written consent of the respective author or creator.
-                </p>
-            </section>
+        <section class="handoff-card">
+            <h2>What happens now</h2>
+            <p>The light is built and posted from Hamburg. You get a second email
+               the day it goes out.</p>
+            <p>Changed your mind? You have 14 days, and one email to
+               <a href="mailto:mail@haukesteinbach.de">mail@haukesteinbach.de</a> is
+               enough — details in the <a href="widerruf.html">withdrawal policy</a>.</p>
+        </section>
 
-        <div class="prose-nav">
-            <a href="datenschutz.html">Privacy policy</a>
-            <a href="index.html">Back to the site</a>
-        </div>
-
+        <div class="handoff-status" id="order-status" role="status" aria-live="polite"></div>
     </main>
 
     <footer class="foot">
@@ -155,5 +123,6 @@
 
 <script src="assets/js/cookie-consent.js"></script>
 <script src="assets/js/steinbach-ui.js"></script>
+<script src="assets/js/order-page.js"></script>
 </body>
 </html>

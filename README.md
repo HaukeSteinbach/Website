@@ -33,6 +33,17 @@ the file handoff. Both are bundled into one Docker image.
 | `admin.html` | the studio's project list — password protected |
 | `/d/<token>` | rendered per delivery: downloads and the revision form |
 
+### Shop
+| | |
+|---|---|
+| `reclight.html` | the product page, with the buy button |
+| `order.html` | confirmation after paying |
+| `agb.html` · `widerruf.html` | terms and withdrawal policy |
+
+One product, sold as hardware. Payment runs on Stripe's hosted page, an invoice
+PDF is issued and emailed automatically, and the Orders tab in `admin.html`
+carries the address to post to. `backend/README.md` covers the setup.
+
 ### Internal
 | | |
 |---|---|

@@ -53,9 +53,13 @@
     <section id="list-view" hidden>
         <header class="page-head admin-head">
             <p class="kicker">Internal</p>
-            <h1>Projects</h1>
+            <h1 id="list-heading">Projects</h1>
             <dl class="admin-counts" id="counts"></dl>
-            <div class="btn-row">
+            <div class="admin-tabs" role="tablist">
+                <button type="button" class="admin-tab on" id="tab-projects" role="tab" aria-selected="true">Projects</button>
+                <button type="button" class="admin-tab" id="tab-orders" role="tab" aria-selected="false">Orders</button>
+            </div>
+            <div class="btn-row" id="project-actions">
                 <button type="button" class="btn fill" id="new-project">New project</button>
                 <button type="button" class="btn" id="refresh">Refresh</button>
             </div>
@@ -117,9 +121,38 @@
                     <tbody id="projects-body"></tbody>
                 </table>
             </div>
+            <div class="admin-table-wrap" id="orders-wrap" hidden>
+                <table class="admin-table" id="orders">
+                    <thead>
+                        <tr>
+                            <th>Invoice</th>
+                            <th>Buyer</th>
+                            <th>Product</th>
+                            <th class="num">Total</th>
+                            <th>Status</th>
+                            <th>Ordered</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-body"></tbody>
+                </table>
+            </div>
+            <p class="admin-empty" id="orders-empty" hidden>No orders yet. They appear here the moment someone buys.</p>
+
             <p class="admin-empty" id="list-empty" hidden>Nothing here yet. A client upload appears automatically; use <strong>New project</strong> to send something out on its own.</p>
             <div class="handoff-status" id="list-status" role="status" aria-live="polite"></div>
         </main>
+    </section>
+
+    <!-- ===================== ORDER DETAIL ===================== -->
+    <section id="order-view" hidden>
+        <header class="page-head admin-head">
+            <button type="button" class="admin-back" id="order-back">&larr; All orders</button>
+            <p class="kicker" id="order-detail-reference"></p>
+            <h1 id="order-detail-title"></h1>
+            <p class="page-deck" id="order-detail-buyer"></p>
+            <div class="page-head-rule" aria-hidden="true"></div>
+        </header>
+        <main class="handoff-layout" id="order-detail-body"></main>
     </section>
 
     <!-- ===================== PROJECT DETAIL ===================== -->

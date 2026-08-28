@@ -26,6 +26,11 @@ export const config = {
   smtpUser: process.env.SMTP_USER || '',
   smtpPassword: process.env.SMTP_PASSWORD || '',
   sourceDownloadLinkTtlHours: Number(process.env.SOURCE_DOWNLOAD_LINK_TTL_HOURS || 168),
+  /* Shop. Without these the shop routes answer 503 and the buy button on
+     reclight.html falls back to the pre-order form. */
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+
   s3Endpoint: process.env.S3_ENDPOINT || '',
   /* R2 has no regions; 'auto' is what the S3 SDK wants to see. */
   s3Region: process.env.S3_REGION || 'auto',
