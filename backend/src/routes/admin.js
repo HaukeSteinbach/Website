@@ -43,10 +43,12 @@ import {
   clearFailedLogins,
   clearSession,
   isAdminConfigured,
+  isSecondFactorConfigured,
   issueSession,
   loginBlocked,
   noteFailedLogin,
   requireAdmin,
+  verifySecondFactor,
   verifyPassword
 } from '../middleware/auth.js';
 
@@ -82,6 +84,15 @@ router.post('/auth/login', (request, response) => {
   if (!verifyPassword(request.body?.password || '', config.adminPasswordHash)) {
     noteFailedLogin(ip);
     return fail(response, 401, 'invalid_password', 'That password does not match.');
+  }
+
+  /* Second step. A wrong code counts against the same lockout as a wrong
+     password — otherwise the code, being only six digits, would be the soft
+     spot to hammer at once the password is known. */
+  if (isSecondFactorConfigured() && !verifySecondFactor(request.body?.code)) {
+    noteFailedLogin(ip);
+    return fail(response, 401, 'invalid_code',
+      'That code is not valid. It changes every 30 seconds — take the current one.');
   }
 
   clearFailedLogins(ip);

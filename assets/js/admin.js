@@ -104,6 +104,19 @@
      Sign in
      ---------------------------------------------------------------------- */
 
+  /* Das Codefeld erscheint nur, wenn der Server den zweiten Schritt auch
+     verlangt. Sonst stuende dort auf jedem Server ein Feld, das niemand
+     ausfuellen kann. */
+  fetch('/health')
+    .then(function (r) { return r.json(); })
+    .then(function (h) {
+      if (h && h.adminSecondFactor === 'on') {
+        document.getElementById('code-group').hidden = false;
+        document.getElementById('code').required = true;
+      }
+    })
+    .catch(function () { /* im Zweifel nur das Passwort zeigen */ });
+
   var signinForm = document.getElementById('signin-form');
   var signinStatus = document.getElementById('signin-status');
 
@@ -116,11 +129,15 @@
     api('/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: document.getElementById('password').value })
+      body: JSON.stringify({
+        password: document.getElementById('password').value,
+        code: document.getElementById('code').value
+      })
     })
       .then(function () {
         setStatus(signinStatus, '');
         document.getElementById('password').value = '';
+        document.getElementById('code').value = '';
         loadList();
       })
       .catch(function (error) { setStatus(signinStatus, error.message, 'error'); })

@@ -16,6 +16,7 @@ export const config = {
   corsAllowedOrigins,
   sessionSecret: process.env.SESSION_SECRET || '',
   adminPasswordHash: process.env.ADMIN_PASSWORD_HASH || '',
+  adminTotpSecret: (process.env.ADMIN_TOTP_SECRET || '').trim(),
   formspreeUploadEndpoint: process.env.FORMSPREE_UPLOAD_ENDPOINT || 'https://formspree.io/f/xgopedgb',
   notificationEmail: process.env.NOTIFICATION_EMAIL || '',
   mailFromEmail: process.env.MAIL_FROM_EMAIL || '',

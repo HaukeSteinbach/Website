@@ -13,7 +13,9 @@
     "sec-test": "node scripts/sec-test.mjs",
     "mail-test": "node scripts/mail-config-test.mjs",
     "shop-test": "node scripts/shop-test.mjs",
-    "shop-sandbox": "node scripts/shop-sandbox.mjs"
+    "shop-sandbox": "node scripts/shop-sandbox.mjs",
+    "admin-2fa": "node scripts/admin-2fa.js",
+    "totp-test": "node scripts/totp-test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.700.0",

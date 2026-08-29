@@ -19,6 +19,7 @@ import {
 
 import { config } from '../lib/config.js';
 import { fail } from '../lib/http.js';
+import { verifyCode } from '../lib/totp.js';
 
 const COOKIE_NAME = 'steinbach_admin';
 const SESSION_HOURS = 12;
@@ -32,6 +33,47 @@ const LOCKOUT_MS = 15 * 60 * 1000;
 
 export function isAdminConfigured() {
   return Boolean(config.adminPasswordHash && config.sessionSecret);
+}
+
+/**
+ * Is the second step switched on?
+ *
+ * Deliberately optional. Turning it on is setting ADMIN_TOTP_SECRET; until
+ * then the password alone still opens the area, so a half-finished rollout
+ * cannot lock the only person with a key out of their own admin area.
+ */
+export function isSecondFactorConfigured() {
+  return Boolean(config.adminTotpSecret);
+}
+
+/* A code stays valid for its whole 30-second window, so without this an
+   attacker who reads one over a shoulder or off a proxy can use it again a few
+   seconds later. In memory like the lockout counters: a restart forgets which
+   step was spent, which at worst reopens a window that is about to close by
+   itself. */
+const spentSteps = new Set();
+
+/**
+ * Check the six-digit code, and refuse one that has already been used.
+ */
+export function verifySecondFactor(code, now = Date.now()) {
+  const counter = verifyCode(config.adminTotpSecret, code, now);
+
+  if (counter === null || spentSteps.has(counter)) {
+    return false;
+  }
+
+  spentSteps.add(counter);
+
+  /* Nothing older than the drift window can be accepted again anyway. */
+  const cutoff = Math.floor(now / 1000 / 30) - 2;
+  for (const step of spentSteps) {
+    if (step < cutoff) {
+      spentSteps.delete(step);
+    }
+  }
+
+  return true;
 }
 
 /**
