@@ -17,6 +17,9 @@ export const config = {
   sessionSecret: process.env.SESSION_SECRET || '',
   adminPasswordHash: process.env.ADMIN_PASSWORD_HASH || '',
   adminTotpSecret: (process.env.ADMIN_TOTP_SECRET || '').trim(),
+  /* off | email | totp. Ohne Angabe entscheidet der Schluessel: liegt einer
+     vor, gilt die App, sonst bleibt es beim Passwort allein. */
+  admin2fa: (process.env.ADMIN_2FA || '').trim().toLowerCase(),
   formspreeUploadEndpoint: process.env.FORMSPREE_UPLOAD_ENDPOINT || 'https://formspree.io/f/xgopedgb',
   notificationEmail: process.env.NOTIFICATION_EMAIL || '',
   mailFromEmail: process.env.MAIL_FROM_EMAIL || '',

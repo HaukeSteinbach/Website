@@ -11,11 +11,18 @@ import { randomUUID } from 'node:crypto';
 import express from 'express';
 
 import { config } from '../lib/config.js';
+import {
+  issueLoginCode,
+  verifyLoginCode,
+  LOGIN_CODE_TTL_MINUTES
+} from '../lib/login-codes.js';
 import { fail, ok } from '../lib/http.js';
 import {
   sendDeliveryEmail,
   sendRevisionAcknowledgementEmail,
-  sendShippedEmail
+  sendShippedEmail,
+  sendLoginCodeEmail,
+  studioRecipient
 } from '../lib/mail.js';
 import {
   addEvent,
@@ -43,16 +50,33 @@ import {
   clearFailedLogins,
   clearSession,
   isAdminConfigured,
-  isSecondFactorConfigured,
   issueSession,
   loginBlocked,
   noteFailedLogin,
   requireAdmin,
+  secondFactorMethod,
   verifySecondFactor,
   verifyPassword
 } from '../middleware/auth.js';
 
 const router = express.Router();
+
+/* Die Adresse steht in der Antwort, damit man sieht, wohin der Code ging —
+   aber nur angedeutet, denn diese Antwort bekommt auch, wer nur das Passwort
+   erraten hat. */
+function maskEmail(address) {
+  const [local, domain] = String(address || '').split('@');
+
+  if (!domain) {
+    return '';
+  }
+
+  return `${local.slice(0, 2)}${'*'.repeat(Math.max(1, local.length - 2))}@${domain}`;
+}
+
+function recipientAddress() {
+  return studioRecipient();
+}
 
 function clientIp(request) {
   const forwarded = request.get('x-forwarded-for');
@@ -68,7 +92,7 @@ function isSecureRequest(request) {
    Session
    -------------------------------------------------------------------------- */
 
-router.post('/auth/login', (request, response) => {
+router.post('/auth/login', async (request, response) => {
   if (!isAdminConfigured()) {
     return fail(response, 503, 'admin_not_configured',
       'The admin area is not set up on this server yet.');
@@ -86,13 +110,80 @@ router.post('/auth/login', (request, response) => {
     return fail(response, 401, 'invalid_password', 'That password does not match.');
   }
 
-  /* Second step. A wrong code counts against the same lockout as a wrong
-     password — otherwise the code, being only six digits, would be the soft
-     spot to hammer at once the password is known. */
-  if (isSecondFactorConfigured() && !verifySecondFactor(request.body?.code)) {
+  const method = secondFactorMethod();
+
+  /* Second step by app: the code is in the request already, because the phone
+     produces it without anyone being asked. A wrong one counts against the
+     same lockout as a wrong password — otherwise the six digits would be the
+     soft spot to hammer at once the password is known. */
+  if (method === 'totp') {
+    if (!verifySecondFactor(request.body?.code)) {
+      noteFailedLogin(ip);
+      return fail(response, 401, 'invalid_code',
+        'That code is not valid. It changes every 30 seconds — take the current one.');
+    }
+
+    clearFailedLogins(ip);
+    issueSession(response, isSecureRequest(request));
+
+    return ok(response, { ok: true });
+  }
+
+  /* Second step by email: nothing is open yet. The browser gets a challenge
+     back and has to return with the code that just went to the studio address.
+     The session is issued in /auth/verify, not here. */
+  if (method === 'email') {
+    const { challenge, code } = issueLoginCode();
+    const sent = await sendLoginCodeEmail({ code, ip, minutes: LOGIN_CODE_TTL_MINUTES });
+
+    if (!sent?.sent) {
+      /* Saying "check your mail" when nothing was sent would leave the only
+         person with a key waiting for a message that never comes. */
+      console.error('[admin] login code could not be sent:', sent?.reason);
+      return fail(response, 503, 'code_not_sent',
+        'The code could not be sent. Check the mail settings on the server.');
+    }
+
+    return ok(response, { step: 'code', challenge, sentTo: maskEmail(recipientAddress()) });
+  }
+
+  clearFailedLogins(ip);
+  issueSession(response, isSecureRequest(request));
+
+  return ok(response, { ok: true });
+});
+
+/**
+ * Second half of the email login.
+ *
+ * Kept apart from the password so a correct password alone opens nothing, and
+ * so guessing codes runs into both the per-challenge limit (five tries, then
+ * the challenge dies) and the per-address lockout.
+ */
+router.post('/auth/verify', async (request, response) => {
+  if (!isAdminConfigured()) {
+    return fail(response, 503, 'admin_not_configured',
+      'The admin area is not set up on this server yet.');
+  }
+
+  const ip = clientIp(request);
+
+  if (loginBlocked(ip)) {
+    return fail(response, 429, 'too_many_attempts',
+      'Too many failed attempts. Try again in 15 minutes.');
+  }
+
+  const verdict = verifyLoginCode(request.body?.challenge, request.body?.code);
+
+  if (verdict === 'expired') {
     noteFailedLogin(ip);
-    return fail(response, 401, 'invalid_code',
-      'That code is not valid. It changes every 30 seconds — take the current one.');
+    return fail(response, 401, 'code_expired',
+      'That code has expired. Sign in again to get a new one.');
+  }
+
+  if (verdict !== 'ok') {
+    noteFailedLogin(ip);
+    return fail(response, 401, 'invalid_code', 'That code does not match.');
   }
 
   clearFailedLogins(ip);

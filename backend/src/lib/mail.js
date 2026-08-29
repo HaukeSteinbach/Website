@@ -22,6 +22,11 @@ let smtpTransporter = null;
 
 const defaultNotificationRecipient = 'mail@haukesteinbach.de';
 
+/** Wohin Meldungen an das Studio gehen — auch der Anmeldecode. */
+export function studioRecipient() {
+  return config.notificationEmail || defaultNotificationRecipient;
+}
+
 /* --------------------------------------------------------------------------
    To the customer
    -------------------------------------------------------------------------- */
@@ -267,6 +272,29 @@ async function sendToCustomer({ to, subject, text, html, attachments }) {
   }
 
   return sendSmtp({ to, subject, text, html, attachments });
+}
+
+/**
+ * The sign-in code.
+ *
+ * Deliberately terse. It says what to do and, more importantly, what it means
+ * if you did not ask for it: someone has your password.
+ */
+export async function sendLoginCodeEmail({ code, ip, minutes }) {
+  return sendToStudio({
+    subject: `Anmeldecode ${code}`,
+    text: [
+      `Dein Code fuer den Adminbereich: ${code}`,
+      '',
+      `Gueltig ${minutes} Minuten, einmalig verwendbar.`,
+      '',
+      `Angefordert von ${ip || 'unbekannter Adresse'}.`,
+      '',
+      'Warst du das nicht, kennt jemand dein Passwort. Dann sofort aendern:',
+      'npm run admin-password -- "neues passwort"',
+      'und die neue Zeile auf den Server geben.'
+    ].join('\n')
+  });
 }
 
 async function sendToStudio({ subject, text, replyTo }) {

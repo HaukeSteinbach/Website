@@ -10,7 +10,7 @@ import { describeMailSetup } from './lib/mail.js';
 import { checkStorage, isStorageConfigured } from './lib/storage.js';
 import { describeShopSetup } from './lib/stripe.js';
 import { errorHandler, notFoundHandler } from './middleware/errors.js';
-import { isAdminConfigured, isSecondFactorConfigured } from './middleware/auth.js';
+import { isAdminConfigured, secondFactorMethod } from './middleware/auth.js';
 import adminRoutes from './routes/admin.js';
 import publicRoutes, { deliveryPageHandler } from './routes/public.js';
 import shopRoutes from './routes/shop.js';
@@ -153,7 +153,7 @@ app.get('/health', async (_request, response) => {
     admin: isAdminConfigured() ? 'configured' : 'not_configured',
     /* Getrennt vom Feld darueber, damit man auf einen Blick sieht, ob der
        zweite Schritt auf diesem Server wirklich scharf ist. */
-    adminSecondFactor: isSecondFactorConfigured() ? 'on' : 'off',
+    adminSecondFactor: secondFactorMethod(),
     mail,
     shop
   });

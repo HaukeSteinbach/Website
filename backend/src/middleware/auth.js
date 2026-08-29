@@ -42,8 +42,24 @@ export function isAdminConfigured() {
  * then the password alone still opens the area, so a half-finished rollout
  * cannot lock the only person with a key out of their own admin area.
  */
+export function secondFactorMethod() {
+  if (config.admin2fa === 'off') {
+    return 'off';
+  }
+
+  if (config.admin2fa === 'email') {
+    return 'email';
+  }
+
+  if (config.admin2fa === 'totp' || config.adminTotpSecret) {
+    return config.adminTotpSecret ? 'totp' : 'off';
+  }
+
+  return 'off';
+}
+
 export function isSecondFactorConfigured() {
-  return Boolean(config.adminTotpSecret);
+  return secondFactorMethod() !== 'off';
 }
 
 /* A code stays valid for its whole 30-second window, so without this an

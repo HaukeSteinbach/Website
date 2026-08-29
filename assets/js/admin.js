@@ -107,10 +107,12 @@
   /* Das Codefeld erscheint nur, wenn der Server den zweiten Schritt auch
      verlangt. Sonst stuende dort auf jedem Server ein Feld, das niemand
      ausfuellen kann. */
+  /* Das Codefeld erscheint sofort, wenn die App den Code liefert, und erst
+     nach dem Passwort, wenn er per Mail kommt -- vorher gibt es ja keinen. */
   fetch('/health')
     .then(function (r) { return r.json(); })
     .then(function (h) {
-      if (h && h.adminSecondFactor === 'on') {
+      if (h && h.adminSecondFactor === 'totp') {
         document.getElementById('code-group').hidden = false;
         document.getElementById('code').required = true;
       }
@@ -120,10 +122,44 @@
   var signinForm = document.getElementById('signin-form');
   var signinStatus = document.getElementById('signin-status');
 
+  /* Bei der Mailfassung laeuft die Anmeldung in zwei Schritten: das Passwort
+     loest eine Mail aus und liefert eine Challenge zurueck, der Code loest
+     die Challenge ein. Diese Variable haelt fest, wo wir gerade stehen. */
+  var challenge = null;
+
+  function angemeldet() {
+    setStatus(signinStatus, '');
+    document.getElementById('password').value = '';
+    document.getElementById('code').value = '';
+    challenge = null;
+    loadList();
+  }
+
   signinForm.addEventListener('submit', function (event) {
     event.preventDefault();
     var submit = document.getElementById('signin-submit');
+    var codeField = document.getElementById('code');
     submit.disabled = true;
+
+    /* Zweiter Schritt: die Challenge steht, es fehlt nur der Code. */
+    if (challenge) {
+      setStatus(signinStatus, 'Checking the code…');
+
+      api('/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ challenge: challenge, code: codeField.value })
+      })
+        .then(angemeldet)
+        .catch(function (error) {
+          setStatus(signinStatus, error.message, 'error');
+          codeField.value = '';
+          codeField.focus();
+        })
+        .then(function () { submit.disabled = false; });
+      return;
+    }
+
     setStatus(signinStatus, 'Checking…');
 
     api('/auth/login', {
@@ -131,14 +167,23 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         password: document.getElementById('password').value,
-        code: document.getElementById('code').value
+        code: codeField.value
       })
     })
-      .then(function () {
-        setStatus(signinStatus, '');
-        document.getElementById('password').value = '';
-        document.getElementById('code').value = '';
-        loadList();
+      .then(function (data) {
+        if (data && data.step === 'code') {
+          challenge = data.challenge;
+          document.getElementById('code-group').hidden = false;
+          codeField.required = true;
+          codeField.value = '';
+          codeField.focus();
+          document.getElementById('password').disabled = true;
+          submit.textContent = 'Confirm code';
+          setStatus(signinStatus, 'Code sent to ' + (data.sentTo || 'your inbox') + '. It is valid for ten minutes.');
+          return;
+        }
+
+        angemeldet();
       })
       .catch(function (error) { setStatus(signinStatus, error.message, 'error'); })
       .then(function () { submit.disabled = false; });
