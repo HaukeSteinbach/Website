@@ -22,7 +22,6 @@ the file handoff. Both are bundled into one Docker image.
 | `steinbach-eq.html` | EQ, saturator, transient shaper, clipper — AU/VST3 |
 | `steinbach-head-tracker.html` | head tracking for binaural mixing |
 | `reclight.html` | studio status light, pre-order |
-| `orgel.html` | sampled Röver pipe organ, with a playable console |
 | `ir-maker.html` | impulse response generator, runs in the browser |
 | `scores-archive.html` | non-exclusive score archive |
 
@@ -73,7 +72,6 @@ assets/
     audio-comparison.js         the A/B player
     scores-archive.js           waveform player for the archive
     ir-maker.js                 the IR tool
-    orgel.js                    the organ sample engine
     admin.js                    the project list
     cookie-consent.js           consent gate for YouTube embeds
   audio/, images/, Video/       media

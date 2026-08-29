@@ -170,7 +170,12 @@ app.get('/d/:token', ...deliveryPageHandler);
 const RETIRED = {
   '/send-files.html': '/admin.html',
   '/delivery.html': '/admin.html',
-  '/revision.html': '/contact.html'
+  '/revision.html': '/contact.html',
+  /* Die Orgel wird bei Steinbach Instruments verkauft, wo auch alle anderen
+     Sampleinstrumente stehen. Sie hier ein zweites Mal zu fuehren, hiess zwei
+     Seiten zum selben Produkt zu pflegen. Der Verweis geht auf das Original,
+     damit Lesezeichen und die Google-Treffer nicht ins Leere laufen. */
+  '/orgel.html': 'https://steinbach-instruments.de/historic-organ.html'
 };
 
 Object.entries(RETIRED).forEach(([from, to]) => {

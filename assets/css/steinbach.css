@@ -17,7 +17,7 @@
      6  Hero (index)
      7  Page header (subpages)
      8  Sections, about, featured work
-     9  Closing call to action
+     9  Body copy
     10  Footer
     11  Portfolio cards (built by assets/js/portfolio.js)
     12  Contact form
@@ -27,15 +27,16 @@
     16  Scores archive
     17  Product pages
     18  IR Maker tool
-    22  Historic organ
-    23  Delivery page + admin
-    24  Shop
-    19  Responsive
+    19  FAQ accordion
+    20  Handoff pages
+    21  Delivery page + admin
+    22  Shop
+    23  Responsive
    ========================================================================== */
 
 
 /* ==========================================================================
-   1  FONTS
+   1   FONTS
    --------------------------------------------------------------------------
    Self-hosted on purpose: loading these from fonts.googleapis.com would send
    every visitor's IP address to Google on every page view, which LG München I
@@ -149,7 +150,7 @@
 
 
 /* ==========================================================================
-   2  TOKENS
+   2   TOKENS
    ========================================================================== */
 
 :root {
@@ -189,7 +190,7 @@
 
 
 /* ==========================================================================
-   3  BASE + PRIMITIVES
+   3   BASE + PRIMITIVES
    ========================================================================== */
 
 * { box-sizing: border-box; }
@@ -355,7 +356,7 @@ html { scroll-padding-top: calc(var(--bar-h) + 1.25rem); }
 
 
 /* ==========================================================================
-   4  TICK RAIL
+   4   TICK RAIL
    --------------------------------------------------------------------------
    An amplitude hint down the right edge, not a drawn waveform. Lengths come
    from the markup as --w; --tick scales the whole set down on small screens.
@@ -384,7 +385,7 @@ html { scroll-padding-top: calc(var(--bar-h) + 1.25rem); }
 
 
 /* ==========================================================================
-   5  TOP BAR + NAVIGATION
+   5   TOP BAR + NAVIGATION
    ========================================================================== */
 
 /* Sticky, but only on the way back up: scrolling down takes the bar with it
@@ -546,7 +547,7 @@ html { scroll-padding-top: calc(var(--bar-h) + 1.25rem); }
 
 
 /* ==========================================================================
-   6  HERO (index)
+   6   HERO (index)
    ========================================================================== */
 
 .hero {
@@ -630,7 +631,7 @@ h1.hero-h1 {
 
 
 /* ==========================================================================
-   7  PAGE HEADER (subpages)
+   7   PAGE HEADER (subpages)
    ========================================================================== */
 
 .page-head {
@@ -689,7 +690,7 @@ h1.hero-h1 {
 
 
 /* ==========================================================================
-   8  SECTIONS, ABOUT, FEATURED WORK
+   8   SECTIONS, ABOUT, FEATURED WORK
    ========================================================================== */
 
 /* Slightly wider than before: with the stray margins below now reset, the
@@ -841,7 +842,7 @@ h1.hero-h1 {
 
 
 /* ==========================================================================
-   9  BODY COPY
+   9   BODY COPY
    ========================================================================== */
 
 .copy {
@@ -2490,7 +2491,7 @@ fieldset.form-group > legend {
 
 
 /* ==========================================================================
-   20  FAQ ACCORDION
+   19  FAQ ACCORDION
    --------------------------------------------------------------------------
    Native <details>, so it works with the keyboard, with search-in-page and
    without JavaScript. Only the marker and the rules are styled.
@@ -2551,7 +2552,7 @@ fieldset.form-group > legend {
 
 
 /* ==========================================================================
-   21  HANDOFF PAGES
+   20  HANDOFF PAGES
    --------------------------------------------------------------------------
    delivery.html, send-files.html and upload.html. These replace the .handoff-*
    rules that used to live in the old stylesheet. The class names are fixed by the
@@ -2845,196 +2846,7 @@ fieldset.form-group > legend {
 
 
 /* ==========================================================================
-   22  HISTORIC ORGAN
-   --------------------------------------------------------------------------
-   The playable console on orgel.html, driven by assets/js/orgel.js.
-
-   Two things here are photographs of the real instrument and cannot be
-   restyled: the console backdrop and the seventeen stop knobs, which are
-   vertical sprite strips. Their geometry — 43x55 per frame, 330 tall, the
-   active frame at -275 — is fixed by the image files and must not be touched.
-   Everything around them is on the site tokens like any other page.
-   ========================================================================== */
-
-.organ-demo-hint {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 1.6rem 0 1.5rem;
-  font-family: var(--mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--grey-3);
-}
-.organ-demo-hint::before { content: '\2192'; }
-
-/* the console reads as one instrument: loading bar, face and controls share
-   a single frame rather than floating separately on the page */
-.organ-console {
-  max-width: 840px;
-  margin: 0 auto;
-  border: 2px solid var(--hair);
-  background: var(--panel);
-}
-
-.organ-loading-bar { height: 2px; background: var(--hair); overflow: hidden; }
-.organ-loading-fill {
-  height: 100%;
-  width: 0%;
-  background: var(--accent);
-  transition: width 0.3s ease, opacity 0.5s ease;
-}
-
-.organ-canvas-wrapper { width: 100%; }
-
-/* orgel.js measures the scaler and scales the canvas to fit, so the canvas
-   keeps its authored 1000x566 pixel grid whatever the viewport does */
-.organ-canvas-scaler { width: 100%; overflow: hidden; position: relative; }
-.organ-canvas {
-  width: 1000px;
-  height: 566px;
-  position: relative;
-  overflow: hidden;
-  transform-origin: top left;
-}
-.organ-bg {
-  position: absolute;
-  width: 1000px;
-  height: 1906px;
-  top: -95px;
-  left: 0;
-  pointer-events: none;
-  user-select: none;
-  display: block;
-}
-
-/* stop knobs — sprite geometry, do not change */
-.organ-stop-btn {
-  position: absolute;
-  width: 43px;
-  height: 55px;
-  border: none;
-  padding: 0;
-  margin: 0;
-  background-color: transparent;
-  background-repeat: no-repeat;
-  background-size: 43px 330px;
-  background-position: 0 0;
-  cursor: pointer;
-  /* an idle knob is dimmed rather than greyed: the photograph keeps its own
-     colour, it just sits back until it is pulled */
-  filter: brightness(0.5) saturate(0.35);
-  transition: filter 0.13s ease;
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-}
-.organ-stop-btn:hover { filter: brightness(0.8) saturate(0.65); }
-.organ-stop-btn.active {
-  background-position: 0 -275px;   /* frame 5 — the pulled knob */
-  filter: brightness(1) saturate(1);
-}
-.organ-stop-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-.organ-stop-btn::after {
-  content: attr(data-label);
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--black);
-  border: 1px solid var(--hair);
-  color: var(--grey);
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-  padding: 3px 7px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.12s;
-  z-index: 20;
-}
-.organ-stop-btn:hover::after { opacity: 1; }
-
-.organ-controls-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  flex-wrap: wrap;
-  padding: 1rem 1.1rem;
-  border-top: 2px solid var(--hair);
-}
-/* the two console buttons run at the compact scale the bar needs */
-.organ-play-btn,
-.organ-clear-btn { padding: 0.7rem 1.3rem; }
-.organ-play-btn { display: inline-flex; align-items: center; gap: 0.5rem; }
-/* playing state: the button stops inviting a press and reads as a stop */
-.organ-play-btn.is-playing {
-  background: none;
-  border-color: var(--grey);
-  color: var(--grey);
-}
-
-.organ-vol-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--grey-3);
-}
-.organ-vol-group input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 84px;
-  height: 2px;
-  background: var(--grey-3);
-  outline: none;
-  cursor: pointer;
-}
-.organ-vol-group input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
-  background: var(--accent);
-  cursor: pointer;
-}
-.organ-vol-group input[type="range"]::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  background: var(--accent);
-  border: none;
-  cursor: pointer;
-}
-.organ-vol-group input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
-
-.organ-status-text {
-  margin-left: auto;
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--grey-3);
-}
-
-/* five features in a three-up grid: the last one takes the empty cell as well,
-   otherwise the row ends on a bare patch of the grid's own hairline ground */
-.organ-features .card:last-child { grid-column: span 2; }
-
-.organ-gallery {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1px;
-  margin-top: clamp(1.75rem, 4vh, 2.75rem);
-  background: var(--hair);
-}
-.organ-gallery .shot { aspect-ratio: 4 / 3; }
-
-
-/* ==========================================================================
-   23  DELIVERY PAGE + ADMIN
+   21  DELIVERY PAGE + ADMIN
    --------------------------------------------------------------------------
    Two internal surfaces. The delivery page is rendered by the backend under
    /d/<token>; the admin area is admin.html driven by assets/js/admin.js.
@@ -3250,7 +3062,7 @@ fieldset.form-group > legend {
 
 
 /* ==========================================================================
-   24  SHOP
+   22  SHOP
    --------------------------------------------------------------------------
    The buy button on reclight.html, the confirmation at order.html, the order
    list in the admin area, and the few things the legal pages need beyond the
@@ -3354,7 +3166,7 @@ fieldset.form-group > legend {
 
 
 /* ==========================================================================
-   19  RESPONSIVE
+   23  RESPONSIVE
    ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
