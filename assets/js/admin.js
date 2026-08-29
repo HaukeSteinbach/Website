@@ -14,7 +14,8 @@
     signin: document.getElementById('signin-view'),
     list: document.getElementById('list-view'),
     detail: document.getElementById('detail-view'),
-    order: document.getElementById('order-view')
+    order: document.getElementById('order-view'),
+    customer: document.getElementById('customer-view')
   };
 
   /* Which tab the list is showing. Projects and orders share the page because
@@ -273,19 +274,29 @@
 
   document.getElementById('tab-projects').addEventListener('click', function () { switchTab('projects'); });
   document.getElementById('tab-orders').addEventListener('click', function () { switchTab('orders'); });
+  document.getElementById('tab-customers').addEventListener('click', function () { switchTab('customers'); });
+  document.getElementById('customer-refresh').addEventListener('click', loadCustomers);
+  document.getElementById('customer-back').addEventListener('click', function () { switchTab('customers'); });
 
   function switchTab(which) {
     tab = which;
     /* the heading is the only thing that says which list this is once you have
        scrolled past the tabs */
-    document.getElementById('list-heading').textContent = which === 'orders' ? 'Orders' : 'Projects';
-    document.getElementById('tab-projects').classList.toggle('on', which === 'projects');
-    document.getElementById('tab-orders').classList.toggle('on', which === 'orders');
-    document.getElementById('tab-projects').setAttribute('aria-selected', String(which === 'projects'));
-    document.getElementById('tab-orders').setAttribute('aria-selected', String(which === 'orders'));
+    var titel = { orders: 'Orders', customers: 'Customers', projects: 'Projects' };
+    document.getElementById('list-heading').textContent = titel[which] || 'Projects';
+    ['projects', 'orders', 'customers'].forEach(function (name) {
+      var knopf = document.getElementById('tab-' + name);
+      knopf.classList.toggle('on', which === name);
+      knopf.setAttribute('aria-selected', String(which === name));
+    });
     document.getElementById('project-actions').hidden = which !== 'projects';
+    document.getElementById('customer-actions').hidden = which !== 'customers';
+    document.getElementById('import-card').hidden = true;
     newCard.hidden = true;
-    return which === 'orders' ? loadOrders() : loadList();
+
+    if (which === 'orders') return loadOrders();
+    if (which === 'customers') return loadCustomers();
+    return loadList();
   }
 
   /* ----------------------------------------------------------------------
@@ -344,6 +355,212 @@
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openOrder(row.dataset.id); }
       });
     });
+  }
+
+  /* ----------------------------------------------------------------------
+     Kunden
+     ---------------------------------------------------------------------- */
+
+  function loadCustomers() {
+    setStatus(listStatus, 'Loading…');
+
+    return api('/customers')
+      .then(function (data) {
+        setStatus(listStatus, '');
+        renderCustomers(data);
+        show('list');
+      })
+      .catch(function (error) {
+        if (error.message.indexOf('session') === -1) setStatus(listStatus, error.message, 'error');
+      });
+  }
+
+  function renderCustomers(data) {
+    document.querySelector('.admin-table-wrap').hidden = true;
+    document.getElementById('list-empty').hidden = true;
+    document.getElementById('orders-wrap').hidden = true;
+    document.getElementById('orders-empty').hidden = true;
+
+    var customers = data.customers || [];
+    document.getElementById('counts').innerHTML =
+      '<div><dt>Customers</dt><dd>' + data.counts.total + '</dd></div>';
+
+    document.getElementById('customers-empty').hidden = customers.length > 0;
+    document.getElementById('customers-wrap').hidden = customers.length === 0;
+
+    var body = document.getElementById('customers-body');
+    body.innerHTML = customers.map(function (c) {
+      return '<tr tabindex="0" role="button" data-id="' + escapeHtml(c.id) + '">' +
+        '<td>' + escapeHtml(c.name) +
+          (c.city ? '<br><span class="mono" style="font-size:.7rem;color:var(--grey-3)">' +
+            escapeHtml(c.city) + '</span>' : '') + '</td>' +
+        '<td class="mono" style="font-size:.75rem">' + escapeHtml(c.email || '—') + '</td>' +
+        '<td class="num mono">' + c.counts.projects + '</td>' +
+        '<td class="num mono">' + c.counts.orders + '</td>' +
+        '<td class="num mono">' + c.counts.legacyInvoices + '</td>' +
+        '</tr>';
+    }).join('');
+
+    Array.prototype.forEach.call(body.querySelectorAll('tr'), function (row) {
+      row.addEventListener('click', function () { openCustomer(row.dataset.id); });
+      row.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCustomer(row.dataset.id); }
+      });
+    });
+  }
+
+  var offenerKunde = null;
+
+  function openCustomer(id) {
+    return api('/customers/' + id)
+      .then(function (data) { renderCustomerDetail(data.customer); show('customer'); window.scrollTo(0, 0); })
+      .catch(function (error) { setStatus(listStatus, error.message, 'error'); });
+  }
+
+  var LEGACY_STATUS = { issued: 'Issued', paid: 'Paid', cancelled: 'Cancelled' };
+
+  function renderCustomerDetail(c) {
+    offenerKunde = c;
+    var a = c.address || {};
+
+    document.getElementById('customer-detail-source').textContent =
+      c.source === 'onlydesk' ? 'Imported from Onlydesk' : 'Customer';
+    document.getElementById('customer-detail-name').textContent = c.name;
+    document.getElementById('customer-detail-contact').textContent =
+      [c.email, c.phone].filter(Boolean).join(' · ');
+
+    function block(titel, inhalt) {
+      return '<section class="sec"><h2 class="fat sub-h">' + titel + '</h2>' + inhalt + '</section>';
+    }
+
+    var anschrift = [c.name, a.line1, a.line2, [a.postalCode, a.city].filter(Boolean).join(' '), a.country]
+      .filter(Boolean).map(escapeHtml).join('<br>');
+
+    var rechnungen = (c.legacyInvoices || []).length
+      ? '<table class="admin-table"><thead><tr><th>Number</th><th>Date</th><th class="num">Amount</th><th>Status</th></tr></thead><tbody>' +
+        c.legacyInvoices.map(function (r) {
+          return '<tr><td class="mono">' + escapeHtml(r.number) + '</td>' +
+            '<td class="mono">' + escapeHtml(r.date || '—') + '</td>' +
+            '<td class="num mono">' + euro(r.totalCents) + '</td>' +
+            '<td>' + escapeHtml(LEGACY_STATUS[r.status] || r.status) + '</td></tr>';
+        }).join('') + '</tbody></table>' +
+        '<p class="note">Issued by the previous system. Kept as they were — original numbers, not renumbered.</p>'
+      : '<p class="admin-empty">None.</p>';
+
+    var projekte = (c.projects || []).length
+      ? '<ul class="checklist">' + c.projects.map(function (p) {
+          return '<li>' + escapeHtml(p.title || 'Project') + ' — ' + escapeHtml(p.status) + '</li>';
+        }).join('') + '</ul>'
+      : '<p class="admin-empty">None.</p>';
+
+    var bestellungen = (c.orders || []).length
+      ? '<ul class="checklist">' + c.orders.map(function (o) {
+          return '<li><span class="mono">' + escapeHtml(o.invoiceNumber) + '</span> — ' +
+            euro(o.totalCents) + ' — ' + escapeHtml(o.status) + '</li>';
+        }).join('') + '</ul>'
+      : '<p class="admin-empty">None.</p>';
+
+    document.getElementById('customer-detail-body').innerHTML =
+      block('Address', '<p class="copy">' + (anschrift || '—') + '</p>' +
+        (c.vatId ? '<p class="mono">VAT ' + escapeHtml(c.vatId) + '</p>' : '') +
+        (c.note ? '<p class="copy">' + escapeHtml(c.note) + '</p>' : '')) +
+      block('Invoices from Onlydesk', rechnungen) +
+      block('Projects', projekte) +
+      block('Shop orders', bestellungen);
+  }
+
+  document.getElementById('customer-delete').addEventListener('click', function () {
+    if (!offenerKunde) return;
+    if (!window.confirm('Delete ' + offenerKunde.name + '? This cannot be undone.')) return;
+
+    api('/customers/' + offenerKunde.id, { method: 'DELETE' })
+      .then(function () { switchTab('customers'); })
+      .catch(function (error) {
+        setStatus(document.getElementById('customer-detail-status'), error.message, 'error');
+      });
+  });
+
+  /* ----------------------------------------------------------------------
+     Onlydesk-Import
+     ---------------------------------------------------------------------- */
+
+  var importDatei = null;
+
+  document.getElementById('import-open').addEventListener('click', function () {
+    var karte = document.getElementById('import-card');
+    karte.hidden = !karte.hidden;
+    document.getElementById('import-report').hidden = true;
+    setStatus(document.getElementById('import-status'), '');
+  });
+
+  document.getElementById('import-cancel').addEventListener('click', function () {
+    document.getElementById('import-card').hidden = true;
+  });
+
+  document.getElementById('import-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    var datei = document.getElementById('import-file').files[0];
+    var status = document.getElementById('import-status');
+
+    if (!datei) return;
+
+    setStatus(status, 'Reading…');
+
+    datei.text()
+      .then(function (text) {
+        importDatei = JSON.parse(text);
+        return schickeImport(false);
+      })
+      .catch(function (error) {
+        setStatus(status, error.message.indexOf('JSON') !== -1
+          ? 'That file is not the export — it does not parse as JSON.'
+          : error.message, 'error');
+      });
+  });
+
+  function schickeImport(anwenden) {
+    var status = document.getElementById('import-status');
+    setStatus(status, anwenden ? 'Importing…' : 'Checking…');
+
+    return api('/customers/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ export: importDatei, apply: anwenden })
+    }).then(function (bericht) {
+      setStatus(status, '');
+      zeigeBericht(bericht);
+      if (anwenden) loadCustomers();
+    }).catch(function (error) {
+      setStatus(status, error.message, 'error');
+    });
+  }
+
+  function zeigeBericht(b) {
+    var ziel = document.getElementById('import-report');
+    var offen = b.unmatched || [];
+
+    ziel.innerHTML =
+      '<dl class="admin-counts">' +
+      '<div><dt>Customers</dt><dd>' + b.customers + '</dd></div>' +
+      '<div><dt>Invoices</dt><dd>' + b.invoices + '</dd></div>' +
+      '<div><dt>Matched</dt><dd>' + b.matched + '</dd></div>' +
+      '<div><dt>Unmatched</dt><dd class="' + (offen.length ? 'is-alert' : '') + '">' + offen.length + '</dd></div>' +
+      '</dl>' +
+      (offen.length
+        ? '<p class="note">These invoices name someone who is not in the list, so they were left alone rather than guessed at:</p><ul class="checklist">' +
+          offen.map(function (r) {
+            return '<li><span class="mono">' + escapeHtml(r.number) + '</span> — „' + escapeHtml(r.name) + '"</li>';
+          }).join('') + '</ul>'
+        : '') +
+      (b.dryRun
+        ? '<div class="btn-row"><button type="button" class="btn fill" id="import-apply">Import now</button></div>' +
+          '<p class="note">Nothing has been written yet.</p>'
+        : '<p class="note">Done. ' + b.created + ' customers added, ' + b.filed + ' invoices filed.</p>');
+
+    ziel.hidden = false;
+
+    var knopf = document.getElementById('import-apply');
+    if (knopf) knopf.addEventListener('click', function () { schickeImport(true); });
   }
 
   function openOrder(id) {

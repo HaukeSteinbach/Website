@@ -12,6 +12,14 @@ import express from 'express';
 
 import { config } from '../lib/config.js';
 import {
+  addLegacyInvoice,
+  deleteCustomer,
+  getCustomer,
+  listCustomers,
+  upsertCustomer
+} from '../lib/customers.js';
+import { kundenAus, rechnungenAus, zuordnen } from '../lib/onlydesk-import.js';
+import {
   issueLoginCode,
   verifyLoginCode,
   LOGIN_CODE_TTL_MINUTES
@@ -435,6 +443,176 @@ router.post('/projects/:id/revisions/:revisionId/acknowledge', requireAdmin, asy
     });
 
     return ok(response, { notification: mail });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+
+/* --------------------------------------------------------------------------
+   Customers
+   --------------------------------------------------------------------------
+   The address book, plus everything already known about a person elsewhere.
+   Projects and orders are not copied in — they are looked up by email address
+   each time, so there is one truth per fact and nothing to keep in step.
+   -------------------------------------------------------------------------- */
+
+async function withLinks(customer) {
+  const email = String(customer.email || '').toLowerCase();
+
+  if (!email) {
+    return { ...customer, projects: [], orders: [] };
+  }
+
+  const [projects, orders] = await Promise.all([listProjects(), listOrders()]);
+
+  return {
+    ...customer,
+    projects: projects
+      .filter((p) => String(p.client?.email || '').toLowerCase() === email)
+      .map((p) => ({ id: p.id, title: p.title, status: p.status, createdAt: p.createdAt })),
+    orders: orders
+      .filter((o) => String(o.buyer?.email || '').toLowerCase() === email)
+      .map((o) => ({
+        id: o.id,
+        invoiceNumber: o.invoiceNumber,
+        totalCents: o.totalCents,
+        status: o.status,
+        createdAt: o.createdAt
+      }))
+  };
+}
+
+router.get('/customers', requireAdmin, async (_request, response, next) => {
+  try {
+    const [customers, projects, orders] = await Promise.all([
+      listCustomers(), listProjects(), listOrders()
+    ]);
+
+    /* Zaehlen statt je Kunde nachzuschlagen: bei zwanzig Kunden ist das egal,
+       bei zweihundert waere das Nachschlagen zweihundert Durchlaeufe. */
+    const projektZahl = new Map();
+    const bestellZahl = new Map();
+
+    for (const p of projects) {
+      const key = String(p.client?.email || '').toLowerCase();
+      if (key) projektZahl.set(key, (projektZahl.get(key) || 0) + 1);
+    }
+
+    for (const o of orders) {
+      const key = String(o.buyer?.email || '').toLowerCase();
+      if (key) bestellZahl.set(key, (bestellZahl.get(key) || 0) + 1);
+    }
+
+    return ok(response, {
+      customers: customers.map((c) => {
+        const key = String(c.email || '').toLowerCase();
+
+        return {
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          city: c.address?.city || '',
+          source: c.source,
+          counts: {
+            projects: projektZahl.get(key) || 0,
+            orders: bestellZahl.get(key) || 0,
+            legacyInvoices: c.legacyInvoices.length
+          }
+        };
+      }),
+      counts: { total: customers.length }
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/customers/:id', requireAdmin, async (request, response, next) => {
+  try {
+    const customer = await getCustomer(request.params.id);
+
+    if (!customer) {
+      return fail(response, 404, 'not_found', 'No such customer.');
+    }
+
+    return ok(response, { customer: await withLinks(customer) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.delete('/customers/:id', requireAdmin, async (request, response, next) => {
+  try {
+    const result = await deleteCustomer(request.params.id);
+
+    if (!result.deleted && result.reason === 'no_such_customer') {
+      return fail(response, 404, 'not_found', 'No such customer.');
+    }
+
+    /* Rechnungen muessen zehn Jahre aufbewahrt werden, § 147 AO. Die Loeschung
+       zu verweigern ist hier die richtige Antwort, nicht ein Versehen. */
+    if (!result.deleted) {
+      return fail(response, 409, 'has_invoices',
+        'This customer carries invoices, which have to be kept for ten years. Delete refused.');
+    }
+
+    return ok(response, { deleted: true });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * Take in an Onlydesk export.
+ *
+ * Without `apply` nothing is written — the answer says what would happen and,
+ * more to the point, what could not be matched. That number is the one to look
+ * at before touching a customer base.
+ */
+router.post('/customers/import', requireAdmin, async (request, response, next) => {
+  try {
+    const auszug = request.body?.export;
+
+    if (!auszug || !Array.isArray(auszug.kunden)) {
+      return fail(response, 422, 'bad_export',
+        'That does not look like an Onlydesk export — no kunden array in it.');
+    }
+
+    const aliase = new Map(Object.entries(request.body?.aliases || {}));
+    const kunden = kundenAus(auszug.kunden);
+    const rechnungen = rechnungenAus(auszug.rechnungen);
+    const { zugeordnet, offen } = zuordnen(kunden, rechnungen, aliase);
+
+    const bericht = {
+      customers: kunden.length,
+      withoutEmail: kunden.filter((k) => !k.email).length,
+      invoices: rechnungen.length,
+      matched: zugeordnet.length,
+      unmatched: offen.map((r) => ({ number: r.number, name: r.kundenName }))
+    };
+
+    if (!request.body?.apply) {
+      return ok(response, { dryRun: true, ...bericht });
+    }
+
+    let created = 0;
+    const idFuer = new Map();
+
+    for (const kunde of kunden) {
+      const { customer, created: neu } = await upsertCustomer(kunde);
+      idFuer.set(kunde, customer.id);
+      if (neu) created += 1;
+    }
+
+    let filed = 0;
+
+    for (const { rechnung, kunde } of zugeordnet) {
+      const { added } = await addLegacyInvoice(idFuer.get(kunde), rechnung);
+      if (added) filed += 1;
+    }
+
+    return ok(response, { dryRun: false, ...bericht, created, filed });
   } catch (error) {
     return next(error);
   }
