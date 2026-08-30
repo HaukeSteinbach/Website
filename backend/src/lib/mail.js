@@ -368,11 +368,190 @@ export async function sendLoginCodeEmail({ code, ip, minutes }) {
   });
 }
 
-async function sendToStudio({ subject, text, replyTo }) {
+/* ---------------------------------------------------------------------------
+   Studio bookings
+   ---------------------------------------------------------------------------
+   English throughout: these go to clients, and the rest of the site speaks
+   English to them too.
+   --------------------------------------------------------------------------- */
+
+function bookingWhen(booking) {
+  const format = (options) => new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Berlin', ...options
+  });
+
+  const start = new Date(booking.start);
+  const end = new Date(booking.end);
+
+  const day = format({ weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(start);
+  const from = format({ hour: '2-digit', minute: '2-digit', hour12: false }).format(start);
+  const to = format({ hour: '2-digit', minute: '2-digit', hour12: false }).format(end);
+  const hours = Math.round(((end - start) / 3600000) * 10) / 10;
+
+  return { day, from, to, hours, span: `${day}, ${from}–${to} (${hours} h)` };
+}
+
+/**
+ * The proposal.
+ *
+ * Two links rather than "reply if that works": a reply has to be read and
+ * acted on, a click cannot be forgotten about. Both are in the mail because
+ * declining has to be as easy as accepting — otherwise the answer that never
+ * comes is a slot held for nobody.
+ */
+export async function sendBookingProposalEmail({ booking, address, confirmUrl, declineUrl, ics, message }) {
+  const when = bookingWhen(booking);
+  const vorname = String(booking.client?.name || '').trim().split(' ')[0];
+
+  const text = [
+    `Hi${vorname ? ` ${vorname}` : ''},`,
+    '',
+    String(message || '').trim() || `here is a studio slot for ${booking.title}:`,
+    '',
+    when.span,
+    address,
+    '',
+    'Please confirm so I can hold it:',
+    confirmUrl,
+    '',
+    'If it does not suit you:',
+    declineUrl,
+    '',
+    'The attached calendar file holds the date; it is marked tentative until you confirm.',
+    '',
+    booking.note || '',
+    '',
+    'Best',
+    'Hauke Steinbach',
+    'haukesteinbach.de'
+  ].filter((line) => line !== '').join('\n');
+
+  return sendToCustomer({
+    to: booking.client?.email,
+    subject: `Studio time — ${when.day}, ${when.from}`,
+    text,
+    html: buildHtml({
+      heading: 'Studio time',
+      lead: escapeHtml(when.span),
+      note: `${address}${booking.note ? `\n\n${booking.note}` : ''}`,
+      buttonUrl: confirmUrl,
+      buttonLabel: 'Confirm this slot',
+      lines: [
+        escapeHtml(String(message || '').trim() || `A slot for ${booking.title}.`),
+        '',
+        `Does not suit you? <a href="${escapeHtml(declineUrl)}" style="color:#E94560">Let me know</a> and I will suggest another time.`,
+        '',
+        'The calendar file attached holds the date. It stays marked tentative until you confirm.'
+      ]
+    }),
+    attachments: ics
+      ? [{
+          filename: 'studio-session.ics',
+          content: Buffer.from(ics, 'utf8'),
+          /* method=REQUEST makes a mail client offer accept and decline rather
+             than just filing it away. */
+          contentType: 'text/calendar; charset=utf-8; method=REQUEST'
+        }]
+      : []
+  });
+}
+
+/** What the client gets once they have confirmed. */
+export async function sendBookingConfirmedEmail({ booking, address, ics }) {
+  const when = bookingWhen(booking);
+  const vorname = String(booking.client?.name || '').trim().split(' ')[0];
+
+  const text = [
+    `Hi${vorname ? ` ${vorname}` : ''},`,
+    '',
+    `your studio time is confirmed:`,
+    '',
+    when.span,
+    address,
+    '',
+    'The calendar file is attached — open it and the session goes straight into your calendar.',
+    '',
+    'If anything changes, just reply to this mail.',
+    '',
+    'See you then',
+    'Hauke Steinbach',
+    'haukesteinbach.de'
+  ].join('\n');
+
+  return sendToCustomer({
+    to: booking.client?.email,
+    subject: `Confirmed — studio ${when.day}, ${when.from}`,
+    text,
+    html: buildHtml({
+      heading: 'Studio time confirmed',
+      lead: escapeHtml(when.span),
+      note: address,
+      lines: [
+        'The calendar file attached puts the session straight into your calendar.',
+        '',
+        'If anything changes, just reply to this mail.',
+        '',
+        'See you then.'
+      ]
+    }),
+    attachments: ics
+      ? [{
+          filename: 'studio-session.ics',
+          content: Buffer.from(ics, 'utf8'),
+          contentType: 'text/calendar; charset=utf-8; method=PUBLISH'
+        }]
+      : []
+  });
+}
+
+/**
+ * The studio's own copy, with the file for the shared calendar.
+ *
+ * This is the step that puts the session on the calendar the room is booked
+ * through, and it happens only after the client has confirmed — an entry made
+ * any earlier holds a slot on a promise.
+ */
+export async function sendBookingToStudioEmail({ booking, address, ics, answer }) {
+  const when = bookingWhen(booking);
+  const confirmed = answer !== 'declined';
+
+  return sendToStudio({
+    subject: confirmed
+      ? `Bestätigt: ${booking.client?.name || 'Kunde'} — ${when.day}, ${when.from}`
+      : `Abgesagt: ${booking.client?.name || 'Kunde'} — ${when.day}, ${when.from}`,
+    text: [
+      confirmed
+        ? `${booking.client?.name || 'Der Kunde'} hat den Termin bestätigt.`
+        : `${booking.client?.name || 'Der Kunde'} hat abgesagt.`,
+      '',
+      when.span,
+      address,
+      '',
+      booking.title,
+      booking.client?.email || '',
+      '',
+      confirmed
+        ? 'Die angehängte Datei öffnen, dann steht der Termin im geteilten Studiokalender.'
+        : 'Der Platz ist wieder frei.',
+      '',
+      `${adminUrl()}#bookings`
+    ].filter((line) => line !== '').join('\n'),
+    replyTo: booking.client?.email || undefined,
+    attachments: confirmed && ics
+      ? [{
+          filename: `studio-${when.day.replace(/\s+/g, '-').toLowerCase()}.ics`,
+          content: Buffer.from(ics, 'utf8'),
+          contentType: 'text/calendar; charset=utf-8; method=PUBLISH'
+        }]
+      : []
+  });
+}
+
+async function sendToStudio({ subject, text, replyTo, attachments }) {
   const recipient = config.notificationEmail || defaultNotificationRecipient;
 
   if (isSmtpConfigured()) {
-    return sendSmtp({ to: recipient, subject, text, replyTo });
+    return sendSmtp({ to: recipient, subject, text, replyTo, attachments });
   }
 
   return sendFormspree({ subject, text, replyTo, recipient });

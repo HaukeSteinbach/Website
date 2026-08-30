@@ -277,6 +277,8 @@
   document.getElementById('tab-orders').addEventListener('click', function () { switchTab('orders'); });
   document.getElementById('tab-customers').addEventListener('click', function () { switchTab('customers'); });
   document.getElementById('tab-documents').addEventListener('click', function () { switchTab('documents'); });
+  document.getElementById('tab-bookings').addEventListener('click', function () { switchTab('bookings'); });
+  document.getElementById('booking-refresh').addEventListener('click', loadBookings);
   document.getElementById('document-refresh').addEventListener('click', loadDocuments);
   document.getElementById('document-back').addEventListener('click', function () { switchTab('documents'); });
   document.getElementById('customer-refresh').addEventListener('click', loadCustomers);
@@ -286,9 +288,12 @@
     tab = which;
     /* the heading is the only thing that says which list this is once you have
        scrolled past the tabs */
-    var titel = { orders: 'Orders', customers: 'Customers', documents: 'Invoices & offers', projects: 'Projects' };
+    var titel = {
+      orders: 'Orders', customers: 'Customers', documents: 'Invoices & offers',
+      bookings: 'Studio time', projects: 'Projects'
+    };
     document.getElementById('list-heading').textContent = titel[which] || 'Projects';
-    ['projects', 'orders', 'customers', 'documents'].forEach(function (name) {
+    ['projects', 'orders', 'customers', 'documents', 'bookings'].forEach(function (name) {
       var knopf = document.getElementById('tab-' + name);
       knopf.classList.toggle('on', which === name);
       knopf.setAttribute('aria-selected', String(which === name));
@@ -296,15 +301,18 @@
     document.getElementById('project-actions').hidden = which !== 'projects';
     document.getElementById('customer-actions').hidden = which !== 'customers';
     document.getElementById('document-actions').hidden = which !== 'documents';
+    document.getElementById('booking-actions').hidden = which !== 'bookings';
     document.getElementById('import-card').hidden = true;
     document.getElementById('new-customer-card').hidden = true;
     document.getElementById('payments-card').hidden = true;
     document.getElementById('pdfs-card').hidden = true;
+    document.getElementById('new-booking-card').hidden = true;
     newCard.hidden = true;
 
     if (which === 'orders') return loadOrders();
     if (which === 'customers') return loadCustomers();
     if (which === 'documents') return loadDocuments();
+    if (which === 'bookings') return loadBookings();
     return loadList();
   }
 
@@ -934,6 +942,178 @@
   });
 
   /* ----------------------------------------------------------------------
+     Studiotermine
+     ---------------------------------------------------------------------- */
+
+  var BOOKING_STATE = {
+    proposed: 'Awaiting reply', confirmed: 'Confirmed',
+    declined: 'Declined', cancelled: 'Withdrawn'
+  };
+
+  function zeitraum(b) {
+    var von = new Date(b.start);
+    var bis = new Date(b.end);
+    var tag = von.toLocaleDateString('en-GB',
+      { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Berlin' });
+    var uhr = function (d) {
+      return d.toLocaleTimeString('en-GB',
+        { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Berlin' });
+    };
+
+    return tag + ', ' + uhr(von) + '–' + uhr(bis);
+  }
+
+  function loadBookings() {
+    setStatus(listStatus, 'Loading…');
+
+    return api('/bookings')
+      .then(function (data) {
+        setStatus(listStatus, '');
+        renderBookings(data);
+        show('list');
+      })
+      .catch(function (error) {
+        if (error.message.indexOf('session') === -1) setStatus(listStatus, error.message, 'error');
+      });
+  }
+
+  function renderBookings(data) {
+    ['.admin-table-wrap', '#list-empty', '#orders-wrap', '#orders-empty',
+     '#customers-wrap', '#customers-empty', '#documents-wrap', '#documents-empty']
+      .forEach(function (sel) {
+        var el = document.querySelector(sel);
+        if (el) el.hidden = true;
+      });
+
+    var termine = data.bookings || [];
+    document.getElementById('counts').innerHTML =
+      '<div><dt>Awaiting reply</dt><dd class="' + (data.counts.awaiting ? 'is-alert' : '') + '">' +
+        data.counts.awaiting + '</dd></div>' +
+      '<div><dt>Upcoming</dt><dd>' + data.counts.upcoming + '</dd></div>' +
+      '<div><dt>Total</dt><dd>' + data.counts.total + '</dd></div>';
+
+    document.getElementById('bookings-empty').hidden = termine.length > 0;
+    document.getElementById('bookings-wrap').hidden = termine.length === 0;
+
+    document.getElementById('bookings-body').innerHTML = termine.map(function (b) {
+      return '<tr>' +
+        '<td class="mono">' + escapeHtml(zeitraum(b)) + '</td>' +
+        '<td>' + escapeHtml(b.clientName || b.clientEmail || '—') + '</td>' +
+        '<td>' + escapeHtml(b.title) + '</td>' +
+        '<td><span class="admin-chip">' + escapeHtml(BOOKING_STATE[b.state] || b.state) + '</span></td>' +
+        '<td>' +
+          (b.state === 'proposed'
+            ? '<button type="button" class="btn btn-secondary" data-erneut="' + escapeHtml(b.id) + '">Send again</button> '
+            : '') +
+          (b.state === 'confirmed'
+            ? '<a class="btn btn-secondary" href="' + API + '/bookings/' + escapeHtml(b.id) + '/calendar.ics">Calendar file</a> '
+            : '') +
+          '<button type="button" class="btn btn-secondary" data-absagen="' + escapeHtml(b.id) + '">Withdraw</button>' +
+        '</td></tr>';
+    }).join('');
+
+    Array.prototype.forEach.call(
+      document.querySelectorAll('[data-erneut]'),
+      function (knopf) {
+        knopf.addEventListener('click', function () {
+          setStatus(listStatus, 'Sending…');
+          api('/bookings/' + knopf.dataset.erneut + '/propose', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+          })
+            .then(function (data) { setStatus(listStatus, 'Sent to ' + data.sentTo + '.'); })
+            .catch(function (error) { setStatus(listStatus, error.message, 'error'); });
+        });
+      }
+    );
+
+    Array.prototype.forEach.call(
+      document.querySelectorAll('[data-absagen]'),
+      function (knopf) {
+        knopf.addEventListener('click', function () {
+          if (!window.confirm('Withdraw this slot? The client is not told automatically.')) return;
+
+          api('/bookings/' + knopf.dataset.absagen + '/state', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ state: 'cancelled' })
+          }).then(loadBookings);
+        });
+      }
+    );
+  }
+
+  /* Aus Datum und Uhrzeit im Formular einen Zeitpunkt machen. Die Felder
+     liefern Ortszeit, der Server will einen eindeutigen Zeitpunkt. */
+  function zeitpunkt(datum, uhrzeit) {
+    return new Date(datum + 'T' + uhrzeit + ':00').toISOString();
+  }
+
+  document.getElementById('new-booking').addEventListener('click', function () {
+    var karte = document.getElementById('new-booking-card');
+    karte.hidden = !karte.hidden;
+
+    if (!karte.hidden) {
+      api('/customers').then(function (data) {
+        document.getElementById('nb-customer').innerHTML = (data.customers || []).map(function (k) {
+          return '<option value="' + escapeHtml(k.id) + '">' + escapeHtml(k.name) +
+            (k.email ? ' — ' + escapeHtml(k.email) : '') + '</option>';
+        }).join('');
+      });
+    }
+  });
+
+  document.getElementById('new-booking-cancel').addEventListener('click', function () {
+    document.getElementById('new-booking-card').hidden = true;
+  });
+
+  document.getElementById('new-booking-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    var status = document.getElementById('new-booking-status');
+    var wert = function (id) { return document.getElementById(id).value; };
+
+    if (wert('nb-to') <= wert('nb-from')) {
+      setStatus(status, 'The session has to end after it starts.', 'error');
+      return;
+    }
+
+    setStatus(status, 'Creating…');
+
+    api('/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerId: wert('nb-customer'),
+        title: wert('nb-title'),
+        note: wert('nb-note'),
+        start: zeitpunkt(wert('nb-date'), wert('nb-from')),
+        end: zeitpunkt(wert('nb-date'), wert('nb-to'))
+      })
+    })
+      .then(function (data) {
+        /* Eine Ueberschneidung ist kein Fehler, aber man will es wissen,
+           bevor die Mail rausgeht. */
+        if (data.clashes.length && !window.confirm(
+          'That overlaps with ' + data.clashes.length + ' other booking(s). Send anyway?')) {
+          return api('/bookings/' + data.booking.id, { method: 'DELETE' })
+            .then(function () { setStatus(status, 'Not sent.'); return null; });
+        }
+
+        setStatus(status, 'Sending…');
+
+        return api('/bookings/' + data.booking.id + '/propose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: wert('nb-message') })
+        }).then(function (gesendet) {
+          setStatus(status, 'Proposal sent to ' + gesendet.sentTo + '.');
+          document.getElementById('new-booking-form').reset();
+          document.getElementById('new-booking-card').hidden = true;
+          loadBookings();
+        });
+      })
+      .catch(function (error) { setStatus(status, error.message, 'error'); });
+  });
+
+  /* ----------------------------------------------------------------------
      Alte Rechnungs-PDFs einspielen
      ---------------------------------------------------------------------- */
 
@@ -946,6 +1126,7 @@
 
   document.getElementById('pdfs-cancel').addEventListener('click', function () {
     document.getElementById('pdfs-card').hidden = true;
+    document.getElementById('new-booking-card').hidden = true;
   });
 
   document.getElementById('pdfs-form').addEventListener('submit', function (event) {
@@ -1005,6 +1186,7 @@
   document.getElementById('payments-cancel').addEventListener('click', function () {
     document.getElementById('payments-card').hidden = true;
     document.getElementById('pdfs-card').hidden = true;
+    document.getElementById('new-booking-card').hidden = true;
   });
 
   document.getElementById('payments-form').addEventListener('submit', function (event) {
@@ -1366,6 +1548,7 @@
     document.getElementById('detail-body').innerHTML = [
       openRevisions.length ? revisionAlert(openRevisions) : '',
       deliverCard(p),
+      terminKarte(p),
       belegKarte(p),
       sourceCard(p),
       historyCard(p),
@@ -1374,6 +1557,85 @@
 
     wireDetail(p);
     ladeProjektbelege(p);
+    ladeProjekttermine(p);
+  }
+
+  /* Studiozeit zu diesem Projekt. Von hier aus steht der Kunde fest, also
+     entfaellt die Auswahl — es bleiben Datum und Uhrzeit. */
+  function terminKarte(p) {
+    return '<section class="handoff-card">' +
+      '<h2>Studio time</h2>' +
+      '<div id="projekt-termine"><p class="admin-empty">Loading…</p></div>' +
+      '<form class="handoff-form" id="projekt-termin-form">' +
+      '<div class="handoff-fieldset handoff-grid-two">' +
+      '<div class="form-group"><label for="pt-date">Date</label>' +
+      '<input type="date" id="pt-date" required></div>' +
+      '<div class="form-group"><label for="pt-from">From — to</label>' +
+      '<span style="display:flex;gap:.5rem">' +
+      '<input type="time" id="pt-from" value="10:00" required>' +
+      '<input type="time" id="pt-to" value="16:00" required></span></div>' +
+      '</div>' +
+      '<div class="handoff-actions">' +
+      '<button type="submit" class="btn">Propose this slot</button></div>' +
+      '<div class="handoff-status" id="pt-status" role="status" aria-live="polite"></div>' +
+      '</form></section>';
+  }
+
+  function ladeProjekttermine(p) {
+    api('/bookings')
+      .then(function (data) {
+        var meine = (data.bookings || []).filter(function (b) { return b.projectId === p.id; });
+
+        document.getElementById('projekt-termine').innerHTML = meine.length
+          ? '<ul class="checklist">' + meine.map(function (b) {
+              return '<li><span class="mono">' + escapeHtml(zeitraum(b)) + '</span> — ' +
+                escapeHtml(BOOKING_STATE[b.state] || b.state) + '</li>';
+            }).join('') + '</ul>'
+          : '<p class="admin-empty">Nothing booked for this project yet.</p>';
+      })
+      .catch(function () {
+        document.getElementById('projekt-termine').innerHTML =
+          '<p class="admin-empty">Could not load them.</p>';
+      });
+
+    document.getElementById('projekt-termin-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      var status = document.getElementById('pt-status');
+      var wert = function (id) { return document.getElementById(id).value; };
+
+      if (wert('pt-to') <= wert('pt-from')) {
+        setStatus(status, 'The session has to end after it starts.', 'error');
+        return;
+      }
+
+      setStatus(status, 'Creating…');
+
+      api('/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: p.id,
+          title: p.title || 'Studio session',
+          start: zeitpunkt(wert('pt-date'), wert('pt-from')),
+          end: zeitpunkt(wert('pt-date'), wert('pt-to'))
+        })
+      })
+        .then(function (data) {
+          if (data.clashes.length && !window.confirm(
+            'That overlaps with ' + data.clashes.length + ' other booking(s). Send anyway?')) {
+            return api('/bookings/' + data.booking.id, { method: 'DELETE' })
+              .then(function () { setStatus(status, 'Not sent.'); return null; });
+          }
+
+          return api('/bookings/' + data.booking.id + '/propose', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+          }).then(function (gesendet) {
+            setStatus(status, 'Proposal sent to ' + gesendet.sentTo + '.');
+            ladeProjekttermine(p);
+          });
+        })
+        .catch(function (error) { setStatus(status, error.message, 'error'); });
+    });
   }
 
   /* Was zu diesem Projekt abgerechnet wurde. Der Kunde steht hier schon fest,

@@ -12,6 +12,7 @@ import { describeShopSetup } from './lib/stripe.js';
 import { errorHandler, notFoundHandler } from './middleware/errors.js';
 import { isAdminConfigured, secondFactorMethod } from './middleware/auth.js';
 import adminRoutes from './routes/admin.js';
+import bookingRoutes from './routes/bookings.js';
 import publicRoutes, { deliveryPageHandler } from './routes/public.js';
 import shopRoutes from './routes/shop.js';
 import releasePageRoutes from './routes/release-pages.js';
@@ -166,6 +167,10 @@ app.use('/api/v1/admin', adminRoutes);
 /* The customer-facing delivery page, kept short because it is pasted into
    emails and read aloud on the phone. */
 app.get('/d/:token', ...deliveryPageHandler);
+
+/* Die Terminseite fuer Kunden. Wie die Lieferseite ueber ein Token
+   angesprochen und ohne Anmeldung. */
+app.use(bookingRoutes);
 
 /* Retired pages. Sending files is a step inside a project now, and a revision
    is asked for on the delivery page itself, so these three have no content of

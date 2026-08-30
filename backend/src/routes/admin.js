@@ -22,6 +22,16 @@ import {
   upsertCustomer
 } from '../lib/customers.js';
 import { buchungenAus, ordneZu } from '../lib/bank-import.js';
+import {
+  createBooking,
+  deleteBooking,
+  getBooking,
+  listBookings,
+  noteBookingEvent,
+  overlapping,
+  studioAddress,
+  updateBooking
+} from '../lib/bookings.js';
 import { SERVICES as CATALOGUE, getService } from '../lib/catalogue.js';
 import { buildDocumentPdf } from '../lib/document-pdf.js';
 import {
@@ -36,6 +46,7 @@ import {
   setPdfKey,
   updateDraft
 } from '../lib/documents.js';
+import { icsFor } from './bookings.js';
 import { kundenAus, rechnungenAus, zuordnen } from '../lib/onlydesk-import.js';
 import {
   issueLoginCode,
@@ -46,6 +57,7 @@ import { fail, ok } from '../lib/http.js';
 import {
   sendDeliveryEmail,
   sendRevisionAcknowledgementEmail,
+  sendBookingProposalEmail,
   sendDocumentEmail,
   sendShippedEmail,
   sendLoginCodeEmail,
@@ -1076,6 +1088,251 @@ router.get('/customers/:id/legacy/:number/pdf', requireAdmin, async (request, re
     }
 
     return ok(response, { url: await getDownloadUrl(rechnung.pdfKey) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+
+/* --------------------------------------------------------------------------
+   Studiotermine
+   --------------------------------------------------------------------------
+   Vorschlagen, der Kunde antwortet, erst dann steht der Termin. Der Kalender
+   im Studio wird geteilt, deshalb haelt schon ein Vorschlag den Platz besetzt
+   -- zweimal dieselbe Stunde anzubieten und es hinterher zu klaeren ist
+   schlimmer, als die Ueberschneidung vorher zu sehen.
+   -------------------------------------------------------------------------- */
+
+router.get('/bookings', requireAdmin, async (_request, response, next) => {
+  try {
+    const bookings = await listBookings();
+    const jetzt = Date.now();
+
+    return ok(response, {
+      address: studioAddress(),
+      bookings: bookings.map((b) => ({
+        id: b.id,
+        state: b.state,
+        start: b.start,
+        end: b.end,
+        title: b.title,
+        clientName: b.client?.name || '',
+        clientEmail: b.client?.email || '',
+        customerId: b.customerId,
+        projectId: b.projectId,
+        proposedAt: b.proposedAt,
+        answeredAt: b.answeredAt,
+        url: `${config.appOrigin.replace(/\/$/, '')}/b/${b.token}`
+      })),
+      counts: {
+        total: bookings.length,
+        awaiting: bookings.filter((b) => b.state === 'proposed').length,
+        upcoming: bookings.filter((b) => b.state === 'confirmed' && Date.parse(b.end) > jetzt).length
+      }
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/bookings/:id', requireAdmin, async (request, response, next) => {
+  try {
+    const booking = await getBooking(request.params.id);
+
+    if (!booking) {
+      return fail(response, 404, 'not_found', 'No such booking.');
+    }
+
+    return ok(response, {
+      booking: { ...booking, url: `${config.appOrigin.replace(/\/$/, '')}/b/${booking.token}` },
+      address: studioAddress()
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * Einen Termin anlegen.
+ *
+ * Die Zeiten kommen als ISO-Zeitpunkte herein. Ueberschneidungen werden
+ * gemeldet, aber nicht verboten: manchmal will man zwei Leute in einem Raum,
+ * und die Entscheidung darueber gehoert nicht in eine Pruefregel.
+ */
+router.post('/bookings', requireAdmin, async (request, response, next) => {
+  try {
+    const start = String(request.body?.start || '');
+    const end = String(request.body?.end || '');
+
+    if (!Date.parse(start) || !Date.parse(end)) {
+      return fail(response, 422, 'bad_times', 'Start and end have to be dates.');
+    }
+
+    if (Date.parse(end) <= Date.parse(start)) {
+      return fail(response, 422, 'bad_times', 'The session has to end after it starts.');
+    }
+
+    let kunde = request.body?.customerId ? await getCustomer(request.body.customerId) : null;
+    let projekt = null;
+
+    if (request.body?.projectId) {
+      projekt = await getProject(request.body.projectId);
+
+      if (!projekt) {
+        return fail(response, 404, 'not_found', 'No such project.');
+      }
+
+      /* Aus einem Projekt heraus steht der Kunde schon fest. */
+      if (!kunde && projekt.client?.email) {
+        const { customer } = await upsertCustomer({
+          name: projekt.client.name || projekt.client.email,
+          email: projekt.client.email,
+          source: 'project'
+        });
+
+        kunde = customer;
+      }
+    }
+
+    const client = {
+      name: request.body?.client?.name || kunde?.name || projekt?.client?.name || '',
+      email: request.body?.client?.email || kunde?.email || projekt?.client?.email || ''
+    };
+
+    if (!client.email) {
+      return fail(response, 422, 'no_email', 'Without an email address there is nobody to propose it to.');
+    }
+
+    const { booking } = await createBooking({
+      start,
+      end,
+      title: request.body?.title || projekt?.title || 'Studio session',
+      note: request.body?.note,
+      customerId: kunde?.id || null,
+      projectId: projekt?.id || null,
+      client
+    });
+
+    const kollision = await overlapping(start, end, booking.id);
+
+    return ok(response, {
+      booking,
+      clashes: kollision.map((b) => ({
+        id: b.id, start: b.start, end: b.end, title: b.title, state: b.state
+      }))
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch('/bookings/:id', requireAdmin, async (request, response, next) => {
+  try {
+    const { booking, reason } = await updateBooking(request.params.id, (draft) => {
+      if (request.body?.start) draft.start = request.body.start;
+      if (request.body?.end) draft.end = request.body.end;
+      if (request.body?.title !== undefined) draft.title = String(request.body.title).trim();
+      if (request.body?.note !== undefined) draft.note = String(request.body.note).trim();
+    });
+
+    if (!booking && reason === 'not_found') {
+      return fail(response, 404, 'not_found', 'No such booking.');
+    }
+
+    return ok(response, { booking });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/** Den Vorschlag rausschicken — oder noch einmal, wenn sich etwas geaendert hat. */
+router.post('/bookings/:id/propose', requireAdmin, async (request, response, next) => {
+  try {
+    const booking = await getBooking(request.params.id);
+
+    if (!booking) {
+      return fail(response, 404, 'not_found', 'No such booking.');
+    }
+
+    if (booking.state === 'cancelled') {
+      return fail(response, 409, 'cancelled', 'This one was withdrawn. Make a new proposal instead.');
+    }
+
+    /* Die Fassungsnummer steigt vor dem Versand, damit ein Kalender, der den
+       Termin schon kennt, die neue Fassung annimmt statt sie zu verwerfen. */
+    const { booking: aktuell } = await noteBookingEvent(booking.id, 'proposed');
+    const basis = `${config.appOrigin.replace(/\/$/, '')}/b/${aktuell.token}`;
+
+    const mail = await sendBookingProposalEmail({
+      booking: aktuell,
+      address: studioAddress(),
+      confirmUrl: basis,
+      declineUrl: basis,
+      ics: icsFor(aktuell, { method: 'REQUEST', status: 'TENTATIVE' }),
+      message: request.body?.message
+    });
+
+    if (!mail.sent) {
+      return fail(response, 502, 'mail_failed', `The proposal did not go out: ${mail.reason || 'unknown'}`);
+    }
+
+    return ok(response, { booking: aktuell, sentTo: aktuell.client.email, url: basis });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/bookings/:id/state', requireAdmin, async (request, response, next) => {
+  try {
+    const erlaubt = ['confirmed', 'declined', 'cancelled'];
+    const what = String(request.body?.state || '');
+
+    if (!erlaubt.includes(what)) {
+      return fail(response, 422, 'bad_state', `Not something a booking can become: ${what}`);
+    }
+
+    const { booking } = await noteBookingEvent(request.params.id, what);
+
+    if (!booking) {
+      return fail(response, 404, 'not_found', 'No such booking.');
+    }
+
+    return ok(response, { booking });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/** Die Kalenderdatei fuer den geteilten Studiokalender. */
+router.get('/bookings/:id/calendar.ics', requireAdmin, async (request, response, next) => {
+  try {
+    const booking = await getBooking(request.params.id);
+
+    if (!booking) {
+      return fail(response, 404, 'not_found', 'No such booking.');
+    }
+
+    response.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    response.setHeader('Content-Disposition', 'attachment; filename="studio-session.ics"');
+
+    return response.send(icsFor(booking, {
+      method: 'PUBLISH',
+      status: booking.state === 'confirmed' ? 'CONFIRMED' : 'TENTATIVE'
+    }));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.delete('/bookings/:id', requireAdmin, async (request, response, next) => {
+  try {
+    const { deleted } = await deleteBooking(request.params.id);
+
+    if (!deleted) {
+      return fail(response, 404, 'not_found', 'No such booking.');
+    }
+
+    return ok(response, { deleted: true });
   } catch (error) {
     return next(error);
   }

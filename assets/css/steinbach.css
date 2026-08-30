@@ -2909,6 +2909,11 @@ fieldset.form-group > legend {
    and most of the screen before a single fact about the project appeared. This
    view is worked in, not read into, so the name comes down to a size that
    leaves the content above the fold. */
+/* Auf der Terminseite steht ein Datum in der Ueberschrift, und ein Datum ist
+   lang. Im Plakatgrad fuellte "Tuesday, 8 September 2026 10:00-16:00" vier
+   Zeilen, und die beiden Knoepfe, um die es auf der Seite geht, lagen unter
+   der Falz. */
+.booking-head h1,
 #detail-view .page-head h1,
 #customer-view .page-head h1,
 #document-view .page-head h1 {

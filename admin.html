@@ -65,6 +65,11 @@
                 <button type="button" class="admin-tab" id="tab-orders" role="tab" aria-selected="false">Orders</button>
                 <button type="button" class="admin-tab" id="tab-customers" role="tab" aria-selected="false">Customers</button>
                 <button type="button" class="admin-tab" id="tab-documents" role="tab" aria-selected="false">Invoices &amp; offers</button>
+                <button type="button" class="admin-tab" id="tab-bookings" role="tab" aria-selected="false">Studio time</button>
+            </div>
+            <div class="btn-row" id="booking-actions" hidden>
+                <button type="button" class="btn fill" id="new-booking">Propose studio time</button>
+                <button type="button" class="btn" id="booking-refresh">Refresh</button>
             </div>
             <div class="btn-row" id="document-actions" hidden>
                 <button type="button" class="btn fill" id="new-offer">New offer</button>
@@ -191,6 +196,68 @@
                     <tbody id="customers-body"></tbody>
                 </table>
             </div>
+            <section class="handoff-card admin-new" id="new-booking-card" hidden>
+                <h2>Propose studio time</h2>
+                <p>The client gets an email with the date, the address and two buttons. Nothing is
+                   held in the studio calendar until they confirm.</p>
+                <form class="handoff-form" id="new-booking-form">
+                    <div class="handoff-fieldset handoff-grid-two">
+                        <div class="form-group">
+                            <label for="nb-customer">Client</label>
+                            <select id="nb-customer" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="nb-title">What for</label>
+                            <input type="text" id="nb-title" placeholder="Recording — EP Nordlicht">
+                        </div>
+                    </div>
+                    <div class="handoff-fieldset handoff-grid-two">
+                        <div class="form-group">
+                            <label for="nb-date">Date</label>
+                            <input type="date" id="nb-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nb-from">From — to (local time)</label>
+                            <span style="display:flex;gap:.5rem">
+                                <input type="time" id="nb-from" value="10:00" required>
+                                <input type="time" id="nb-to" value="16:00" required>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="handoff-fieldset">
+                        <div class="form-group">
+                            <label for="nb-note">Anything they should know</label>
+                            <textarea id="nb-note" rows="2" placeholder="Please bring your stems on a stick."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="nb-message">Opening line of the email</label>
+                            <input type="text" id="nb-message" placeholder="here is the slot we talked about:">
+                        </div>
+                    </div>
+                    <div class="handoff-actions">
+                        <button type="submit" class="btn fill">Create and send proposal</button>
+                        <button type="button" class="btn btn-secondary" id="new-booking-cancel">Cancel</button>
+                    </div>
+                    <div class="handoff-status" id="new-booking-status" role="status" aria-live="polite"></div>
+                </form>
+            </section>
+
+            <div class="admin-table-wrap" id="bookings-wrap" hidden>
+                <table class="admin-table" id="bookings">
+                    <thead>
+                        <tr>
+                            <th>When</th>
+                            <th>Client</th>
+                            <th>What for</th>
+                            <th>State</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookings-body"></tbody>
+                </table>
+            </div>
+            <p class="admin-empty" id="bookings-empty" hidden>No studio time booked yet.</p>
+
             <section class="handoff-card admin-new" id="pdfs-card" hidden>
                 <h2>Import invoice PDFs</h2>
                 <p>The invoice files from the tax folder. They are matched by their filename, which is the invoice number — 2026-05-18-0001.pdf.</p>
