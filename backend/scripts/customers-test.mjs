@@ -164,6 +164,37 @@ await checkAsync('der Bestand überlebt einen Neustart, weil er nur ein Objekt i
   assert.ok(wieder.some((k) => k.id === id));
 });
 
+/* ---- 7. Alte Rechnungs-PDFs -------------------------------------------- */
+
+const { attachLegacyPdf, legacyInvoiceKey } = await import('../src/lib/customers.js');
+
+await checkAsync('ein PDF haengt sich an seine Rechnung', async () => {
+  const ergebnis = await attachLegacyPdf('2026-05-18-0001', legacyInvoiceKey('2026-05-18-0001'));
+  assert.equal(ergebnis.attached, true);
+});
+
+await checkAsync('und ist danach an der Rechnung vermerkt', async () => {
+  const alle = await listCustomers();
+  const rechnung = alle.flatMap((k) => k.legacyInvoices).find((r) => r.number === '2026-05-18-0001');
+  assert.equal(rechnung.pdfKey, 'legacy-invoices/2026-05-18-0001.pdf');
+});
+
+await checkAsync('zu einer unbekannten Nummer haengt sich nichts', async () => {
+  const ergebnis = await attachLegacyPdf('1999-01-01-0001', 'x');
+  assert.equal(ergebnis.attached, false);
+  assert.equal(ergebnis.reason, 'no_such_invoice');
+});
+
+check('der Ablageort ist aus der Nummer ableitbar und damit stabil', () =>
+  assert.equal(legacyInvoiceKey('2026-05-18-0001'), 'legacy-invoices/2026-05-18-0001.pdf'));
+
+/* Ein Dateiname mit Zusatz drumherum soll trotzdem ankommen: nicht jeder hat
+   seine Rechnungen exakt nach der Nummer benannt. */
+check('die Nummer laesst sich aus einem laengeren Dateinamen lesen', () => {
+  const muster = 'Rechnung 2026-05-18-0001 Muster GmbH'.match(/\d{4}-\d{2}-\d{2}-\d{4}/);
+  assert.equal(muster[0], '2026-05-18-0001');
+});
+
 for (const n of pass) console.log(`  ok   ${n}`);
 for (const f of fail) console.log(`  FEHL ${f}`);
 console.log(`\n${pass.length} bestanden, ${fail.length} fehlgeschlagen`);

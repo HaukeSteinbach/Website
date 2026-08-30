@@ -1,0 +1,67 @@
+<!--
+  E-Mail-Signatur — Hauke Steinbach
+
+  Einsetzen: diese Datei im Browser öffnen, alles markieren (Cmd+A), kopieren
+  (Cmd+C) und im Mailprogramm als Signatur einfügen. Nicht den Quelltext
+  kopieren, sondern die dargestellte Seite.
+
+  Warum das hier so aussieht, wie es aussieht:
+
+  Tabellen und Stile direkt am Element, weil Outlook alles andere verwirft.
+  Keine Webfonts — Archivo Black, Poppins und JetBrains Mono lädt kein
+  Mailprogramm nach, also stehen hier Stapel aus Schriften, die auf jedem
+  Rechner liegen. Die Anmutung trägt stattdessen die Anordnung: schwere
+  Versalien, der Akzentstrich, die technischen Zeilen in Monospace.
+
+  Kein schwarzer Grund, obwohl die Website schwarz ist. Eine Signatur steht am
+  Ende einer fremden Nachricht, oft in einem Verlauf mit weißem Hintergrund;
+  ein Block in Vollschwarz kämpft dort gegen alles darüber. Dieselbe
+  Überlegung wie bei der Rechnung, die aus demselben Grund weiß ist.
+
+  Die Farben sind so gewählt, dass sie auf hellem und auf dunklem Grund
+  lesbar bleiben. Ein dunkles Grau für den Namen wäre auf Weiß richtig und im
+  Dunkelmodus unsichtbar, und es gibt kein Grau, das auf beidem kräftig wirkt.
+  Deshalb trägt der Name die Akzentfarbe und die übrigen Zeilen ein mittleres
+  Grau, das nach beiden Seiten genug Abstand hat.
+
+  Das Foto liegt auf der eigenen Domain, in Farbe und auf 320 px verkleinert,
+  damit es bei 76 px Anzeige auch auf Retina-Bildschirmen scharf bleibt. Die
+  Website zeigt Fotos schwarzweiß, aber das macht sie mit einem CSS-Filter,
+  und der wirkt in Mailprogrammen nicht — hier müsste die Behandlung ins Bild
+  eingebrannt werden, und in Farbe wirkt der Kopf in einer Signatur ohnehin
+  offener.
+-->
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <tr>
+    <td style="padding:0 18px 0 0;vertical-align:top;">
+      <img src="https://haukesteinbach.de/assets/images/signature-hauke.jpg"
+           alt="Hauke Steinbach"
+           width="76" height="76"
+           style="display:block;width:76px;height:76px;border:0;outline:none;text-decoration:none;">
+    </td>
+    <td style="vertical-align:top;padding:0;">
+
+      <div style="font-size:15px;line-height:1.2;font-weight:bold;letter-spacing:0.04em;color:#E94560;text-transform:uppercase;">
+        Hauke Steinbach
+      </div>
+
+      <!-- Der eine Akzent, als Block gesetzt wie auf der Website -->
+      <div style="width:34px;height:3px;background:#E94560;font-size:0;line-height:0;margin:7px 0 8px;">&nbsp;</div>
+
+      <div style="font-size:12px;line-height:1.5;color:#767676;padding-bottom:9px;">
+        Production &middot; Mixing &middot; Mastering &mdash; Hamburg
+      </div>
+
+      <div style="font-family:'JetBrains Mono',Menlo,Consolas,'Courier New',monospace;font-size:11px;line-height:1.75;color:#767676;">
+        <a href="tel:+491727387647" style="color:#767676;text-decoration:none;">+49 172 738 7647</a><br>
+        <a href="mailto:mail@haukesteinbach.de" style="color:#767676;text-decoration:none;">mail@haukesteinbach.de</a><br>
+        <a href="https://haukesteinbach.de" style="color:#E94560;text-decoration:none;">haukesteinbach.de</a>
+      </div>
+
+      <div style="font-family:'JetBrains Mono',Menlo,Consolas,'Courier New',monospace;font-size:10px;line-height:1.6;color:#767676;padding-top:8px;">
+        Eppendorfer Stieg 1 &middot; 22299 Hamburg
+      </div>
+
+    </td>
+  </tr>
+</table>

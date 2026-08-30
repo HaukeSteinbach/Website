@@ -1038,22 +1038,43 @@ router.post('/customers/legacy-invoices/pdfs', requireAdmin, (request, response)
     const abgelegt = [];
     const ohneRechnung = [];
 
+    /* Liegt ueberhaupt schon etwas da, woran die Dateien haengen koennten?
+       Ohne diese Pruefung meldet der Import "keine Rechnung dazu" fuer jede
+       einzelne Datei und verschweigt den eigentlichen Grund: dass der
+       Onlydesk-Import noch nicht gelaufen ist. */
+    const bestand = await listCustomers();
+    const bekannteNummern = bestand.flatMap((k) => k.legacyInvoices.map((r) => r.number));
+
+    if (!bekannteNummern.length) {
+      return fail(response, 409, 'no_invoices_yet',
+        'There are no invoices in the system yet, so there is nothing for these PDFs to attach to. '
+        + 'Run the Onlydesk import first, then upload the files again.');
+    }
+
     for (const datei of dateien) {
-      /* Der Dateiname ohne Endung ist die Rechnungsnummer. */
-      const nummer = String(datei.originalname || '').replace(/\.pdf$/i, '').trim();
+      const name = String(datei.originalname || '').replace(/\.pdf$/i, '').trim();
 
       /* macOS legt in Archiven zu jeder Datei eine ._Datei mit Metadaten. Die
          als "keine Rechnung dazu" zu melden, waere ein Bericht voller Rauschen
          ueber Dateien, die niemand hochladen wollte. */
-      if (nummer.startsWith('._') || nummer.startsWith('.')) {
+      if (name.startsWith('.')) {
         continue;
       }
-      const key = legacyInvoiceKey(nummer);
 
+      /* Der Dateiname ist die Rechnungsnummer -- meistens. Wer die Dateien
+         einmal anders benannt hat ("Rechnung 2026-05-18-0001 Muster.pdf"),
+         soll sie trotzdem einspielen koennen, also wird die Nummer aus dem
+         Namen herausgelesen und erst danach exakt verglichen. */
+      const muster = name.match(/\d{4}-\d{2}-\d{2}-\d{4}/);
+      const nummer = bekannteNummern.includes(name)
+        ? name
+        : (muster && bekannteNummern.includes(muster[0]) ? muster[0] : name);
+
+      const key = legacyInvoiceKey(nummer);
       const { attached } = await attachLegacyPdf(nummer, key);
 
       if (!attached) {
-        ohneRechnung.push(nummer);
+        ohneRechnung.push(name);
         continue;
       }
 
