@@ -240,6 +240,34 @@ export async function addLegacyInvoice(customerId, invoice) {
 }
 
 /**
+ * Eine alte Rechnung als bezahlt vermerken.
+ *
+ * Die Onlydesk-Rechnungen sind ein Archiv, aber ein offener Posten von damals
+ * bleibt ein offener Posten — er soll sich hier abhaken lassen, ohne dass
+ * dafür das alte System noch einmal geöffnet werden muss.
+ */
+export async function markLegacyPaid(customerId, number, payment) {
+  return withIndex((index) => {
+    const customer = index.customers.find((c) => c.id === customerId);
+    const invoice = customer?.legacyInvoices.find((i) => i.number === number);
+
+    if (!invoice) {
+      return { marked: false, reason: 'not_found', skipWrite: true };
+    }
+
+    if (invoice.status === 'paid') {
+      return { marked: false, reason: 'already_paid', skipWrite: true };
+    }
+
+    invoice.status = 'paid';
+    invoice.paidAt = payment?.date || new Date().toISOString();
+    customer.updatedAt = new Date().toISOString();
+
+    return { marked: true };
+  });
+}
+
+/**
  * Remove a customer.
  *
  * The one operation the rest of this codebase does not have, and the reason it

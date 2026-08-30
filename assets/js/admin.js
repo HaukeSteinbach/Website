@@ -298,6 +298,7 @@
     document.getElementById('document-actions').hidden = which !== 'documents';
     document.getElementById('import-card').hidden = true;
     document.getElementById('new-customer-card').hidden = true;
+    document.getElementById('payments-card').hidden = true;
     newCard.hidden = true;
 
     if (which === 'orders') return loadOrders();
@@ -546,7 +547,7 @@
   var offenerBeleg = null;
 
   var DOC_STATE = {
-    draft: 'Draft', issued: 'Issued', cancelled: 'Cancelled',
+    draft: 'Draft', issued: 'Issued', paid: 'Paid', cancelled: 'Cancelled',
     accepted: 'Accepted', declined: 'Declined'
   };
 
@@ -867,6 +868,122 @@
         setStatus(document.getElementById('document-status'), error.message, 'error');
       });
   });
+
+  /* ----------------------------------------------------------------------
+     Kontoauszug einlesen
+     ---------------------------------------------------------------------- */
+
+  var gefundeneZahlungen = [];
+
+  document.getElementById('payments-open').addEventListener('click', function () {
+    var karte = document.getElementById('payments-card');
+    karte.hidden = !karte.hidden;
+    document.getElementById('payments-report').hidden = true;
+    setStatus(document.getElementById('payments-status'), '');
+  });
+
+  document.getElementById('payments-cancel').addEventListener('click', function () {
+    document.getElementById('payments-card').hidden = true;
+  });
+
+  document.getElementById('payments-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    var datei = document.getElementById('payments-file').files[0];
+    var status = document.getElementById('payments-status');
+    if (!datei) return;
+
+    setStatus(status, 'Reading…');
+
+    datei.text()
+      .then(function (csv) {
+        return api('/payments/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ csv: csv })
+        });
+      })
+      .then(function (bericht) { setStatus(status, ''); zeigeZahlungen(bericht); })
+      .catch(function (error) { setStatus(status, error.message, 'error'); });
+  });
+
+  function zeigeZahlungen(b) {
+    gefundeneZahlungen = b.matches || [];
+    var ziel = document.getElementById('payments-report');
+    var sicher = gefundeneZahlungen.filter(function (m) { return m.certain; }).length;
+
+    ziel.innerHTML =
+      '<dl class="admin-counts">' +
+      '<div><dt>Incoming</dt><dd>' + b.incoming + '</dd></div>' +
+      '<div><dt>Matched</dt><dd>' + gefundeneZahlungen.length + '</dd></div>' +
+      '<div><dt>By number</dt><dd>' + sicher + '</dd></div>' +
+      '<div><dt>Still open</dt><dd class="' + (b.stillOpen.length ? 'is-alert' : '') + '">' +
+        b.stillOpen.length + '</dd></div>' +
+      '</dl>' +
+      (gefundeneZahlungen.length
+        ? '<table class="admin-table"><thead><tr><th></th><th>Invoice</th><th>Who</th>' +
+          '<th class="num">Amount</th><th>Date</th><th>How</th></tr></thead><tbody>' +
+          gefundeneZahlungen.map(function (m, i) {
+            return '<tr><td><input type="checkbox" data-zahlung="' + i + '"' +
+              (m.certain ? ' checked' : '') + '></td>' +
+              '<td class="mono">' + escapeHtml(m.number) + '</td>' +
+              '<td>' + escapeHtml(m.who || m.counterparty || '—') + '</td>' +
+              '<td class="num mono">' + euro(m.amountCents) + '</td>' +
+              '<td class="mono">' + escapeHtml(m.date) + '</td>' +
+              '<td>' + (m.certain
+                ? 'number in the reference'
+                : '<span class="is-alert">amount only — check</span>') + '</td></tr>';
+          }).join('') + '</tbody></table>' +
+          /* Unsichere Treffer stehen abgewählt da: sie beruhen nur auf dem
+             Betrag, und eine falsch abgehakte Rechnung merkt niemand. */
+          '<p class="note">Ticked rows carry the invoice number in the reference. ' +
+          'Amount-only matches are left for you to confirm.</p>' +
+          '<div class="btn-row"><button type="button" class="btn fill" id="payments-apply">Mark ticked as paid</button></div>'
+        : '<p class="admin-empty">Nothing matched an open invoice.</p>') +
+      (b.unmatched.length
+        ? '<h3>Not matched</h3><ul class="checklist">' + b.unmatched.map(function (u) {
+            return '<li>' + euro(u.amountCents) + ' on ' + escapeHtml(u.date) + ' — ' +
+              escapeHtml(u.counterparty || u.reference || '') +
+              (u.reason === 'ambiguous'
+                ? ' <span class="is-alert">(several invoices have this amount: ' +
+                  escapeHtml(u.candidates.join(', ')) + ')</span>'
+                : '') + '</li>';
+          }).join('') + '</ul>'
+        : '');
+
+    ziel.hidden = false;
+
+    var knopf = document.getElementById('payments-apply');
+    if (knopf) knopf.addEventListener('click', uebernehmeZahlungen);
+  }
+
+  function uebernehmeZahlungen() {
+    var status = document.getElementById('payments-status');
+    var gewaehlt = [];
+
+    Array.prototype.forEach.call(
+      document.querySelectorAll('[data-zahlung]'),
+      function (kasten) {
+        if (kasten.checked) gewaehlt.push(gefundeneZahlungen[Number(kasten.dataset.zahlung)]);
+      }
+    );
+
+    if (!gewaehlt.length) { setStatus(status, 'Nothing ticked.', 'error'); return; }
+
+    setStatus(status, 'Marking…');
+
+    api('/payments/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matches: gewaehlt })
+    })
+      .then(function (data) {
+        setStatus(status, data.paid + ' marked as paid.' +
+          (data.failed.length ? ' ' + data.failed.length + ' could not be.' : ''));
+        document.getElementById('payments-report').hidden = true;
+        loadDocuments();
+      })
+      .catch(function (error) { setStatus(status, error.message, 'error'); });
+  }
 
   /* ----------------------------------------------------------------------
      Onlydesk-Import

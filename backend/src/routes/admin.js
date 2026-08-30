@@ -14,10 +14,12 @@ import { config } from '../lib/config.js';
 import {
   addLegacyInvoice,
   deleteCustomer,
+  markLegacyPaid,
   getCustomer,
   listCustomers,
   upsertCustomer
 } from '../lib/customers.js';
+import { buchungenAus, ordneZu } from '../lib/bank-import.js';
 import { SERVICES as CATALOGUE, getService } from '../lib/catalogue.js';
 import { buildDocumentPdf } from '../lib/document-pdf.js';
 import {
@@ -27,6 +29,7 @@ import {
   getDocument,
   issueDocument,
   listDocuments,
+  markPaid,
   noteEvent,
   setPdfKey,
   updateDraft
@@ -956,6 +959,131 @@ router.post('/documents/:id/state', requireAdmin, async (request, response, next
     }
 
     return ok(response, { document });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+
+/* --------------------------------------------------------------------------
+   Zahlungen
+   --------------------------------------------------------------------------
+   Der Kontoauszug kommt als CSV herein, wird zugeordnet und wieder vergessen.
+   Gespeichert wird nur, welche Rechnung bezahlt ist — der Auszug selbst
+   gehoert in die Buchhaltung, nicht hierher.
+   -------------------------------------------------------------------------- */
+
+/** Alles, was auf Geld wartet: eigene Rechnungen und das Onlydesk-Archiv. */
+async function offenePosten() {
+  const [belege, kunden] = await Promise.all([listDocuments(), listCustomers()]);
+
+  const eigene = belege
+    .filter((d) => d.kind === 'invoice' && d.state === 'issued')
+    .map((d) => ({
+      id: d.id,
+      kind: 'document',
+      number: d.number,
+      totalCents: d.totalCents,
+      date: d.issuedAt ? d.issuedAt.slice(0, 10) : '',
+      who: d.recipient?.name || ''
+    }));
+
+  const alte = kunden.flatMap((kunde) => kunde.legacyInvoices
+    .filter((r) => r.status === 'issued')
+    .map((r) => ({
+      id: kunde.id,
+      kind: 'legacy',
+      number: r.number,
+      totalCents: r.totalCents,
+      date: r.date || '',
+      who: kunde.name
+    })));
+
+  return [...eigene, ...alte];
+}
+
+router.post('/payments/preview', requireAdmin, async (request, response, next) => {
+  try {
+    const csv = String(request.body?.csv || '');
+
+    if (!csv.trim()) {
+      return fail(response, 422, 'empty', 'No statement in that file.');
+    }
+
+    const gelesen = buchungenAus(csv);
+
+    /* Ohne Betrag und Datum ist nichts zuzuordnen. Lieber hier abbrechen und
+       sagen, welche Spalten gefunden wurden, als stumm nichts zu treffen. */
+    if (gelesen.spalten.amount === undefined || gelesen.spalten.date === undefined) {
+      return fail(response, 422, 'columns_not_found',
+        'The date or amount column could not be found. Header was: '
+        + gelesen.kopf.join(' | '));
+    }
+
+    const { treffer, uebrig, nochOffen } = ordneZu(gelesen.buchungen, await offenePosten());
+
+    return ok(response, {
+      rows: gelesen.zeilen,
+      incoming: gelesen.buchungen.length,
+      columns: Object.keys(gelesen.spalten),
+      matches: treffer.map((t) => ({
+        invoiceId: t.rechnung.id,
+        invoiceKind: t.rechnung.kind,
+        number: t.rechnung.number,
+        who: t.rechnung.who,
+        reason: t.grund,
+        certain: t.sicher,
+        date: t.buchung.date,
+        amountCents: t.buchung.amountCents,
+        reference: t.buchung.reference.slice(0, 140),
+        counterparty: t.buchung.counterparty
+      })),
+      unmatched: uebrig.map((u) => ({
+        date: u.buchung.date,
+        amountCents: u.buchung.amountCents,
+        reference: u.buchung.reference.slice(0, 140),
+        counterparty: u.buchung.counterparty,
+        reason: u.grund,
+        candidates: u.kandidaten
+      })),
+      stillOpen: nochOffen.map((r) => ({ number: r.number, totalCents: r.totalCents, who: r.who }))
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * Die bestaetigten Treffer eintragen.
+ *
+ * Bewusst getrennt vom Erkennen: was als bezahlt gilt, entscheidet ein Mensch,
+ * nicht eine Betragsuebereinstimmung.
+ */
+router.post('/payments/apply', requireAdmin, async (request, response, next) => {
+  try {
+    const eintraege = Array.isArray(request.body?.matches) ? request.body.matches : [];
+    const erledigt = [];
+    const gescheitert = [];
+
+    for (const eintrag of eintraege) {
+      const zahlung = {
+        date: eintrag.date || null,
+        amountCents: eintrag.amountCents ?? null,
+        reference: eintrag.reference || '',
+        source: 'bank'
+      };
+
+      if (eintrag.invoiceKind === 'legacy') {
+        const { marked, reason } = await markLegacyPaid(eintrag.invoiceId, eintrag.number, zahlung);
+        (marked ? erledigt : gescheitert).push({ number: eintrag.number, reason: reason || null });
+        continue;
+      }
+
+      const { document, reason } = await markPaid(eintrag.invoiceId, zahlung);
+      (document ? erledigt : gescheitert).push({ number: eintrag.number, reason: reason || null });
+    }
+
+    return ok(response, { paid: erledigt.length, failed: gescheitert });
   } catch (error) {
     return next(error);
   }

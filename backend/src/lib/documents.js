@@ -27,7 +27,7 @@ const INDEX_KEY = 'documents/index.json';
 const WRITE_ATTEMPTS = 5;
 
 export const KINDS = ['offer', 'invoice'];
-export const STATES = ['draft', 'issued', 'cancelled', 'accepted', 'declined'];
+export const STATES = ['draft', 'issued', 'paid', 'cancelled', 'accepted', 'declined'];
 
 /* ---------------------------------------------------------------------------
    Speicher
@@ -290,6 +290,42 @@ export async function noteEvent(id, what, extra) {
 
     if (what === 'sent') document.sentAt = at;
     if (['cancelled', 'accepted', 'declined'].includes(what)) document.state = what;
+
+    return { document };
+  });
+}
+
+/**
+ * Eine Rechnung als bezahlt vermerken.
+ *
+ * Was vom Kontoauszug übrigbleibt: Datum, Betrag, Verwendungszweck. Der
+ * Auszug selbst wird nicht gespeichert — gebraucht wird der Nachweis, dass
+ * diese Rechnung beglichen ist, nicht die Kontobewegung daneben.
+ */
+export async function markPaid(id, payment) {
+  return withIndex((index) => {
+    const document = index.documents.find((d) => d.id === id);
+
+    if (!document) {
+      return { document: null, reason: 'not_found', skipWrite: true };
+    }
+
+    if (document.state !== 'issued') {
+      return { document: null, reason: 'not_issued', skipWrite: true };
+    }
+
+    const at = new Date().toISOString();
+
+    document.state = 'paid';
+    document.paidAt = payment?.date || at;
+    document.payment = {
+      date: payment?.date || null,
+      amountCents: payment?.amountCents ?? null,
+      reference: payment?.reference || '',
+      source: payment?.source || 'bank'
+    };
+    document.updatedAt = at;
+    document.events.push({ at, what: 'paid', amountCents: document.payment.amountCents });
 
     return { document };
   });

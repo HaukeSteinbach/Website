@@ -69,6 +69,7 @@
             <div class="btn-row" id="document-actions" hidden>
                 <button type="button" class="btn fill" id="new-offer">New offer</button>
                 <button type="button" class="btn" id="new-invoice">New invoice</button>
+                <button type="button" class="btn" id="payments-open">Import bank statement</button>
                 <button type="button" class="btn" id="document-refresh">Refresh</button>
             </div>
             <div class="btn-row" id="customer-actions" hidden>
@@ -257,6 +258,25 @@
                     <tbody id="documents-body"></tbody>
                 </table>
             </div>
+            <section class="handoff-card admin-new" id="payments-card" hidden>
+                <h2>Import bank statement</h2>
+                <p>Export your account as CSV and drop it here. Nothing is marked paid until you have looked at what was found.</p>
+                <form class="handoff-form" id="payments-form">
+                    <div class="handoff-fieldset">
+                        <div class="form-group">
+                            <label for="payments-file">Statement (.csv)</label>
+                            <input type="file" id="payments-file" accept=".csv,text/csv,text/plain" required>
+                        </div>
+                    </div>
+                    <div class="handoff-actions">
+                        <button type="submit" class="btn fill">Check</button>
+                        <button type="button" class="btn btn-secondary" id="payments-cancel">Cancel</button>
+                    </div>
+                    <div class="handoff-status" id="payments-status" role="status" aria-live="polite"></div>
+                </form>
+                <div id="payments-report" hidden></div>
+            </section>
+
             <p class="admin-empty" id="documents-empty" hidden>Nothing written yet. Start with an offer or an invoice.</p>
 
             <p class="admin-empty" id="list-empty" hidden>Nothing here yet. A client upload appears automatically; use <strong>New project</strong> to send something out on its own.</p>
