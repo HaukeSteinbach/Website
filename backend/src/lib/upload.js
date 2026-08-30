@@ -86,6 +86,23 @@ function extensionFilter(allowed) {
   };
 }
 
+/**
+ * Die alten Rechnungs-PDFs aus dem Finanzamtsordner.
+ *
+ * Anders als die Projektdateien laufen die durch den Arbeitsspeicher statt
+ * direkt in den Bucket: sie sind klein, und der Ablageort haengt an der
+ * Rechnungsnummer im Dateinamen, die erst nach dem Einlesen feststeht. Ein
+ * fester Schluessel je Nummer heisst ausserdem, dass ein zweiter Durchlauf
+ * ueberschreibt statt zu verdoppeln.
+ */
+export function legacyInvoiceUpload() {
+  return multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024, files: 200 },
+    fileFilter: extensionFilter(['pdf'])
+  });
+}
+
 export function sourceUpload(projectId) {
   return multer({
     storage: r2Storage({ projectId, kind: 'source' }),

@@ -240,6 +240,35 @@ export async function addLegacyInvoice(customerId, invoice) {
 }
 
 /**
+ * Das PDF einer alten Rechnung hinterlegen.
+ *
+ * Gesucht wird über die Nummer, nicht über den Kunden: die Dateien heißen nach
+ * der Rechnungsnummer und wissen nichts davon, zu wem sie gehören. Nummern
+ * sind eindeutig, also reicht das.
+ */
+export async function attachLegacyPdf(number, key) {
+  return withIndex((index) => {
+    for (const customer of index.customers) {
+      const invoice = customer.legacyInvoices.find((i) => i.number === number);
+
+      if (invoice) {
+        invoice.pdfKey = key;
+        customer.updatedAt = new Date().toISOString();
+
+        return { attached: true, customerId: customer.id };
+      }
+    }
+
+    return { attached: false, reason: 'no_such_invoice', skipWrite: true };
+  });
+}
+
+/** Wo das PDF einer alten Rechnung liegt. */
+export function legacyInvoiceKey(number) {
+  return `legacy-invoices/${String(number).replace(/[^\w.-]/g, '_')}.pdf`;
+}
+
+/**
  * Eine alte Rechnung als bezahlt vermerken.
  *
  * Die Onlydesk-Rechnungen sind ein Archiv, aber ein offener Posten von damals

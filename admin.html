@@ -75,6 +75,7 @@
             <div class="btn-row" id="customer-actions" hidden>
                 <button type="button" class="btn fill" id="new-customer">New customer</button>
                 <button type="button" class="btn" id="import-open">Import from Onlydesk</button>
+                <button type="button" class="btn" id="pdfs-open">Import invoice PDFs</button>
                 <button type="button" class="btn" id="customer-refresh">Refresh</button>
             </div>
             <div class="btn-row" id="project-actions">
@@ -190,6 +191,25 @@
                     <tbody id="customers-body"></tbody>
                 </table>
             </div>
+            <section class="handoff-card admin-new" id="pdfs-card" hidden>
+                <h2>Import invoice PDFs</h2>
+                <p>The invoice files from the tax folder. They are matched by their filename, which is the invoice number — 2026-05-18-0001.pdf.</p>
+                <form class="handoff-form" id="pdfs-form">
+                    <div class="handoff-fieldset">
+                        <div class="form-group">
+                            <label for="pdfs-files">Invoice PDFs</label>
+                            <input type="file" id="pdfs-files" accept="application/pdf,.pdf" multiple required>
+                        </div>
+                    </div>
+                    <div class="handoff-actions">
+                        <button type="submit" class="btn fill">Upload</button>
+                        <button type="button" class="btn btn-secondary" id="pdfs-cancel">Cancel</button>
+                    </div>
+                    <div class="handoff-status" id="pdfs-status" role="status" aria-live="polite"></div>
+                </form>
+                <div id="pdfs-report" hidden></div>
+            </section>
+
             <section class="handoff-card admin-new" id="new-customer-card" hidden>
                 <h2>New customer</h2>
                 <form class="handoff-form" id="new-customer-form">

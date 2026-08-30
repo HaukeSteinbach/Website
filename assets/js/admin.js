@@ -299,6 +299,7 @@
     document.getElementById('import-card').hidden = true;
     document.getElementById('new-customer-card').hidden = true;
     document.getElementById('payments-card').hidden = true;
+    document.getElementById('pdfs-card').hidden = true;
     newCard.hidden = true;
 
     if (which === 'orders') return loadOrders();
@@ -451,10 +452,16 @@
     var rechnungen = (c.legacyInvoices || []).length
       ? '<table class="admin-table"><thead><tr><th>Number</th><th>Date</th><th class="num">Amount</th><th>Status</th></tr></thead><tbody>' +
         c.legacyInvoices.map(function (r) {
-          return '<tr><td class="mono">' + escapeHtml(r.number) + '</td>' +
+          return '<tr><td class="mono">' +
+            (r.pdfKey
+              ? '<a href="#" data-altpdf="' + escapeHtml(r.number) + '">' + escapeHtml(r.number) + '</a>'
+              : escapeHtml(r.number)) + '</td>' +
             '<td class="mono">' + escapeHtml(r.date || '—') + '</td>' +
             '<td class="num mono">' + euro(r.totalCents) + '</td>' +
-            '<td>' + escapeHtml(LEGACY_STATUS[r.status] || r.status) + '</td></tr>';
+            '<td>' + escapeHtml(LEGACY_STATUS[r.status] || r.status) +
+            /* Bei stornierten Rechnungen fehlt das PDF zu Recht. */
+            (r.pdfKey || r.status === 'cancelled' ? '' : ' <span class="is-alert">· no PDF</span>') +
+            '</td></tr>';
         }).join('') + '</tbody></table>' +
         '<p class="note">Issued by the previous system. Kept as they were — original numbers, not renumbered.</p>'
       : '<p class="admin-empty">None.</p>';
@@ -498,6 +505,20 @@
       block('Invoices from Onlydesk', rechnungen) +
       block('Projects', projekte) +
       block('Shop orders', bestellungen);
+
+    Array.prototype.forEach.call(
+      document.querySelectorAll('[data-altpdf]'),
+      function (link) {
+        link.addEventListener('click', function (event) {
+          event.preventDefault();
+          api('/customers/' + c.id + '/legacy/' + encodeURIComponent(link.dataset.altpdf) + '/pdf')
+            .then(function (data) { window.open(data.url, '_blank'); })
+            .catch(function (error) {
+              setStatus(document.getElementById('customer-detail-status'), error.message, 'error');
+            });
+        });
+      }
+    );
 
     Array.prototype.forEach.call(
       document.querySelectorAll('[data-beleg]'),
@@ -913,6 +934,62 @@
   });
 
   /* ----------------------------------------------------------------------
+     Alte Rechnungs-PDFs einspielen
+     ---------------------------------------------------------------------- */
+
+  document.getElementById('pdfs-open').addEventListener('click', function () {
+    var karte = document.getElementById('pdfs-card');
+    karte.hidden = !karte.hidden;
+    document.getElementById('pdfs-report').hidden = true;
+    setStatus(document.getElementById('pdfs-status'), '');
+  });
+
+  document.getElementById('pdfs-cancel').addEventListener('click', function () {
+    document.getElementById('pdfs-card').hidden = true;
+  });
+
+  document.getElementById('pdfs-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    var dateien = document.getElementById('pdfs-files').files;
+    var status = document.getElementById('pdfs-status');
+    if (!dateien.length) return;
+
+    var paket = new FormData();
+    Array.prototype.forEach.call(dateien, function (datei) { paket.append('files', datei); });
+
+    setStatus(status, 'Uploading ' + dateien.length + ' files…');
+
+    /* Ohne Content-Type: den setzt der Browser samt Grenzmarkierung selbst. */
+    api('/customers/legacy-invoices/pdfs', { method: 'POST', body: paket })
+      .then(function (bericht) {
+        setStatus(status, '');
+        var ziel = document.getElementById('pdfs-report');
+
+        ziel.innerHTML =
+          '<dl class="admin-counts">' +
+          '<div><dt>Filed</dt><dd>' + bericht.stored + '</dd></div>' +
+          '<div><dt>No invoice</dt><dd class="' + (bericht.unknown.length ? 'is-alert' : '') + '">' +
+            bericht.unknown.length + '</dd></div>' +
+          '<div><dt>Still without PDF</dt><dd class="' +
+            (bericht.stillWithoutPdf.length ? 'is-alert' : '') + '">' +
+            bericht.stillWithoutPdf.length + '</dd></div></dl>' +
+          (bericht.unknown.length
+            ? '<p class="note">No invoice carries these numbers: ' +
+              escapeHtml(bericht.unknown.join(', ')) + '</p>'
+            : '') +
+          (bericht.stillWithoutPdf.length
+            ? '<p class="note">These invoices have no PDF on file. They have to be kept for ten ' +
+              'years under § 147 AO, so it is worth tracking them down: ' +
+              escapeHtml(bericht.stillWithoutPdf.join(', ')) + '</p>'
+            : '<p class="note">Every invoice that is not cancelled has its PDF.</p>');
+
+        ziel.hidden = false;
+        loadCustomers();
+      })
+      .catch(function (error) { setStatus(status, error.message, 'error'); });
+  });
+
+  /* ----------------------------------------------------------------------
      Kontoauszug einlesen
      ---------------------------------------------------------------------- */
 
@@ -927,6 +1004,7 @@
 
   document.getElementById('payments-cancel').addEventListener('click', function () {
     document.getElementById('payments-card').hidden = true;
+    document.getElementById('pdfs-card').hidden = true;
   });
 
   document.getElementById('payments-form').addEventListener('submit', function (event) {

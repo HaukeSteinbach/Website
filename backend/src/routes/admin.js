@@ -13,7 +13,9 @@ import express from 'express';
 import { config } from '../lib/config.js';
 import {
   addLegacyInvoice,
+  attachLegacyPdf,
   deleteCustomer,
+  legacyInvoiceKey,
   markLegacyPaid,
   getCustomer,
   listCustomers,
@@ -67,6 +69,7 @@ import {
 import { getDownloadUrl, isStorageConfigured, putObject } from '../lib/storage.js';
 import {
   deliveryUpload,
+  legacyInvoiceUpload,
   describeUploadError,
   discardFiles,
   toStoredFiles
@@ -995,6 +998,88 @@ router.post('/documents/:id/state', requireAdmin, async (request, response, next
   }
 });
 
+
+
+/**
+ * Die alten Rechnungs-PDFs einspielen.
+ *
+ * Die Dateien heissen nach ihrer Rechnungsnummer -- 2026-05-18-0001.pdf --,
+ * und genau daran werden sie zugeordnet. Wer nicht passt, wird gemeldet statt
+ * geraten: ein PDF unter der falschen Rechnung ist schlimmer als eines, das
+ * fehlt, weil es niemandem auffaellt.
+ */
+router.post('/customers/legacy-invoices/pdfs', requireAdmin, (request, response) => {
+  const upload = legacyInvoiceUpload().array('files');
+
+  upload(request, response, async (uploadError) => {
+    if (uploadError) {
+      const described = describeUploadError(uploadError);
+      return fail(response, described.status, described.code, described.message);
+    }
+
+    const dateien = Array.isArray(request.files) ? request.files : [];
+
+    if (!dateien.length) {
+      return fail(response, 422, 'no_files', 'No PDFs in that upload.');
+    }
+
+    const abgelegt = [];
+    const ohneRechnung = [];
+
+    for (const datei of dateien) {
+      /* Der Dateiname ohne Endung ist die Rechnungsnummer. */
+      const nummer = String(datei.originalname || '').replace(/\.pdf$/i, '').trim();
+
+      /* macOS legt in Archiven zu jeder Datei eine ._Datei mit Metadaten. Die
+         als "keine Rechnung dazu" zu melden, waere ein Bericht voller Rauschen
+         ueber Dateien, die niemand hochladen wollte. */
+      if (nummer.startsWith('._') || nummer.startsWith('.')) {
+        continue;
+      }
+      const key = legacyInvoiceKey(nummer);
+
+      const { attached } = await attachLegacyPdf(nummer, key);
+
+      if (!attached) {
+        ohneRechnung.push(nummer);
+        continue;
+      }
+
+      /* Erst nach der Zuordnung ablegen: sonst saehen im Bucket Dateien, zu
+         denen es keine Rechnung gibt. */
+      await putObject(key, datei.buffer, { contentType: 'application/pdf' });
+      abgelegt.push(nummer);
+    }
+
+    /* Was jetzt noch ohne PDF dasteht -- fuer § 147 AO die eigentlich
+       interessante Zahl. */
+    const kunden = await listCustomers();
+    const ohnePdf = kunden.flatMap((k) => k.legacyInvoices
+      .filter((r) => !r.pdfKey && r.status !== 'cancelled')
+      .map((r) => r.number));
+
+    return ok(response, {
+      stored: abgelegt.length,
+      unknown: ohneRechnung,
+      stillWithoutPdf: ohnePdf.sort()
+    });
+  });
+});
+
+router.get('/customers/:id/legacy/:number/pdf', requireAdmin, async (request, response, next) => {
+  try {
+    const kunde = await getCustomer(request.params.id);
+    const rechnung = kunde?.legacyInvoices.find((r) => r.number === request.params.number);
+
+    if (!rechnung?.pdfKey) {
+      return fail(response, 404, 'not_found', 'No PDF on file for that invoice.');
+    }
+
+    return ok(response, { url: await getDownloadUrl(rechnung.pdfKey) });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 /* --------------------------------------------------------------------------
    Zahlungen
