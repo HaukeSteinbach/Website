@@ -18,6 +18,19 @@ import {
   listCustomers,
   upsertCustomer
 } from '../lib/customers.js';
+import { SERVICES as CATALOGUE, getService } from '../lib/catalogue.js';
+import { buildDocumentPdf } from '../lib/document-pdf.js';
+import {
+  createDraft,
+  deleteDraft,
+  documentKey,
+  getDocument,
+  issueDocument,
+  listDocuments,
+  noteEvent,
+  setPdfKey,
+  updateDraft
+} from '../lib/documents.js';
 import { kundenAus, rechnungenAus, zuordnen } from '../lib/onlydesk-import.js';
 import {
   issueLoginCode,
@@ -28,6 +41,7 @@ import { fail, ok } from '../lib/http.js';
 import {
   sendDeliveryEmail,
   sendRevisionAcknowledgementEmail,
+  sendDocumentEmail,
   sendShippedEmail,
   sendLoginCodeEmail,
   studioRecipient
@@ -47,7 +61,7 @@ import {
   listOrders,
   updateOrder
 } from '../lib/orders.js';
-import { getDownloadUrl, isStorageConfigured } from '../lib/storage.js';
+import { getDownloadUrl, isStorageConfigured, putObject } from '../lib/storage.js';
 import {
   deliveryUpload,
   describeUploadError,
@@ -613,6 +627,335 @@ router.post('/customers/import', requireAdmin, async (request, response, next) =
     }
 
     return ok(response, { dryRun: false, ...bericht, created, filed });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+
+/* --------------------------------------------------------------------------
+   Kunden anlegen
+   -------------------------------------------------------------------------- */
+
+router.post('/customers', requireAdmin, async (request, response, next) => {
+  try {
+    const name = String(request.body?.name || '').trim();
+
+    if (!name) {
+      return fail(response, 422, 'name_required', 'A customer needs a name.');
+    }
+
+    const { customer, created } = await upsertCustomer({ ...request.body, name, source: 'manual' });
+
+    /* Kein Fehler, wenn es die Person schon gibt: gesucht war ein Kunde mit
+       diesen Angaben, und der liegt vor. Ein zweiter Datensatz waere das
+       Gegenteil von hilfreich. */
+    return ok(response, { customer, created });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/* --------------------------------------------------------------------------
+   Angebote und Rechnungen
+   -------------------------------------------------------------------------- */
+
+router.get('/catalogue', requireAdmin, (_request, response) =>
+  ok(response, { services: CATALOGUE }));
+
+router.get('/documents', requireAdmin, async (request, response, next) => {
+  try {
+    const alle = await listDocuments();
+    const gefiltert = request.query.projectId
+      ? alle.filter((d) => d.projectId === request.query.projectId)
+      : alle;
+
+    return ok(response, {
+      documents: gefiltert.map((d) => ({
+        id: d.id,
+        kind: d.kind,
+        state: d.state,
+        number: d.number,
+        title: d.title,
+        recipientName: d.recipient?.name || '',
+        totalCents: d.totalCents,
+        issuedAt: d.issuedAt,
+        sentAt: d.sentAt,
+        createdAt: d.createdAt,
+        customerId: d.customerId,
+        projectId: d.projectId
+      })),
+      counts: {
+        total: gefiltert.length,
+        drafts: gefiltert.filter((d) => d.state === 'draft').length,
+        open: gefiltert.filter((d) => d.kind === 'invoice' && d.state === 'issued').length
+      }
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/documents/:id', requireAdmin, async (request, response, next) => {
+  try {
+    const document = await getDocument(request.params.id);
+
+    if (!document) {
+      return fail(response, 404, 'not_found', 'No such document.');
+    }
+
+    return ok(response, { document });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * Positionen aus dem Katalog aufbauen.
+ *
+ * Preis und Text kommen aus dem Katalog, nicht aus dem Browser — sonst
+ * bestimmte die Oberflaeche, was eine Leistung kostet. Ueberschreiben ist
+ * erlaubt, aber nur ausdruecklich und Feld fuer Feld.
+ */
+function positionenAus(items) {
+  return (items || []).map((item) => {
+    const service = getService(item.slug);
+
+    return {
+      slug: item.slug || null,
+      name: String(item.name || service?.name || '').trim(),
+      description: item.description !== undefined
+        ? String(item.description).trim()
+        : (service?.description || ''),
+      quantity: Number(item.quantity) || 1,
+      unitCents: item.unitCents !== undefined
+        ? Math.round(Number(item.unitCents))
+        : (service?.unitCents || 0)
+    };
+  }).filter((position) => position.name);
+}
+
+router.post('/documents', requireAdmin, async (request, response, next) => {
+  try {
+    let kunde = request.body?.customerId ? await getCustomer(request.body.customerId) : null;
+
+    if (request.body?.customerId && !kunde) {
+      return fail(response, 404, 'not_found', 'No such customer.');
+    }
+
+    /* Aus einem Projekt heraus geschrieben: der Kunde steht dort schon, also
+       wird er nicht noch einmal getippt. Gibt es ihn im Stamm noch nicht,
+       entsteht er hier — sonst haette man nach dem dritten Auftrag drei
+       Rechnungen und keinen Kunden. */
+    if (!kunde && request.body?.projectId) {
+      const projekt = await getProject(request.body.projectId);
+
+      if (!projekt) {
+        return fail(response, 404, 'not_found', 'No such project.');
+      }
+
+      if (projekt.client?.email) {
+        const { customer } = await upsertCustomer({
+          name: projekt.client.name || projekt.client.email,
+          email: projekt.client.email,
+          address: projekt.client.address || {},
+          source: 'project'
+        });
+
+        kunde = customer;
+      }
+    }
+
+    const { document } = await createDraft({
+      kind: request.body?.kind,
+      customerId: kunde?.id || null,
+      projectId: request.body?.projectId || null,
+      recipient: kunde ? empfaengerAus(kunde) : request.body?.recipient || null,
+      title: request.body?.title,
+      intro: request.body?.intro,
+      validUntil: request.body?.validUntil,
+      items: positionenAus(request.body?.items)
+    });
+
+    return ok(response, { document });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/** Aus einem Kunden die Anschrift machen, die auf dem Beleg steht. */
+function empfaengerAus(kunde) {
+  return {
+    name: kunde.name,
+    line1: kunde.address?.line1 || '',
+    line2: kunde.address?.line2 || '',
+    postalCode: kunde.address?.postalCode || '',
+    city: kunde.address?.city || '',
+    country: kunde.address?.country || '',
+    email: kunde.email || '',
+    vatId: kunde.vatId || ''
+  };
+}
+
+router.patch('/documents/:id', requireAdmin, async (request, response, next) => {
+  try {
+    const { document, reason } = await updateDraft(request.params.id, (draft) => {
+      if (request.body?.title !== undefined) draft.title = String(request.body.title).trim();
+      if (request.body?.intro !== undefined) draft.intro = String(request.body.intro).trim();
+      if (request.body?.validUntil !== undefined) draft.validUntil = request.body.validUntil || null;
+      if (request.body?.customerId !== undefined) draft.customerId = request.body.customerId || null;
+      if (request.body?.items !== undefined) draft.items = positionenAus(request.body.items);
+    });
+
+    if (!document && reason === 'not_found') {
+      return fail(response, 404, 'not_found', 'No such document.');
+    }
+
+    if (!document) {
+      return fail(response, 409, 'not_a_draft',
+        'This one has been issued. An issued document is not edited — cancel it and write a new one.');
+    }
+
+    return ok(response, { document });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.delete('/documents/:id', requireAdmin, async (request, response, next) => {
+  try {
+    const { deleted, reason } = await deleteDraft(request.params.id);
+
+    if (!deleted && reason === 'not_found') {
+      return fail(response, 404, 'not_found', 'No such document.');
+    }
+
+    if (!deleted) {
+      return fail(response, 409, 'not_a_draft',
+        'Issued documents are cancelled, not deleted — they have to stay findable for ten years.');
+    }
+
+    return ok(response, { deleted: true });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * Ausstellen: Nummer vergeben, PDF bauen, ablegen.
+ *
+ * Ab hier ist der Beleg fest. Das PDF entsteht genau einmal und wird
+ * gespeichert, statt bei jedem Abruf neu erzeugt zu werden — was der Kunde in
+ * der Hand haelt, muss auch dann noch abrufbar sein, wenn sich am Programm
+ * etwas geaendert hat.
+ */
+router.post('/documents/:id/issue', requireAdmin, async (request, response, next) => {
+  try {
+    const vorher = await getDocument(request.params.id);
+
+    if (!vorher) {
+      return fail(response, 404, 'not_found', 'No such document.');
+    }
+
+    const kunde = vorher.customerId ? await getCustomer(vorher.customerId) : null;
+    const { document, reason } = await issueDocument(
+      request.params.id,
+      kunde ? empfaengerAus(kunde) : vorher.recipient
+    );
+
+    if (!document && reason === 'no_items') {
+      return fail(response, 422, 'no_items', 'A document without a single line cannot be issued.');
+    }
+
+    if (!document) {
+      return fail(response, 409, 'not_a_draft', 'This one has already been issued.');
+    }
+
+    const pdf = await buildDocumentPdf(document);
+    const key = documentKey(document);
+
+    await putObject(key, Buffer.from(pdf), { contentType: 'application/pdf' });
+    const { document: fertig } = await setPdfKey(document.id, key);
+
+    return ok(response, { document: fertig });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/documents/:id/pdf', requireAdmin, async (request, response, next) => {
+  try {
+    const document = await getDocument(request.params.id);
+
+    if (!document) {
+      return fail(response, 404, 'not_found', 'No such document.');
+    }
+
+    /* Ein Entwurf hat noch kein abgelegtes PDF — den zeigt man als Vorschau,
+       frisch gebaut und ohne Nummer. */
+    if (!document.pdfKey) {
+      const pdf = await buildDocumentPdf(document);
+
+      response.setHeader('Content-Type', 'application/pdf');
+      response.setHeader('Content-Disposition', 'inline; filename="Vorschau.pdf"');
+
+      return response.end(Buffer.from(pdf));
+    }
+
+    return ok(response, { url: await getDownloadUrl(document.pdfKey) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/documents/:id/send', requireAdmin, async (request, response, next) => {
+  try {
+    const document = await getDocument(request.params.id);
+
+    if (!document) {
+      return fail(response, 404, 'not_found', 'No such document.');
+    }
+
+    if (document.state === 'draft') {
+      return fail(response, 409, 'still_a_draft',
+        'Issue it first — a draft has no number, and a document without a number should not leave the house.');
+    }
+
+    if (!document.recipient?.email) {
+      return fail(response, 422, 'no_email', 'This recipient has no email address.');
+    }
+
+    const pdf = await buildDocumentPdf(document);
+    const mail = await sendDocumentEmail({ document, pdf, message: request.body?.message });
+
+    if (!mail.sent) {
+      return fail(response, 502, 'mail_failed', `The mail did not go out: ${mail.reason || 'unknown'}`);
+    }
+
+    const { document: fertig } = await noteEvent(document.id, 'sent', { to: document.recipient.email });
+
+    return ok(response, { document: fertig, sentTo: document.recipient.email });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/documents/:id/state', requireAdmin, async (request, response, next) => {
+  try {
+    const erlaubt = ['cancelled', 'accepted', 'declined'];
+    const what = String(request.body?.state || '');
+
+    if (!erlaubt.includes(what)) {
+      return fail(response, 422, 'bad_state', `Not something a document can become: ${what}`);
+    }
+
+    const { document } = await noteEvent(request.params.id, what);
+
+    if (!document) {
+      return fail(response, 404, 'not_found', 'No such document.');
+    }
+
+    return ok(response, { document });
   } catch (error) {
     return next(error);
   }

@@ -78,6 +78,33 @@ function nextInvoiceNumber(index, now) {
   return `${INVOICE_PREFIX}${day}-${String(next).padStart(4, '0')}`;
 }
 
+/**
+ * Eine Rechnungsnummer ziehen, ohne dass eine Bestellung dahintersteht.
+ *
+ * Von Hand geschriebene Rechnungen brauchen dieselbe Folge wie die aus dem
+ * Shop, sonst gäbe es zwei Zähler unter einer Steuernummer und damit früher
+ * oder später zweimal dieselbe Nummer — was § 14 UStG gerade verbietet. Der
+ * Zähler liegt weiter in diesem einen Objekt, und weil das Ziehen und das
+ * Speichern ein Schreibvorgang sind, kann keine Nummer doppelt vergeben
+ * werden und keine verlorengehen.
+ */
+export async function drawInvoiceNumber() {
+  for (let attempt = 1; attempt <= WRITE_ATTEMPTS; attempt += 1) {
+    const { index, etag } = await readIndex();
+    const number = nextInvoiceNumber(index, new Date());
+
+    try {
+      await writeIndex(index, etag);
+      return number;
+    } catch (error) {
+      /* Jemand anders war schneller; noch einmal lesen und neu ziehen. */
+      if (attempt === WRITE_ATTEMPTS) throw error;
+    }
+  }
+
+  throw new StorageError('Es konnte keine Rechnungsnummer gezogen werden.');
+}
+
 /* ---------------------------------------------------------------------------
    Reading
    --------------------------------------------------------------------------- */

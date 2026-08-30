@@ -280,6 +280,77 @@ async function sendToCustomer({ to, subject, text, html, attachments }) {
  * Deliberately terse. It says what to do and, more importantly, what it means
  * if you did not ask for it: someone has your password.
  */
+/**
+ * Ein Angebot oder eine Rechnung an den Kunden schicken.
+ *
+ * Geschäftspost, kein Newsletter: Anrede, ein Satz worum es geht, die Summe,
+ * das PDF im Anhang. Die Antwort geht an die Studioadresse, damit ein „passt
+ * so" oder eine Rückfrage dort landet, wo sie hingehört, und nicht in einem
+ * Postfach, das niemand liest.
+ */
+export async function sendDocumentEmail({ document, pdf, message }) {
+  const an = document.recipient || {};
+  const istRechnung = document.kind === 'invoice';
+  const vorname = String(an.name || '').trim().split(' ')[0];
+
+  const betreff = istRechnung
+    ? `Rechnung ${document.number}${document.title ? ` — ${document.title}` : ''}`
+    : `Angebot ${document.number}${document.title ? ` — ${document.title}` : ''}`;
+
+  const einleitung = String(message || '').trim() || (istRechnung
+    ? `anbei die Rechnung ${document.number}${document.title ? ` für ${document.title}` : ''}. `
+      + 'Zahlbar innerhalb von 14 Tagen ohne Abzug; die Bankverbindung steht auf der Rechnung.'
+    : `anbei mein Angebot ${document.number}${document.title ? ` für ${document.title}` : ''}. `
+      + 'Rückfragen jederzeit gern — eine Antwort auf diese Mail genügt.');
+
+  const positionen = (document.items || [])
+    .map((p) => `${p.quantity} × ${p.name} — ${euro(p.totalCents)}`);
+
+  const text = [
+    `Hallo${vorname ? ` ${vorname}` : ''},`,
+    '',
+    einleitung,
+    '',
+    ...positionen,
+    `Gesamt — ${euro(document.totalCents)}`,
+    '',
+    'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.',
+    !istRechnung && document.validUntil
+      ? `Das Angebot gilt bis zum ${new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeZone: 'Europe/Berlin' }).format(new Date(document.validUntil))}.`
+      : '',
+    '',
+    'Viele Grüße',
+    'Hauke Steinbach',
+    'haukesteinbach.de'
+  ].filter((line) => line !== '').join('\n');
+
+  return sendToCustomer({
+    to: an.email,
+    subject: betreff,
+    text,
+    html: buildHtml({
+      heading: istRechnung ? 'Rechnung' : 'Angebot',
+      lead: escapeHtml(`${document.number}${document.title ? ` — ${document.title}` : ''}`),
+      lines: [
+        escapeHtml(einleitung),
+        '',
+        ...positionen.map(escapeHtml),
+        `<strong style="color:#D6D6D6">Gesamt &mdash; ${euro(document.totalCents)}</strong>`,
+        '',
+        'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.',
+        `Das ${istRechnung ? 'Rechnungs' : 'Angebots'}-PDF liegt dieser Mail bei.`
+      ]
+    }),
+    attachments: pdf
+      ? [{
+          filename: `${istRechnung ? 'Rechnung' : 'Angebot'}-${document.number}.pdf`,
+          content: Buffer.from(pdf),
+          contentType: 'application/pdf'
+        }]
+      : []
+  });
+}
+
 export async function sendLoginCodeEmail({ code, ip, minutes }) {
   return sendToStudio({
     subject: `Anmeldecode ${code}`,

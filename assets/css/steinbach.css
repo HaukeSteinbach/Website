@@ -2909,7 +2909,9 @@ fieldset.form-group > legend {
    and most of the screen before a single fact about the project appeared. This
    view is worked in, not read into, so the name comes down to a size that
    leaves the content above the fold. */
-#detail-view .page-head h1 {
+#detail-view .page-head h1,
+#customer-view .page-head h1,
+#document-view .page-head h1 {
   font-size: clamp(1.5rem, 3.4vw, 2.6rem);
   line-height: 1.05;
   max-width: 24ch;

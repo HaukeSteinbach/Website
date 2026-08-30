@@ -25,10 +25,10 @@ import { PDFDocument, rgb } from 'pdf-lib';
 
 const FONT_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../assets/invoice-fonts');
 
-const A4 = { w: 595.28, h: 841.89 };
-const M = 62;                                   /* page margin */
+export const A4 = { w: 595.28, h: 841.89 };
+export const M = 62;                            /* page margin */
 
-const C = {
+export const C = {
   ink:    rgb(0.05, 0.04, 0.05),
   dim:    rgb(0.45, 0.42, 0.44),
   faint:  rgb(0.72, 0.70, 0.71),
@@ -51,7 +51,7 @@ export const ISSUER = {
 
 let fontCache = null;
 
-function loadFonts() {
+export function loadFonts() {
   if (!fontCache) {
     fontCache = {
       display: fs.readFileSync(path.join(FONT_DIR, 'archivo-black-400.ttf')),
@@ -64,11 +64,11 @@ function loadFonts() {
   return fontCache;
 }
 
-function euro(cents) {
+export function euro(cents) {
   return `${(cents / 100).toFixed(2).replace('.', ',')} €`;
 }
 
-function germanDate(iso) {
+export function germanDate(iso) {
   return new Intl.DateTimeFormat('de-DE', {
     day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Berlin'
   }).format(new Date(iso));

@@ -15,7 +15,8 @@
     list: document.getElementById('list-view'),
     detail: document.getElementById('detail-view'),
     order: document.getElementById('order-view'),
-    customer: document.getElementById('customer-view')
+    customer: document.getElementById('customer-view'),
+    document: document.getElementById('document-view')
   };
 
   /* Which tab the list is showing. Projects and orders share the page because
@@ -275,6 +276,9 @@
   document.getElementById('tab-projects').addEventListener('click', function () { switchTab('projects'); });
   document.getElementById('tab-orders').addEventListener('click', function () { switchTab('orders'); });
   document.getElementById('tab-customers').addEventListener('click', function () { switchTab('customers'); });
+  document.getElementById('tab-documents').addEventListener('click', function () { switchTab('documents'); });
+  document.getElementById('document-refresh').addEventListener('click', loadDocuments);
+  document.getElementById('document-back').addEventListener('click', function () { switchTab('documents'); });
   document.getElementById('customer-refresh').addEventListener('click', loadCustomers);
   document.getElementById('customer-back').addEventListener('click', function () { switchTab('customers'); });
 
@@ -282,20 +286,23 @@
     tab = which;
     /* the heading is the only thing that says which list this is once you have
        scrolled past the tabs */
-    var titel = { orders: 'Orders', customers: 'Customers', projects: 'Projects' };
+    var titel = { orders: 'Orders', customers: 'Customers', documents: 'Invoices & offers', projects: 'Projects' };
     document.getElementById('list-heading').textContent = titel[which] || 'Projects';
-    ['projects', 'orders', 'customers'].forEach(function (name) {
+    ['projects', 'orders', 'customers', 'documents'].forEach(function (name) {
       var knopf = document.getElementById('tab-' + name);
       knopf.classList.toggle('on', which === name);
       knopf.setAttribute('aria-selected', String(which === name));
     });
     document.getElementById('project-actions').hidden = which !== 'projects';
     document.getElementById('customer-actions').hidden = which !== 'customers';
+    document.getElementById('document-actions').hidden = which !== 'documents';
     document.getElementById('import-card').hidden = true;
+    document.getElementById('new-customer-card').hidden = true;
     newCard.hidden = true;
 
     if (which === 'orders') return loadOrders();
     if (which === 'customers') return loadCustomers();
+    if (which === 'documents') return loadDocuments();
     return loadList();
   }
 
@@ -380,6 +387,8 @@
     document.getElementById('list-empty').hidden = true;
     document.getElementById('orders-wrap').hidden = true;
     document.getElementById('orders-empty').hidden = true;
+    document.getElementById('documents-wrap').hidden = true;
+    document.getElementById('documents-empty').hidden = true;
 
     var customers = data.customers || [];
     document.getElementById('counts').innerHTML =
@@ -477,6 +486,385 @@
       .then(function () { switchTab('customers'); })
       .catch(function (error) {
         setStatus(document.getElementById('customer-detail-status'), error.message, 'error');
+      });
+  });
+
+  /* ----------------------------------------------------------------------
+     Kunden anlegen
+     ---------------------------------------------------------------------- */
+
+  document.getElementById('new-customer').addEventListener('click', function () {
+    var karte = document.getElementById('new-customer-card');
+    karte.hidden = !karte.hidden;
+    if (!karte.hidden) document.getElementById('nc-name').focus();
+  });
+
+  document.getElementById('new-customer-cancel').addEventListener('click', function () {
+    document.getElementById('new-customer-card').hidden = true;
+  });
+
+  document.getElementById('new-customer-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    var status = document.getElementById('new-customer-status');
+    setStatus(status, 'Saving…');
+
+    var wert = function (id) { return document.getElementById(id).value.trim(); };
+
+    api('/customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: wert('nc-name'),
+        email: wert('nc-email'),
+        phone: wert('nc-phone'),
+        vatId: wert('nc-vat'),
+        address: {
+          line1: wert('nc-line1'),
+          postalCode: wert('nc-postal'),
+          city: wert('nc-city'),
+          country: wert('nc-country')
+        }
+      })
+    })
+      .then(function (data) {
+        setStatus(status, data.created ? '' : 'That one was already in the list.');
+        if (data.created) {
+          document.getElementById('new-customer-form').reset();
+          document.getElementById('nc-country').value = 'Deutschland';
+          document.getElementById('new-customer-card').hidden = true;
+        }
+        loadCustomers();
+      })
+      .catch(function (error) { setStatus(status, error.message, 'error'); });
+  });
+
+  /* ----------------------------------------------------------------------
+     Angebote und Rechnungen
+     ---------------------------------------------------------------------- */
+
+  var katalog = [];
+  var offenerBeleg = null;
+
+  var DOC_STATE = {
+    draft: 'Draft', issued: 'Issued', cancelled: 'Cancelled',
+    accepted: 'Accepted', declined: 'Declined'
+  };
+
+  function ladeKatalog() {
+    if (katalog.length) return Promise.resolve(katalog);
+
+    return api('/catalogue').then(function (data) {
+      katalog = data.services || [];
+      return katalog;
+    });
+  }
+
+  function loadDocuments() {
+    setStatus(listStatus, 'Loading…');
+
+    return api('/documents')
+      .then(function (data) {
+        setStatus(listStatus, '');
+        renderDocuments(data);
+        show('list');
+      })
+      .catch(function (error) {
+        if (error.message.indexOf('session') === -1) setStatus(listStatus, error.message, 'error');
+      });
+  }
+
+  function renderDocuments(data) {
+    document.querySelector('.admin-table-wrap').hidden = true;
+    document.getElementById('list-empty').hidden = true;
+    document.getElementById('orders-wrap').hidden = true;
+    document.getElementById('orders-empty').hidden = true;
+    document.getElementById('customers-wrap').hidden = true;
+    document.getElementById('customers-empty').hidden = true;
+
+    var docs = data.documents || [];
+    document.getElementById('counts').innerHTML =
+      '<div><dt>Drafts</dt><dd>' + data.counts.drafts + '</dd></div>' +
+      '<div><dt>Open invoices</dt><dd class="' + (data.counts.open ? 'is-alert' : '') + '">' +
+        data.counts.open + '</dd></div>' +
+      '<div><dt>Total</dt><dd>' + data.counts.total + '</dd></div>';
+
+    document.getElementById('documents-empty').hidden = docs.length > 0;
+    document.getElementById('documents-wrap').hidden = docs.length === 0;
+
+    var body = document.getElementById('documents-body');
+    body.innerHTML = docs.map(function (d) {
+      return '<tr tabindex="0" role="button" data-id="' + escapeHtml(d.id) + '">' +
+        '<td class="mono">' + escapeHtml(d.number || '—') + '<br>' +
+          '<span class="mono" style="font-size:.7rem;color:var(--grey-3)">' +
+          (d.kind === 'invoice' ? 'Invoice' : 'Offer') + '</span></td>' +
+        '<td>' + escapeHtml(d.recipientName || '—') + '</td>' +
+        '<td>' + escapeHtml(d.title || '—') + '</td>' +
+        '<td class="num mono">' + euro(d.totalCents) + '</td>' +
+        '<td><span class="admin-chip">' + escapeHtml(DOC_STATE[d.state] || d.state) + '</span></td>' +
+        '<td class="mono">' + formatDate(d.issuedAt || d.createdAt) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    Array.prototype.forEach.call(body.querySelectorAll('tr'), function (row) {
+      row.addEventListener('click', function () { openDocument(row.dataset.id); });
+      row.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDocument(row.dataset.id); }
+      });
+    });
+  }
+
+  function neuerBeleg(kind, vorgabe) {
+    return ladeKatalog()
+      .then(function () {
+        return api('/documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.assign({ kind: kind, items: [] }, vorgabe || {}))
+        });
+      })
+      .then(function (data) { return openDocument(data.document.id); })
+      .catch(function (error) { setStatus(listStatus, error.message, 'error'); });
+  }
+
+  document.getElementById('new-offer').addEventListener('click', function () { neuerBeleg('offer'); });
+  document.getElementById('new-invoice').addEventListener('click', function () { neuerBeleg('invoice'); });
+
+  function openDocument(id) {
+    return Promise.all([ladeKatalog(), api('/documents/' + id), api('/customers')])
+      .then(function (ergebnisse) {
+        renderDocument(ergebnisse[1].document, ergebnisse[2].customers || []);
+        show('document');
+        window.scrollTo(0, 0);
+      })
+      .catch(function (error) { setStatus(listStatus, error.message, 'error'); });
+  }
+
+  function renderDocument(d, kunden) {
+    offenerBeleg = d;
+    var entwurf = d.state === 'draft';
+    var rechnung = d.kind === 'invoice';
+
+    document.getElementById('document-kicker').textContent =
+      (rechnung ? 'Invoice' : 'Offer') + ' · ' + (DOC_STATE[d.state] || d.state);
+    document.getElementById('document-number').textContent = d.number || 'Draft';
+    document.getElementById('document-recipient').textContent = d.recipient
+      ? [d.recipient.name, d.recipient.email].filter(Boolean).join(' · ')
+      : 'No recipient yet — pick a customer below.';
+
+    document.getElementById('document-editor').hidden = !entwurf;
+    document.getElementById('document-issue').hidden = !entwurf;
+    document.getElementById('document-discard').hidden = !entwurf;
+    document.getElementById('document-send').hidden = entwurf;
+    document.getElementById('document-cancel').hidden = entwurf || d.state === 'cancelled';
+    document.getElementById('doc-valid-hint').hidden = !rechnung;
+    document.getElementById('doc-valid').parentNode.hidden = rechnung;
+
+    if (entwurf) {
+      var auswahl = document.getElementById('doc-customer');
+      auswahl.innerHTML = '<option value="">— none —</option>' + kunden.map(function (k) {
+        return '<option value="' + escapeHtml(k.id) + '"' + (k.id === d.customerId ? ' selected' : '') +
+          '>' + escapeHtml(k.name) + '</option>';
+      }).join('');
+
+      document.getElementById('doc-add-service').innerHTML = katalog.map(function (service) {
+        return '<option value="' + escapeHtml(service.slug) + '">' + escapeHtml(service.name) +
+          ' — ' + euro(service.unitCents) + '</option>';
+      }).join('');
+
+      document.getElementById('doc-title').value = d.title || '';
+      document.getElementById('doc-intro').value = d.intro || '';
+      document.getElementById('doc-valid').value = d.validUntil ? d.validUntil.slice(0, 10) : '';
+
+      zeichnePositionen(d.items || []);
+    } else {
+      /* Ausgestellt: nichts mehr zum Tippen, nur noch zum Nachlesen. */
+      document.getElementById('document-frozen').hidden = false;
+      document.getElementById('document-frozen').innerHTML =
+        '<section class="sec"><h2 class="fat sub-h">' + escapeHtml(d.title || 'Document') + '</h2>' +
+        '<table class="admin-table"><tbody>' +
+        (d.items || []).map(function (p) {
+          return '<tr><td>' + escapeHtml(p.name) + '</td><td class="num mono">' + p.quantity +
+            '</td><td class="num mono">' + euro(p.totalCents) + '</td></tr>';
+        }).join('') +
+        '<tr><td><strong>Total</strong></td><td></td><td class="num mono"><strong>' +
+        euro(d.totalCents) + '</strong></td></tr></tbody></table>' +
+        (d.sentAt ? '<p class="note">Sent ' + formatDate(d.sentAt) + ' to ' +
+          escapeHtml(d.recipient && d.recipient.email || '') + '.</p>' : '<p class="note">Not sent yet.</p>') +
+        '</section>';
+    }
+  }
+
+  var positionen = [];
+
+  function zeichnePositionen(items) {
+    positionen = items.slice();
+    var ziel = document.getElementById('doc-items');
+
+    ziel.innerHTML = positionen.map(function (p, i) {
+      return '<div class="handoff-fieldset handoff-grid-two" data-zeile="' + i + '">' +
+        '<div class="form-group"><label>Line</label>' +
+        '<input type="text" data-feld="name" value="' + escapeHtml(p.name) + '"></div>' +
+        '<div class="form-group"><label>Quantity × unit price (€)</label>' +
+        '<span style="display:flex;gap:.5rem">' +
+        '<input type="number" step="0.5" min="0" data-feld="quantity" value="' + p.quantity + '" style="width:5rem">' +
+        '<input type="number" step="0.01" min="0" data-feld="unit" value="' + (p.unitCents / 100).toFixed(2) + '">' +
+        '<button type="button" class="btn btn-secondary" data-weg="' + i + '">×</button>' +
+        '</span></div>' +
+        '<div class="form-group" style="grid-column:1/-1"><label>Description</label>' +
+        '<textarea rows="2" data-feld="description">' + escapeHtml(p.description || '') + '</textarea></div>' +
+        '</div>';
+    }).join('') || '<p class="admin-empty">No lines yet.</p>';
+
+    Array.prototype.forEach.call(ziel.querySelectorAll('[data-weg]'), function (knopf) {
+      knopf.addEventListener('click', function () {
+        positionen.splice(Number(knopf.dataset.weg), 1);
+        zeichnePositionen(positionen);
+      });
+    });
+
+    Array.prototype.forEach.call(ziel.querySelectorAll('input,textarea'), function (feld) {
+      feld.addEventListener('input', function () { lesePositionen(); zeigeSumme(); });
+    });
+
+    zeigeSumme();
+  }
+
+  function lesePositionen() {
+    var ziel = document.getElementById('doc-items');
+
+    positionen = Array.prototype.map.call(ziel.querySelectorAll('[data-zeile]'), function (zeile, i) {
+      var lies = function (feld) {
+        var el = zeile.querySelector('[data-feld="' + feld + '"]');
+        return el ? el.value : '';
+      };
+
+      return {
+        slug: positionen[i] ? positionen[i].slug : null,
+        name: lies('name'),
+        description: lies('description'),
+        quantity: Number(lies('quantity')) || 0,
+        unitCents: Math.round(Number(lies('unit')) * 100) || 0
+      };
+    });
+
+    return positionen;
+  }
+
+  function zeigeSumme() {
+    var summe = positionen.reduce(function (s, p) { return s + Math.round(p.quantity * p.unitCents); }, 0);
+    document.getElementById('doc-total').textContent = euro(summe);
+  }
+
+  document.getElementById('doc-add').addEventListener('click', function () {
+    var slug = document.getElementById('doc-add-service').value;
+    var service = katalog.filter(function (x) { return x.slug === slug; })[0];
+    if (!service) return;
+
+    lesePositionen();
+    positionen.push({
+      slug: service.slug, name: service.name,
+      description: service.description, quantity: 1, unitCents: service.unitCents
+    });
+    zeichnePositionen(positionen);
+  });
+
+  document.getElementById('document-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    speichereBeleg().then(function () {
+      setStatus(document.getElementById('document-status'), 'Saved.');
+    });
+  });
+
+  function speichereBeleg() {
+    var status = document.getElementById('document-status');
+    setStatus(status, 'Saving…');
+    lesePositionen();
+
+    var gueltig = document.getElementById('doc-valid').value;
+    var kundenId = document.getElementById('doc-customer').value;
+
+    return api('/documents/' + offenerBeleg.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: document.getElementById('doc-title').value,
+        intro: document.getElementById('doc-intro').value,
+        validUntil: gueltig ? new Date(gueltig).toISOString() : null,
+        customerId: kundenId || null,
+        items: positionen
+      })
+    }).then(function (data) {
+      offenerBeleg = data.document;
+      return data.document;
+    }).catch(function (error) {
+      setStatus(status, error.message, 'error');
+      throw error;
+    });
+  }
+
+  document.getElementById('document-preview').addEventListener('click', function () {
+    var status = document.getElementById('document-status');
+
+    var weiter = offenerBeleg.state === 'draft' ? speichereBeleg() : Promise.resolve();
+
+    weiter.then(function () {
+      return fetch(API + '/documents/' + offenerBeleg.id + '/pdf', { credentials: 'same-origin' });
+    }).then(function (antwort) {
+      var typ = antwort.headers.get('content-type') || '';
+
+      if (typ.indexOf('application/pdf') !== -1) {
+        return antwort.blob().then(function (blob) { window.open(URL.createObjectURL(blob), '_blank'); });
+      }
+
+      return antwort.json().then(function (data) { window.open(data.url, '_blank'); });
+    }).catch(function (error) { setStatus(status, error.message, 'error'); });
+  });
+
+  document.getElementById('document-issue').addEventListener('click', function () {
+    var status = document.getElementById('document-status');
+
+    if (!window.confirm('Issue this? It gets a number and cannot be changed afterwards.')) return;
+
+    speichereBeleg()
+      .then(function () {
+        return api('/documents/' + offenerBeleg.id + '/issue', { method: 'POST' });
+      })
+      .then(function (data) { return openDocument(data.document.id); })
+      .catch(function (error) { setStatus(status, error.message, 'error'); });
+  });
+
+  document.getElementById('document-send').addEventListener('click', function () {
+    var status = document.getElementById('document-status');
+    var an = offenerBeleg.recipient && offenerBeleg.recipient.email;
+
+    if (!an) { setStatus(status, 'This recipient has no email address.', 'error'); return; }
+    if (!window.confirm('Send to ' + an + '?')) return;
+
+    setStatus(status, 'Sending…');
+
+    api('/documents/' + offenerBeleg.id + '/send', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
+    })
+      .then(function (data) { setStatus(status, 'Sent to ' + data.sentTo + '.'); return openDocument(offenerBeleg.id); })
+      .catch(function (error) { setStatus(status, error.message, 'error'); });
+  });
+
+  document.getElementById('document-cancel').addEventListener('click', function () {
+    if (!window.confirm('Cancel this document? It stays on file, marked cancelled.')) return;
+
+    api('/documents/' + offenerBeleg.id + '/state', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: 'cancelled' })
+    }).then(function () { return openDocument(offenerBeleg.id); });
+  });
+
+  document.getElementById('document-discard').addEventListener('click', function () {
+    if (!window.confirm('Throw this draft away?')) return;
+
+    api('/documents/' + offenerBeleg.id, { method: 'DELETE' })
+      .then(function () { switchTab('documents'); })
+      .catch(function (error) {
+        setStatus(document.getElementById('document-status'), error.message, 'error');
       });
   });
 
