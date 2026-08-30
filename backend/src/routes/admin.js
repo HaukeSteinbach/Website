@@ -477,14 +477,32 @@ router.post('/projects/:id/revisions/:revisionId/acknowledge', requireAdmin, asy
 async function withLinks(customer) {
   const email = String(customer.email || '').toLowerCase();
 
+  /* Belege haengen ausdruecklich an der Kundennummer, nicht an der Adresse:
+     wer keine Mailadresse hat, bekommt trotzdem Rechnungen. */
+  const belege = (await listDocuments())
+    .filter((d) => d.customerId === customer.id)
+    .map((d) => ({
+      id: d.id,
+      kind: d.kind,
+      state: d.state,
+      number: d.number,
+      title: d.title,
+      totalCents: d.totalCents,
+      issuedAt: d.issuedAt,
+      sentAt: d.sentAt,
+      paidAt: d.paidAt || null,
+      createdAt: d.createdAt
+    }));
+
   if (!email) {
-    return { ...customer, projects: [], orders: [] };
+    return { ...customer, documents: belege, projects: [], orders: [] };
   }
 
   const [projects, orders] = await Promise.all([listProjects(), listOrders()]);
 
   return {
     ...customer,
+    documents: belege,
     projects: projects
       .filter((p) => String(p.client?.email || '').toLowerCase() === email)
       .map((p) => ({ id: p.id, title: p.title, status: p.status, createdAt: p.createdAt })),
@@ -502,9 +520,20 @@ async function withLinks(customer) {
 
 router.get('/customers', requireAdmin, async (_request, response, next) => {
   try {
-    const [customers, projects, orders] = await Promise.all([
-      listCustomers(), listProjects(), listOrders()
+    const [customers, projects, orders, belege] = await Promise.all([
+      listCustomers(), listProjects(), listOrders(), listDocuments()
     ]);
+
+    const belegZahl = new Map();
+    const offeneZahl = new Map();
+
+    for (const d of belege) {
+      if (!d.customerId) continue;
+      belegZahl.set(d.customerId, (belegZahl.get(d.customerId) || 0) + 1);
+      if (d.kind === 'invoice' && d.state === 'issued') {
+        offeneZahl.set(d.customerId, (offeneZahl.get(d.customerId) || 0) + 1);
+      }
+    }
 
     /* Zaehlen statt je Kunde nachzuschlagen: bei zwanzig Kunden ist das egal,
        bei zweihundert waere das Nachschlagen zweihundert Durchlaeufe. */
@@ -534,6 +563,8 @@ router.get('/customers', requireAdmin, async (_request, response, next) => {
           counts: {
             projects: projektZahl.get(key) || 0,
             orders: bestellZahl.get(key) || 0,
+            documents: belegZahl.get(c.id) || 0,
+            unpaid: offeneZahl.get(c.id) || 0,
             legacyInvoices: c.legacyInvoices.length
           }
         };

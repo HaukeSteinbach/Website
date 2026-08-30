@@ -407,7 +407,9 @@
         '<td class="mono" style="font-size:.75rem">' + escapeHtml(c.email || '—') + '</td>' +
         '<td class="num mono">' + c.counts.projects + '</td>' +
         '<td class="num mono">' + c.counts.orders + '</td>' +
-        '<td class="num mono">' + c.counts.legacyInvoices + '</td>' +
+        '<td class="num mono' + (c.counts.unpaid ? ' is-alert' : '') + '">' +
+          (c.counts.documents + c.counts.legacyInvoices) +
+          (c.counts.unpaid ? ' (' + c.counts.unpaid + ' offen)' : '') + '</td>' +
         '</tr>';
     }).join('');
 
@@ -470,13 +472,54 @@
         }).join('') + '</ul>'
       : '<p class="admin-empty">None.</p>';
 
+    var belege = (c.documents || []).length
+      ? '<table class="admin-table"><thead><tr><th>Number</th><th>Subject</th>' +
+        '<th class="num">Amount</th><th>State</th></tr></thead><tbody>' +
+        c.documents.map(function (d) {
+          return '<tr tabindex="0" role="button" data-beleg="' + escapeHtml(d.id) + '">' +
+            '<td class="mono">' + escapeHtml(d.number || 'Draft') + '<br>' +
+            '<span class="mono" style="font-size:.7rem;color:var(--grey-3)">' +
+            (d.kind === 'invoice' ? 'Invoice' : 'Offer') + '</span></td>' +
+            '<td>' + escapeHtml(d.title || '—') + '</td>' +
+            '<td class="num mono">' + euro(d.totalCents) + '</td>' +
+            '<td>' + escapeHtml(DOC_STATE[d.state] || d.state) + '</td></tr>';
+        }).join('') + '</tbody></table>'
+      : '<p class="admin-empty">None yet.</p>';
+
     document.getElementById('customer-detail-body').innerHTML =
       block('Address', '<p class="copy">' + (anschrift || '—') + '</p>' +
         (c.vatId ? '<p class="mono">VAT ' + escapeHtml(c.vatId) + '</p>' : '') +
         (c.note ? '<p class="copy">' + escapeHtml(c.note) + '</p>' : '')) +
+      block('Offers and invoices', belege +
+        '<div class="btn-row">' +
+        '<button type="button" class="btn" id="customer-new-offer">New offer</button>' +
+        '<button type="button" class="btn" id="customer-new-invoice">New invoice</button>' +
+        '</div>') +
       block('Invoices from Onlydesk', rechnungen) +
       block('Projects', projekte) +
       block('Shop orders', bestellungen);
+
+    Array.prototype.forEach.call(
+      document.querySelectorAll('[data-beleg]'),
+      function (zeile) {
+        zeile.addEventListener('click', function () { openDocument(zeile.dataset.beleg); });
+        zeile.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openDocument(zeile.dataset.beleg);
+          }
+        });
+      }
+    );
+
+    /* Von hier aus geschrieben, steht der Kunde schon fest — das ist der
+       kürzere Weg als über den Belegreiter und dort die Auswahl. */
+    document.getElementById('customer-new-offer').addEventListener('click', function () {
+      neuerBeleg('offer', { customerId: c.id });
+    });
+    document.getElementById('customer-new-invoice').addEventListener('click', function () {
+      neuerBeleg('invoice', { customerId: c.id });
+    });
   }
 
   document.getElementById('customer-delete').addEventListener('click', function () {
@@ -1245,12 +1288,63 @@
     document.getElementById('detail-body').innerHTML = [
       openRevisions.length ? revisionAlert(openRevisions) : '',
       deliverCard(p),
+      belegKarte(p),
       sourceCard(p),
       historyCard(p),
       closeCard(p)
     ].join('');
 
     wireDetail(p);
+    ladeProjektbelege(p);
+  }
+
+  /* Was zu diesem Projekt abgerechnet wurde. Der Kunde steht hier schon fest,
+     also ist das der kürzeste Weg zu einer Rechnung — kein zweites Mal Namen
+     und Adresse suchen. */
+  function belegKarte(p) {
+    return '<section class="handoff-card">' +
+      '<h2>Offers and invoices</h2>' +
+      '<div id="projekt-belege"><p class="admin-empty">Loading…</p></div>' +
+      '<div class="btn-row">' +
+      '<button type="button" class="btn" id="projekt-angebot">New offer</button>' +
+      '<button type="button" class="btn" id="projekt-rechnung">New invoice</button>' +
+      '</div></section>';
+  }
+
+  function ladeProjektbelege(p) {
+    api('/documents?projectId=' + encodeURIComponent(p.id))
+      .then(function (data) {
+        var docs = data.documents || [];
+        document.getElementById('projekt-belege').innerHTML = docs.length
+          ? '<ul class="checklist">' + docs.map(function (d) {
+              return '<li><a href="#" data-projektbeleg="' + escapeHtml(d.id) + '">' +
+                '<span class="mono">' + escapeHtml(d.number || 'Draft') + '</span></a> — ' +
+                escapeHtml(d.title || (d.kind === 'invoice' ? 'Invoice' : 'Offer')) + ' — ' +
+                euro(d.totalCents) + ' — ' + escapeHtml(DOC_STATE[d.state] || d.state) + '</li>';
+            }).join('') + '</ul>'
+          : '<p class="admin-empty">Nothing billed for this project yet.</p>';
+
+        Array.prototype.forEach.call(
+          document.querySelectorAll('[data-projektbeleg]'),
+          function (link) {
+            link.addEventListener('click', function (event) {
+              event.preventDefault();
+              openDocument(link.dataset.projektbeleg);
+            });
+          }
+        );
+      })
+      .catch(function () {
+        document.getElementById('projekt-belege').innerHTML =
+          '<p class="admin-empty">Could not load them.</p>';
+      });
+
+    document.getElementById('projekt-angebot').addEventListener('click', function () {
+      neuerBeleg('offer', { projectId: p.id, title: p.title || '' });
+    });
+    document.getElementById('projekt-rechnung').addEventListener('click', function () {
+      neuerBeleg('invoice', { projectId: p.id, title: p.title || '' });
+    });
   }
 
   function revisionAlert(revisions) {
