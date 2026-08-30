@@ -24,17 +24,25 @@
   Deshalb trägt der Name die Akzentfarbe und die übrigen Zeilen ein mittleres
   Grau, das nach beiden Seiten genug Abstand hat.
 
-  Das Foto liegt auf der eigenen Domain, in Farbe und auf 320 px verkleinert,
-  damit es bei 76 px Anzeige auch auf Retina-Bildschirmen scharf bleibt. Die
-  Website zeigt Fotos schwarzweiß, aber das macht sie mit einem CSS-Filter,
-  und der wirkt in Mailprogrammen nicht — hier müsste die Behandlung ins Bild
-  eingebrannt werden, und in Farbe wirkt der Kopf in einer Signatur ohnehin
-  offener.
+  Das Foto wird von der eigenen Domain geladen und nicht in die Mail
+  eingebettet. Eingebettet wäre bequemer — es wäre sofort da, ohne dass etwas
+  ausgerollt sein muss —, aber Gmail zeigt Bilder aus data:-URIs grundsätzlich
+  nicht an, und der Empfänger sieht dann einen leeren Rahmen. Eine echte
+  Adresse zeigen alle.
+
+  Es zeigt bewusst auf hauke-portrait-square.jpg, weil das bereits ausgeliefert
+  wird. Unter assets/images/signature-hauke.jpg liegt dieselbe Aufnahme auf
+  320 px verkleinert, 23 statt 129 kB; sobald der Server den neuen Stand hat,
+  kann die Zeile darauf zeigen. Vorher wäre die Signatur bilderlos, und das
+  ist der schlechtere Zustand.
+
+  Die Website zeigt Fotos schwarzweiß, aber das macht sie mit einem
+  CSS-Filter, und der wirkt in Mailprogrammen nicht.
 -->
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
   <tr>
     <td style="padding:0 18px 0 0;vertical-align:top;">
-      <img src="https://haukesteinbach.de/assets/images/signature-hauke.jpg"
+      <img src="https://haukesteinbach.de/assets/images/hauke-portrait-square.jpg"
            alt="Hauke Steinbach"
            width="76" height="76"
            style="display:block;width:76px;height:76px;border:0;outline:none;text-decoration:none;">
@@ -49,7 +57,7 @@
       <div style="width:34px;height:3px;background:#E94560;font-size:0;line-height:0;margin:7px 0 8px;">&nbsp;</div>
 
       <div style="font-size:12px;line-height:1.5;color:#767676;padding-bottom:9px;">
-        Production &middot; Mixing &middot; Mastering &mdash; Hamburg
+        Production &middot; Mixing &middot; Mastering
       </div>
 
       <div style="font-family:'JetBrains Mono',Menlo,Consolas,'Courier New',monospace;font-size:11px;line-height:1.75;color:#767676;">
