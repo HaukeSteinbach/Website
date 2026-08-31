@@ -191,7 +191,7 @@ async function recordPaidSession(session) {
   const shippingCents = session.total_details?.amount_shipping || 0;
   const totalCents = session.amount_total || 0;
 
-  const { order, created } = await createOrder({
+  const { order } = await createOrder({
     stripeSessionId: session.id,
     stripePaymentIntent: typeof session.payment_intent === 'string' ? session.payment_intent : null,
     product: {
@@ -209,31 +209,79 @@ async function recordPaidSession(session) {
     buyer: buyerFromSession(session)
   });
 
-  if (!created) {
-    return order;                       /* Stripe retried; nothing left to do */
+  /* Ab hier wird jeder Schritt einzeln nachgeholt, statt bei einem zweiten
+     Durchlauf pauschal abzubrechen.
+
+     Vorher stand hier ein `if (!created) return order`. Das war falsch, und
+     zwar auf die stille Art: schlug der Rechnungsdruck oder die Ablage beim
+     ersten Mal fehl, antwortete der Webhook mit 500, Stripe versuchte es
+     erneut -- und beim zweiten Durchlauf war die Bestellung bereits angelegt,
+     also wurde alles Weitere uebersprungen. Ergebnis: bezahlte Bestellung, aber
+     nie eine Rechnung und nie eine Benachrichtigung. Aufgefallen waere das
+     erst, wenn jemand nach seiner Ware fragt. */
+
+  let aktuell = order;
+  let pdf = null;
+
+  /* 1. Rechnung, falls sie noch fehlt. */
+  if (!aktuell.invoiceKey) {
+    try {
+      pdf = await buildInvoicePdf(aktuell);
+      const key = invoiceKey(aktuell);
+
+      await putObject(key, Buffer.from(pdf), { contentType: 'application/pdf' });
+
+      const { order: mitRechnung } = await updateOrder(aktuell.id, (draft) => {
+        draft.invoiceKey = key;
+        addOrderEvent(draft, 'invoice_created', { number: draft.invoiceNumber });
+      });
+
+      aktuell = mitRechnung;
+    } catch (error) {
+      /* Nicht weiterwerfen: dass etwas verkauft wurde, ist die wichtigere
+         Nachricht als dass das PDF klemmt. Die Meldung geht unten trotzdem
+         raus, und der Fehler steht in der Bestellung. */
+      console.error('[shop] invoice failed:', error?.stack || error);
+
+      const { order: mitFehler } = await updateOrder(aktuell.id, (draft) => {
+        addOrderEvent(draft, 'invoice_failed', { reason: String(error?.message || error) });
+      });
+
+      aktuell = mitFehler;
+    }
   }
 
-  /* Invoice first, mail second: a customer should never get a mail promising
-     an attachment that failed to build. */
-  const pdf = await buildInvoicePdf(order);
-  const key = invoiceKey(order);
-  await putObject(key, Buffer.from(pdf), { contentType: 'application/pdf' });
+  /* 2. Bestaetigung an den Kaeufer, falls sie noch nicht raus ist. */
+  if (!aktuell.mailSentAt) {
+    const toBuyer = await sendOrderConfirmationEmail({ order: aktuell, invoicePdf: pdf });
 
-  const { order: withInvoice } = await updateOrder(order.id, (draft) => {
-    draft.invoiceKey = key;
-    addOrderEvent(draft, 'invoice_created', { number: draft.invoiceNumber });
-  });
+    const { order: nachMail } = await updateOrder(aktuell.id, (draft) => {
+      draft.mailSentAt = toBuyer.sent ? new Date().toISOString() : null;
+      addOrderEvent(draft, toBuyer.sent ? 'confirmation_sent' : 'confirmation_failed',
+        toBuyer.sent ? null : { reason: toBuyer.reason });
+    });
 
-  const toBuyer = await sendOrderConfirmationEmail({ order: withInvoice, invoicePdf: pdf });
-  await sendOrderNoticeEmail({ order: withInvoice });
+    aktuell = nachMail;
+  }
 
-  await updateOrder(order.id, (draft) => {
-    draft.mailSentAt = toBuyer.sent ? new Date().toISOString() : null;
-    addOrderEvent(draft, toBuyer.sent ? 'confirmation_sent' : 'confirmation_failed',
-      toBuyer.sent ? null : { reason: toBuyer.reason });
-  });
+  /* 3. Die Meldung ans Studio. Zuletzt, damit sie auch dann noch abgesetzt
+     wird, wenn davor etwas schiefging -- und nur einmal je Bestellung. */
+  if (!aktuell.noticeSentAt) {
+    const toStudio = await sendOrderNoticeEmail({ order: aktuell });
 
-  return withInvoice;
+    if (toStudio?.sent) {
+      const { order: gemeldet } = await updateOrder(aktuell.id, (draft) => {
+        draft.noticeSentAt = new Date().toISOString();
+        addOrderEvent(draft, 'notice_sent');
+      });
+
+      aktuell = gemeldet;
+    } else {
+      console.error('[shop] order notice not sent:', toStudio?.reason);
+    }
+  }
+
+  return aktuell;
 }
 
 /* --------------------------------------------------------------------------

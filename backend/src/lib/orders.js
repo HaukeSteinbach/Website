@@ -163,6 +163,7 @@ export async function createOrder(input) {
       trackingNote: null,
       invoiceKey: null,
       mailSentAt: null,
+      noticeSentAt: null,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
       events: [{ type: 'paid', at: now.toISOString() }]
