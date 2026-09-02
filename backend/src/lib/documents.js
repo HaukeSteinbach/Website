@@ -370,6 +370,22 @@ export async function deleteDraft(id) {
   });
 }
 
+/**
+ * Wie die Datei heißt, wenn sie auf dem Rechner landet.
+ *
+ * R- für Rechnungen, A- für Angebote, dann die Nummer. Damit sortieren sich
+ * die Belege in einem Ordner nach Art und darin chronologisch, weil die
+ * Nummer mit dem Datum beginnt. Ohne diesen Namen hießen sie schlicht
+ * "download": der Ablageschlüssel im Speicher ist nicht der Dateiname, den
+ * der Browser bekommt — der muss dem Downloadlink ausdrücklich mitgegeben
+ * werden.
+ */
+export function documentFileName(document) {
+  const kuerzel = document.kind === 'invoice' ? 'R' : 'A';
+
+  return `${kuerzel}-${document.number || 'Entwurf'}.pdf`;
+}
+
 export function documentKey(document) {
   return `documents/${document.id}/${document.kind === 'invoice' ? 'Rechnung' : 'Angebot'}-${document.number}.pdf`;
 }

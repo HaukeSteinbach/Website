@@ -146,7 +146,7 @@ export async function sendOrderConfirmationEmail({ order, invoicePdf }) {
     }),
     attachments: invoicePdf
       ? [{
-          filename: `Rechnung-${order.invoiceNumber}.pdf`,
+          filename: `R-${order.invoiceNumber}.pdf`,
           content: Buffer.from(invoicePdf),
           contentType: 'application/pdf'
         }]
@@ -343,7 +343,9 @@ export async function sendDocumentEmail({ document, pdf, message }) {
     }),
     attachments: pdf
       ? [{
-          filename: `${istRechnung ? 'Rechnung' : 'Angebot'}-${document.number}.pdf`,
+          /* Derselbe Name wie beim Download, damit ein Beleg im Postfach und
+             im Ordner gleich heisst. */
+          filename: `${istRechnung ? 'R' : 'A'}-${document.number}.pdf`,
           content: Buffer.from(pdf),
           contentType: 'application/pdf'
         }]

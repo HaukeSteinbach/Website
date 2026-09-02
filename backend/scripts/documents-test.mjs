@@ -159,6 +159,25 @@ try {
   const leerAus = await ruf(`/documents/${leer.document.id}/issue`, { method: 'POST' });
   check('ohne Position wird nichts ausgestellt', () => assert.equal(leerAus.status, 422));
 
+  /* ---- 4b. Dateinamen ----------------------------------------------------- */
+
+  const { documentFileName } = await import('../src/lib/documents.js');
+
+  check('eine Rechnung heisst R- plus Nummer', () =>
+    assert.equal(documentFileName(rechnung.document), `R-${rechnung.document.number}.pdf`));
+  check('ein Angebot heisst A- plus Nummer', () =>
+    assert.equal(documentFileName(ausgestellt.document), `A-${ausgestellt.document.number}.pdf`));
+  check('ein Entwurf hat keine Nummer und heisst danach', () =>
+    assert.equal(documentFileName({ kind: 'invoice', number: null }), 'R-Entwurf.pdf'));
+
+  /* Der Ablageschluessel im Speicher ist nicht der Dateiname beim Download --
+     ohne ausdruecklichen Namen hiess die Datei "download". */
+  const link = await (await ruf(`/documents/${rechnung.document.id}/pdf`)).json();
+  check('der Downloadlink traegt den Namen mit', () =>
+    assert.equal(link.name, `R-${rechnung.document.number}.pdf`));
+  check('und zwar auch in der Adresse selbst', () =>
+    assert.match(decodeURIComponent(link.url), new RegExp(`filename="R-${rechnung.document.number}\\.pdf"`)));
+
   /* ---- 5. Versand --------------------------------------------------------- */
 
   const vorherigeMails = postfach.messages.length;
@@ -179,8 +198,8 @@ try {
   const mail = postfach.text();
   check('mit der Nummer im Betreff', () => assert.ok(mail.includes(rechnung.document.number)));
   check('und dem PDF im Anhang', () => assert.match(mail, /application\/pdf/i));
-  check('als Anhang mit sprechendem Namen', () =>
-    assert.ok(mail.includes(`Rechnung-${rechnung.document.number}.pdf`)));
+  check('als Anhang mit demselben Namen wie beim Download', () =>
+    assert.ok(mail.includes(`R-${rechnung.document.number}.pdf`)));
 
   /* ---- 6. Listen und Zustände --------------------------------------------- */
 

@@ -37,6 +37,7 @@ import { buildDocumentPdf } from '../lib/document-pdf.js';
 import {
   createDraft,
   deleteDraft,
+  documentFileName,
   documentKey,
   getDocument,
   issueDocument,
@@ -946,12 +947,17 @@ router.get('/documents/:id/pdf', requireAdmin, async (request, response, next) =
       const pdf = await buildDocumentPdf(document);
 
       response.setHeader('Content-Type', 'application/pdf');
-      response.setHeader('Content-Disposition', 'inline; filename="Vorschau.pdf"');
+      /* Ein Entwurf hat noch keine Nummer, also auch keinen sprechenden
+         Namen -- er soll ja gerade noch nicht abgelegt werden. */
+      response.setHeader('Content-Disposition', 'inline; filename="Entwurf.pdf"');
 
       return response.end(Buffer.from(pdf));
     }
 
-    return ok(response, { url: await getDownloadUrl(document.pdfKey) });
+    return ok(response, {
+      url: await getDownloadUrl(document.pdfKey, documentFileName(document)),
+      name: documentFileName(document)
+    });
   } catch (error) {
     return next(error);
   }
@@ -1108,7 +1114,10 @@ router.get('/customers/:id/legacy/:number/pdf', requireAdmin, async (request, re
       return fail(response, 404, 'not_found', 'No PDF on file for that invoice.');
     }
 
-    return ok(response, { url: await getDownloadUrl(rechnung.pdfKey) });
+    return ok(response, {
+      url: await getDownloadUrl(rechnung.pdfKey, `R-${rechnung.number}.pdf`),
+      name: `R-${rechnung.number}.pdf`
+    });
   } catch (error) {
     return next(error);
   }
@@ -1533,7 +1542,7 @@ router.get('/orders/:id/invoice', requireAdmin, async (request, response, next) 
     }
 
     return ok(response, {
-      url: await getDownloadUrl(order.invoiceKey, `Rechnung-${order.invoiceNumber}.pdf`)
+      url: await getDownloadUrl(order.invoiceKey, `R-${order.invoiceNumber}.pdf`)
     });
   } catch (error) {
     return next(error);
