@@ -163,20 +163,32 @@ try {
 
   const { documentFileName } = await import('../src/lib/documents.js');
 
-  check('eine Rechnung heisst R- plus Nummer', () =>
-    assert.equal(documentFileName(rechnung.document), `R-${rechnung.document.number}.pdf`));
-  check('ein Angebot heisst A- plus Nummer', () =>
-    assert.equal(documentFileName(ausgestellt.document), `A-${ausgestellt.document.number}.pdf`));
-  check('ein Entwurf hat keine Nummer und heisst danach', () =>
-    assert.equal(documentFileName({ kind: 'invoice', number: null }), 'R-Entwurf.pdf'));
+  check('eine Rechnung heisst wie ihre Nummer', () =>
+    assert.equal(documentFileName(rechnung.document), `${rechnung.document.number}.pdf`));
+  check('ein Angebot ebenso', () =>
+    assert.equal(documentFileName(ausgestellt.document), `${ausgestellt.document.number}.pdf`));
+
+  /* Das Kuerzel steht schon in der Nummer; ein A- oder R- davor saegte
+     dasselbe zweimal. */
+  check('kein doppeltes Kuerzel', () => {
+    assert.ok(!documentFileName(ausgestellt.document).startsWith('A-AN-'));
+    assert.ok(!documentFileName(rechnung.document).startsWith('R-HS-'));
+  });
+
+  /* Die alten Onlydesk-Nummern beginnen mit dem Datum und verraten fuer sich
+     genommen nicht, was sie sind -- die bekommen ihr R-. */
+  check('eine alte Rechnung bekommt ein R- davor', () =>
+    assert.equal(documentFileName({ kind: 'invoice', number: '2026-05-18-0001' }), 'R-2026-05-18-0001.pdf'));
+  check('ein Entwurf heisst Entwurf', () =>
+    assert.equal(documentFileName({ kind: 'invoice', number: null }), 'Entwurf.pdf'));
 
   /* Der Ablageschluessel im Speicher ist nicht der Dateiname beim Download --
      ohne ausdruecklichen Namen hiess die Datei "download". */
   const link = await (await ruf(`/documents/${rechnung.document.id}/pdf`)).json();
   check('der Downloadlink traegt den Namen mit', () =>
-    assert.equal(link.name, `R-${rechnung.document.number}.pdf`));
+    assert.equal(link.name, `${rechnung.document.number}.pdf`));
   check('und zwar auch in der Adresse selbst', () =>
-    assert.match(decodeURIComponent(link.url), new RegExp(`filename="R-${rechnung.document.number}\\.pdf"`)));
+    assert.match(decodeURIComponent(link.url), new RegExp(`filename="${rechnung.document.number}\\.pdf"`)));
 
   /* ---- 5. Versand --------------------------------------------------------- */
 
@@ -199,7 +211,7 @@ try {
   check('mit der Nummer im Betreff', () => assert.ok(mail.includes(rechnung.document.number)));
   check('und dem PDF im Anhang', () => assert.match(mail, /application\/pdf/i));
   check('als Anhang mit demselben Namen wie beim Download', () =>
-    assert.ok(mail.includes(`R-${rechnung.document.number}.pdf`)));
+    assert.ok(mail.includes(`${rechnung.document.number}.pdf`)));
 
   /* ---- 6. Listen und Zustände --------------------------------------------- */
 

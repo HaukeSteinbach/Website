@@ -1542,7 +1542,7 @@ router.get('/orders/:id/invoice', requireAdmin, async (request, response, next) 
     }
 
     return ok(response, {
-      url: await getDownloadUrl(order.invoiceKey, `R-${order.invoiceNumber}.pdf`)
+      url: await getDownloadUrl(order.invoiceKey, `${order.invoiceNumber}.pdf`)
     });
   } catch (error) {
     return next(error);

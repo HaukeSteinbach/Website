@@ -373,17 +373,27 @@ export async function deleteDraft(id) {
 /**
  * Wie die Datei heißt, wenn sie auf dem Rechner landet.
  *
- * R- für Rechnungen, A- für Angebote, dann die Nummer. Damit sortieren sich
- * die Belege in einem Ordner nach Art und darin chronologisch, weil die
- * Nummer mit dem Datum beginnt. Ohne diesen Namen hießen sie schlicht
- * "download": der Ablageschlüssel im Speicher ist nicht der Dateiname, den
- * der Browser bekommt — der muss dem Downloadlink ausdrücklich mitgegeben
- * werden.
+ * Die Nummer, sonst nichts — AN-2026-08-30-0001.pdf, HS-2026-08-30-0001.pdf.
+ * Sie trägt ihr Kürzel bereits: AN für Angebote, HS für Rechnungen aus diesem
+ * Haus. Ein zusätzliches A- oder R- davor sagt dasselbe zweimal und macht den
+ * Namen nur länger.
+ *
+ * Ein R- bekommen nur die alten Onlydesk-Rechnungen, deren Nummern mit dem
+ * Datum beginnen und für sich genommen nicht verraten, was sie sind.
+ *
+ * Ohne diesen Namen hießen die Dateien schlicht "download": der
+ * Ablageschlüssel im Speicher ist nicht der Dateiname, den der Browser
+ * bekommt — der muss dem Downloadlink ausdrücklich mitgegeben werden.
  */
 export function documentFileName(document) {
-  const kuerzel = document.kind === 'invoice' ? 'R' : 'A';
+  if (!document.number) {
+    return 'Entwurf.pdf';
+  }
 
-  return `${kuerzel}-${document.number || 'Entwurf'}.pdf`;
+  /* Trägt die Nummer schon ein Kürzel, bleibt sie, wie sie ist. */
+  return /^[A-Z]{1,3}-/.test(document.number)
+    ? `${document.number}.pdf`
+    : `${document.kind === 'invoice' ? 'R-' : 'A-'}${document.number}.pdf`;
 }
 
 export function documentKey(document) {
