@@ -283,13 +283,25 @@
   align-items:center;justify-content:space-between;gap:18px;padding:14px 32px;
   background:rgba(0,0,0,.94);border-top:1px solid var(--hair);
   padding-right:calc(32px + var(--rail));
+  /* Links Platz fuer den Cookie-Knopf, der unten in der Ecke klebt und mit
+     z-index 90 ueber dieser Leiste liegt: gemessen 142 px breit, und die Zeile
+     lief mitten hindurch. In rem statt in Pixeln, weil die Beschriftung in
+     anderen Sprachen laenger wird -- "Cookie-Einstellungen" braucht mehr als
+     "Cookie settings" -- und weil sie dann mit der Schriftgroesse mitwaechst.
+     11 rem sind rund 176 px, also die gemessene Breite plus Luft. */
+  padding-left:calc(32px + 11rem);
   transform:translateY(110%);transition:transform 260ms var(--ease-out)}
 .chain .sticky.show{transform:none}
 .chain .sticky .what{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;
   text-transform:uppercase;color:var(--grey-2)}
 .chain .sticky .what b{color:var(--grey);font-weight:400}
 .chain .sticky .btn{padding:12px 22px}
-@media(max-width:700px){.chain .sticky .what{display:none}}
+/* Unter 700 px faellt die Zeile weg. Den reservierten Platz zurueckzunehmen
+   waere aber falsch: mit space-between und nur noch einem Kind ruecken die
+   Knoepfe nach links und stossen ihrerseits an den Cookie-Knopf. Sie gehen
+   deshalb nach rechts, dorthin, wo vorher die Zeile den Abstand hielt. */
+@media(max-width:700px){.chain .sticky .what{display:none}
+  .chain .sticky{justify-content:flex-end}}
 
 
 /* ---- Einwaende als Aufklapper ------------------------------------------
