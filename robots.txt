@@ -6,6 +6,10 @@ Disallow: /upload.html
 Disallow: /admin.html
 Disallow: /release-links.html
 Disallow: /order.html
+
+# Die Linkseite zur Filament EP. Sie ist zum Verschicken gedacht, steht
+# nirgends verlinkt und traegt zusaetzlich noindex im Kopf.
+Disallow: /filament.html
 Disallow: /d/
 
 # Interne Bereiche. Beide tragen zusätzlich noindex im Kopf — das hier hält

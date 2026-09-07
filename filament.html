@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Diese Seite ist zum Verschicken da, nicht zum Gefundenwerden. Sie steht
+     nirgends verlinkt, sie steht nicht im Sitemap, sie ist in robots.txt
+     ausgenommen, und noindex hält sie auch dann aus dem Index, wenn jemand
+     die Adresse doch irgendwo hinterlässt. nofollow, damit auch die Links
+     von hier nichts weitertragen. -->
+<meta name="robots" content="noindex,nofollow">
+
+<title>Filament EP — Billy Orean &amp; Hauke Steinbach</title>
+<meta name="description" content="Filament EP von Billy Orean und Hauke Steinbach. Alle Plattformen auf einen Blick.">
+
+<!-- Für die Vorschau in WhatsApp, Instagram und Mail: ohne diese vier Zeilen
+     verschickt man einen nackten Link. Das Bild muss absolut adressiert sein,
+     relative Pfade nehmen die Dienste nicht. -->
+<meta property="og:type" content="music.album">
+<meta property="og:title" content="Filament EP — Billy Orean &amp; Hauke Steinbach">
+<meta property="og:description" content="Vier Titel. Auf allen Plattformen.">
+<meta property="og:image" content="https://haukesteinbach.de/assets/images/filament/og.jpg">
+<meta property="og:url" content="https://haukesteinbach.de/filament.html">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+<link rel="preload" href="assets/fonts/archivo-black-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/jetbrains-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+<style>
+/* Eigenes, kleines Stylesheet statt steinbach.css: die große Datei bringt
+   Leiste, Rail, Navigation und dreitausend Zeilen mit, von denen hier keine
+   gebraucht wird. Schriften, Farben und Maße sind aus ihr übernommen, damit
+   die Seite trotzdem nach Steinbach aussieht. */
+
+@font-face{font-family:'Archivo Black';src:url('assets/fonts/archivo-black-400-latin.woff2') format('woff2');
+  font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Poppins';src:url('assets/fonts/poppins-400-latin.woff2') format('woff2');
+  font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url('assets/fonts/jetbrains-mono-400-latin.woff2') format('woff2');
+  font-weight:400;font-style:normal;font-display:swap}
+
+:root{
+  --black:#000; --grey:#D6D6D6; --grey-2:#8C8C8C; --grey-3:#4A4A4A;
+  --hair:#232323; --panel:#0B0B0B; --accent:#E94560; --on-accent:#000;
+  --fat:'Archivo Black','Arial Black',Impact,sans-serif;
+  --geo:'Poppins','Century Gothic','Avenir Next',sans-serif;
+  --mono:'JetBrains Mono','Cascadia Mono',Consolas,ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--black); color:var(--grey);
+  font-family:var(--geo); font-size:16px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  display:flex; justify-content:center;
+  padding:clamp(1.5rem,6vw,4rem) clamp(1.25rem,5vw,2rem);
+}
+.blatt{width:100%; max-width:420px}
+
+/* Das Cover ist quadratisch und bleibt es auch, bevor das Bild da ist:
+   aspect-ratio hält den Platz frei, sonst springt der ganze Text nach unten,
+   sobald es lädt. */
+.cover{
+  display:block; width:100%; height:auto; aspect-ratio:1/1; object-fit:cover;
+  background:var(--panel); border:1px solid var(--hair);
+}
+/* height:auto muss sein: die Attribute width und height im Markup schlagen
+   als Darstellungshinweis auf die CSS-Hoehe durch, und dann steht das Cover
+   1400 Bildpunkte hoch da statt quadratisch. Die Attribute bleiben trotzdem
+   stehen, sie halten den Platz frei, solange das Bild noch laedt. */
+
+.kicker{
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--grey-2);
+  margin:1.75rem 0 .5rem;
+}
+h1{
+  font-family:var(--fat); font-weight:400;
+  font-size:clamp(2rem,9vw,2.6rem); line-height:.95;
+  letter-spacing:-.01em; margin:0; text-transform:uppercase;
+}
+.strich{height:2px; width:56px; background:var(--accent); margin:1.25rem 0 1.5rem}
+
+/* Die Titelliste. Nummern in Mono, damit sie untereinander stehen. */
+ol.titel{list-style:none; margin:0 0 2rem; padding:0}
+ol.titel li{
+  display:flex; gap:.9rem; align-items:baseline;
+  padding:.6rem 0; border-bottom:1px solid var(--hair);
+  font-size:.94rem;
+}
+ol.titel li:first-child{border-top:1px solid var(--hair)}
+ol.titel .nr{font-family:var(--mono); font-size:.7rem; color:var(--grey-3)}
+
+/* Die Knöpfe. Ein Dienst je Zeile, volle Breite, große Trefferfläche —
+   das hier wird zu neunzig Prozent auf dem Telefon geöffnet. */
+.dienste{display:flex; flex-direction:column; gap:.6rem}
+.dienst{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.95rem 1.1rem; border:1px solid var(--hair); background:var(--panel);
+  color:var(--grey); text-decoration:none;
+  font-family:var(--mono); font-size:.76rem; letter-spacing:.12em;
+  text-transform:uppercase;
+  transition:border-color .18s ease, color .18s ease, background-color .18s ease;
+}
+.dienst:hover,.dienst:focus-visible{
+  border-color:var(--accent); color:#fff; background:#111; outline:none;
+}
+.dienst .pfeil{color:var(--grey-3); font-size:.9rem; line-height:1}
+.dienst:hover .pfeil,.dienst:focus-visible .pfeil{color:var(--accent)}
+
+/* Ein Dienst ohne Adresse wird nicht versteckt, sondern grau und tot
+   gezeigt. Wer die Seite baut, sieht so sofort, was noch fehlt; wer sie
+   bekommt, sieht keinen Knopf, der ins Leere führt. */
+.dienst.offen{
+  color:var(--grey-3); border-style:dashed; pointer-events:none;
+}
+
+footer{
+  margin-top:2.5rem; padding-top:1.25rem; border-top:1px solid var(--hair);
+  font-family:var(--mono); font-size:.66rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--grey-3);
+  display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+}
+footer a{color:var(--grey-3); text-decoration:none}
+footer a:hover{color:var(--grey-2)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="blatt">
+
+  <img class="cover" src="assets/images/filament/cover.jpg" width="1400" height="1400"
+       alt="Cover der Filament EP">
+
+  <p class="kicker">Billy Orean &amp; Hauke Steinbach &middot; EP</p>
+  <h1>Filament</h1>
+  <div class="strich"></div>
+
+  <ol class="titel">
+    <li><span class="nr">01</span><span>Filament</span></li>
+    <li><span class="nr">02</span><span>Filament (Delight Remix)</span></li>
+    <li><span class="nr">03</span><span>Filament (Janosch Kurzrock Remix)</span></li>
+    <li><span class="nr">04</span><span>Filament (Lenny Cesar Remix)</span></li>
+  </ol>
+
+  <!-- Die Adressen stammen aus dem Music-Hub-Link und tragen dessen
+       Zaehlparameter. Die bleiben dran, sonst zaehlt der Vertrieb die
+       Aufrufe von hier nicht mit. Jede wurde einzeln geoeffnet und zeigt
+       die EP mit ihren vier Titeln, keinen einzelnen Song. -->
+  <nav class="dienste">
+    <a class="dienst" href="https://open.spotify.com/album/1WcvtTWfHQCoVlYBAyVQoq?go=1&amp;utm_source=Original_Original&amp;utm_medium=Original&amp;utm_content=1451df02-252d-49e6-b90c-cab2f4811f21_none_Billy%20Orean%2C%20Hauke%20Steinbach_none_Filament_none_20260813_direct_music-hub-api_DE_listen.music-hub.com%2Fgrgnfb" target="_blank" rel="noopener noreferrer">
+      Spotify <span class="pfeil" aria-hidden="true">&#8599;</span></a>
+    <a class="dienst" href="https://music.apple.com/de/album/6801091041?app=music&amp;at=1l3vpUI&amp;ct=LFV_1c74b190f3a85a0cebc30ba240e5d652&amp;itscg=30440&amp;itsct=catchall_p2&amp;lId=216956663&amp;cId=none&amp;sr=2&amp;src=Linkfire&amp;ls=1" target="_blank" rel="noopener noreferrer">
+      Apple Music <span class="pfeil" aria-hidden="true">&#8599;</span></a>
+    <a class="dienst" href="https://music.youtube.com/playlist?list=OLAK5uy_mJyt6kqTLmS1GhNuJRU2EZ3THg33izRIw&amp;src=Linkfire&amp;lId=1451df02-252d-49e6-b90c-cab2f4811f21&amp;cId=d3d58fd7-4c47-11e6-9fd0-066c3e7a8751" target="_blank" rel="noopener noreferrer">
+      YouTube Music <span class="pfeil" aria-hidden="true">&#8599;</span></a>
+    <a class="dienst" href="https://soundcloud.com/billyorean/sets/filament-306889722?utm_medium=api&amp;utm_campaign=social_sharing&amp;utm_source=id_313799" target="_blank" rel="noopener noreferrer">
+      SoundCloud <span class="pfeil" aria-hidden="true">&#8599;</span></a>
+    <a class="dienst" href="https://www.tidal.com/album/552029494" target="_blank" rel="noopener noreferrer">
+      Tidal <span class="pfeil" aria-hidden="true">&#8599;</span></a>
+    <a class="dienst" href="https://www.deezer.com/album/1053247762?app_id=140685&amp;utm_source=partner_linkfire&amp;utm_campaign=1c74b190f3a85a0cebc30ba240e5d652&amp;utm_medium=Original&amp;utm_term=music-hub-api&amp;utm_content=album-1053247762" target="_blank" rel="noopener noreferrer">
+      Deezer <span class="pfeil" aria-hidden="true">&#8599;</span></a>
+    <a class="dienst" href="https://music.amazon.com/albums/B0HF4PGYDY?tag=linkfiregen&amp;ie=UTF8&amp;linkCode=as2&amp;ascsubtag=1c74b190f3a85a0cebc30ba240e5d652&amp;ref=dmm_acq_soc_de_u_lfire_lp_x_1c74b190f3a85a0cebc30ba240e5d652" target="_blank" rel="noopener noreferrer">
+      Amazon Music <span class="pfeil" aria-hidden="true">&#8599;</span></a>
+    <a class="dienst" href="https://open.qobuz.com/album/oz6y3jaj42bhy?lf=1c74b190f3a85a0cebc30ba240e5d652" target="_blank" rel="noopener noreferrer">
+      Qobuz <span class="pfeil" aria-hidden="true">&#8599;</span></a>
+  </nav>
+
+  <p class="kicker">Kaufen</p>
+  <nav class="dienste">
+    <a class="dienst" href="https://music.apple.com/de/album/6801091041?app=itunes&amp;at=1l3vpUI&amp;ct=LFV_1c74b190f3a85a0cebc30ba240e5d652&amp;itscg=30440&amp;itsct=catchall_p9&amp;lId=216956663&amp;cId=none&amp;sr=9&amp;src=Linkfire&amp;ls=1" target="_blank" rel="noopener noreferrer">
+      iTunes <span class="pfeil" aria-hidden="true">&#8599;</span></a>
+    <a class="dienst" href="https://www.qobuz.com/de-de/album/filament-billy-orean-hauke-steinbach/oz6y3jaj42bhy?lf=1c74b190f3a85a0cebc30ba240e5d652" target="_blank" rel="noopener noreferrer">
+      Qobuz Download <span class="pfeil" aria-hidden="true">&#8599;</span></a>
+  </nav>
+
+  <footer>
+    <span>Filament EP</span>
+    <a href="https://haukesteinbach.de">haukesteinbach.de</a>
+  </footer>
+
+</main>
+
+</body>
+</html>
