@@ -364,7 +364,10 @@ html { scroll-padding-top: calc(var(--bar-h) + 1.25rem); }
 
 .rail {
   position: fixed;
-  top: 0; right: 0; bottom: 0;
+  /* --bar-h is measured by steinbach-ui.js: the ticks begin under the bar
+     instead of running behind it. The fallback keeps the old behaviour if
+     the script has not run yet, so nothing jumps into view. */
+  top: var(--bar-h, 0px); right: 0; bottom: 0;
   width: var(--rail);
   z-index: 60;
   display: flex;
