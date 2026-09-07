@@ -53,7 +53,7 @@ Schreibtisch, die zusammen mit einem Befehl weitergegeben wird.${N}
 EOF
 
 # ── 1. Cloudflare R2 ─────────────────────────────────────────────────────────
-schritt "1 von 3 · Cloudflare R2"
+schritt "1 von 4 · Cloudflare R2"
 
 cat <<EOF
   Der Bucket ${B}steinbach-filehandoff${N} ist schon angelegt. Es fehlt ein
@@ -86,7 +86,7 @@ case "$R2_ENDPOINT" in
 esac
 
 # ── 2. Passwort ──────────────────────────────────────────────────────────────
-schritt "2 von 3 · Dein Passwort für die Projektübersicht"
+schritt "2 von 4 · Dein Passwort für die Projektübersicht"
 
 echo "  Damit meldest du dich auf haukesteinbach.de/admin.html an."
 echo "  Mindestens 12 Zeichen. Die Eingabe bleibt unsichtbar."
@@ -111,7 +111,7 @@ GEHEIMNIS=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex
 ok "SESSION_SECRET erzeugt"
 
 # ── 3. Mail ──────────────────────────────────────────────────────────────────
-schritt "3 von 3 · Mailversand an Kunden"
+schritt "3 von 4 · Mailversand an Kunden"
 
 cat <<EOF
   ${B}Ohne diesen Schritt bekommt kein Kunde eine Mail.${N}
@@ -144,6 +144,83 @@ SMTP_SECURE=$SMTP_SECURE"
 else
   ok "übersprungen — Kunden bekommen vorerst keine Mail"
 fi
+
+# ── 4. Der Shop ──────────────────────────────────────────────────────────────
+schritt "4 von 4 · Shop und Chain-Downloads"
+
+cat <<EOF
+  ${B}Ohne diesen Schritt bleibt der Kaufknopf verborgen${N} und auf den
+  Produktseiten steht weiter der Weg über die Kontaktseite. Das ist ein
+  funktionierender Zustand, kein kaputter — mit Enter überspringen und später
+  nachtragen geht also.
+
+  Der geheime Schlüssel steht bei Stripe unter Entwickler, API-Schlüssel:
+    https://dashboard.stripe.com/apikeys
+  Zum Proben sk_test_…, für echtes Geld sk_live_…
+
+EOF
+
+printf '  Stripe-Schlüssel %s(sk_live_… oder sk_test_… — Enter zum Überspringen)%s\n  > ' "$DIM" "$N"
+read -rs STRIPE_KEY; echo
+
+SHOP_BLOCK=""
+if [ -n "$STRIPE_KEY" ]; then
+  cat <<EOF
+
+  ${B}Jetzt der Webhook.${N} Ohne ihn wird bezahlt und danach passiert nichts:
+  keine Rechnung, kein Lizenzschlüssel, keine Mail. Neuen Endpunkt anlegen:
+
+    Adresse:  https://haukesteinbach.de/api/v1/public/shop/webhook
+    Ereignis: checkout.session.completed
+
+  Direkt dorthin, Ereignis ist schon eingetragen:
+    https://dashboard.stripe.com/webhooks/create?events=checkout.session.completed
+
+  Danach steht dort "Signing secret" (whsec_…).
+
+EOF
+  printf '  Signaturgeheimnis > '
+  read -rs STRIPE_HOOK; echo
+
+  SHOP_BLOCK="STRIPE_SECRET_KEY=$STRIPE_KEY"
+  [ -n "$STRIPE_HOOK" ] && SHOP_BLOCK="$SHOP_BLOCK
+STRIPE_WEBHOOK_SECRET=$STRIPE_HOOK"
+  unset STRIPE_KEY STRIPE_HOOK
+  ok "Shop eingerichtet"
+else
+  ok "übersprungen — der Kaufknopf bleibt vorerst verborgen"
+fi
+
+# Die Dateien hinter dem Chain-Download. Feste Adressen, absichtlich nicht je
+# Käufer: was dort hängt, ist die Demo, also dieselbe Datei für alle. Was hier
+# leer bleibt, taucht auf der Seite gar nicht erst als Knopf auf — besser als
+# ein Knopf, der ins Leere führt.
+cat <<EOF
+
+  ${B}Die Dateien zu Steinbach Chain.${N} Am besten ein öffentlicher R2-Bucket
+  mit eigener Domain, dann liefert Cloudflare aus. Was noch nicht fertig ist,
+  mit Enter überspringen.
+
+EOF
+
+CHAIN_BLOCK=""
+chain_frage() {                            # chain_frage SCHLUESSEL "Beschriftung"
+  local key="$1" text="$2" wert
+  printf '  %-18s > ' "$text"
+  read -r wert
+  if [ -n "$wert" ]; then
+    CHAIN_BLOCK="$CHAIN_BLOCK
+$key=$wert"
+    ok "$text übernommen"
+  fi
+}
+
+chain_frage CHAIN_DOWNLOAD_MAC "macOS-Installer"
+chain_frage CHAIN_DOWNLOAD_WIN "Windows-Installer"
+chain_frage CHAIN_MANUAL_URL   "Handbuch (PDF)"
+chain_frage CHAIN_REPORT_URL   "Messbericht (PDF)"
+
+[ -z "$CHAIN_BLOCK" ] && ok "keine Adressen — die Demoknöpfe bleiben vorerst aus"
 
 # ── Datei schreiben ──────────────────────────────────────────────────────────
 umask 077
@@ -178,10 +255,10 @@ cat > "$AUSGABE" <<EOF
 #      Kommt stattdessen ein Fehler, stehen darunter die Logzeilen, die sagen
 #      warum.
 #
-#   4. Diese Datei danach löschen — sie enthält Zugangsdaten.
+#   4. Diese Datei danach löschen. Sie enthält Zugangsdaten.
 #
-# Der Rest der Website läuft weiter wie bisher; das hier schaltet nur den
-# Dateiaustausch und die Projektübersicht scharf.
+# Der Rest der Website läuft weiter wie bisher. Das hier schaltet den
+# Dateiaustausch, die Projektübersicht und, falls ausgefüllt, den Shop scharf.
 # ============================================================================
 
 S3_ENDPOINT=$R2_ENDPOINT
@@ -193,6 +270,9 @@ S3_SECRET_KEY=$R2_SECRET
 ADMIN_PASSWORD_HASH=$HASH
 SESSION_SECRET=$GEHEIMNIS
 $SMTP_BLOCK
+
+$SHOP_BLOCK
+$CHAIN_BLOCK
 
 MAIL_FROM_EMAIL=mail@haukesteinbach.de
 NOTIFICATION_EMAIL=mail@haukesteinbach.de
