@@ -171,9 +171,15 @@
 /* ---- Eintreten beim Scrollen ------------------------------------------
    16 px sind genug. Groeszere Wege sehen nach Effekt aus, kleinere nach
    Absicht. ease-out, weil das Element eintritt. ------------------------- */
-.chain .rise{opacity:0;transform:translateY(16px);
+/* Das Verstecken haengt an .rise-an, und die Klasse setzt chain-page.js als
+   ERSTE Anweisung an <html>. Vorher stand hier opacity:0 fest im Stylesheet,
+   und damit war das Skript nicht fuer die Bewegung zustaendig, sondern fuer
+   die Existenz: als die Content Security Policy es blockierte, war nicht die
+   Animation weg, sondern die ganze Seite. Jetzt kostet ein Ausfall den Weg
+   und nicht den Inhalt. */
+.rise-an .chain .rise{opacity:0;transform:translateY(16px);
   transition:opacity 520ms var(--ease-out),transform 520ms var(--ease-out)}
-.chain .rise.in{opacity:1;transform:none}
+.rise-an .chain .rise.in{opacity:1;transform:none}
 .chain .rise.d1{transition-delay:70ms}.chain .rise.d2{transition-delay:140ms}
 .chain .rise.d3{transition-delay:210ms}.chain .rise.d4{transition-delay:280ms}
 
@@ -371,7 +377,7 @@
 
 /* ---- Weniger Bewegung, nicht keine ------------------------------------ */
 @media (prefers-reduced-motion:reduce){
-  .chain .rise{transform:none;transition:opacity 240ms ease}
+  .rise-an .chain .rise{transform:none;transition:opacity 240ms ease}
   .chain .ab-thumb{transition:none}
   .chain .btn:active{transform:none}
   .chain .sticky{transition:none}

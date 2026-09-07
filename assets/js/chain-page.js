@@ -17,6 +17,12 @@
    die Nase, und still heisst: die Seite sieht leer aus und niemand sieht warum.
    ============================================================================= */
 
+/* ERSTE ANWEISUNG, vor allem anderen: dem Dokument sagen, dass das Skript
+   laeuft. Erst diese Klasse schaltet in steinbach-chain.html das opacity:0
+   der Einblendung ein. Faellt die Datei aus, aus welchem Grund auch immer,
+   steht der Inhalt sichtbar da und es fehlt nur der Weg. */
+document.documentElement.classList.add('rise-an');
+
 /* ---- Block 1 von 2, unveraendert uebernommen ---- */
 /* ---------------------------------------------------------------------------
    Drei kleine Dinge, mehr braucht die Seite nicht.

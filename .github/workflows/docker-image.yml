@@ -20,6 +20,26 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      # Ein Inline-<script> faellt im Betrieb still auf die Nase: der Server
+      # schickt eine Content Security Policy mit script-src 'self' und ohne
+      # 'unsafe-inline'. Am 07.09. kostete das die ganze Chain-Seite -- sie
+      # kam beim Besucher leer an, weil die Einblendung nicht lief und der
+      # Inhalt auf opacity:0 stehen blieb. Lokal faellt es nie auf, weil dort
+      # keine CSP mitkommt. Also hier, vor dem Bau.
+      #
+      # Erlaubt bleibt <script type="application/ld+json">: das wird nicht
+      # ausgefuehrt, sondern nur gelesen.
+      - name: Kein <script> ohne src
+        run: |
+          treffer=$(grep -nE '<script(?![^>]*(src=|type="application/ld\+json"))' -P *.html || true)
+          if [ -n "$treffer" ]; then
+            echo "Inline-Skripte gefunden. Die Content Security Policy blockt sie,"
+            echo "und die Seite kommt beim Besucher leer an. Nach assets/js/ auslagern:"
+            echo "$treffer"
+            exit 1
+          fi
+          echo "Keine Inline-Skripte."
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
