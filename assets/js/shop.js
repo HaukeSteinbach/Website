@@ -37,10 +37,20 @@
     var demo = document.getElementById('demo-links');
     if (!demo || !dateien.length) return;
 
-    demo.innerHTML = dateien.map(function (d, i) {
-      return '<a class="btn' + (i === 0 ? ' fill' : '') + '" href="' + d.url
-        + '" rel="noopener">' + d.label + '</a>';
+    /* Eine Aufklappliste statt einer Reihe Knoepfe. Drei nebeneinander sahen
+       aus wie drei Entscheidungen, dabei ist es eine: das Ding laden. Zu ist
+       der Ausgangszustand, aufgeklappt stehen die Dateien untereinander mit
+       ihrer Beschriftung, wie im Kontobereich -- dieselben Regeln, damit ein
+       Kaeufer die Liste an beiden Orten wiedererkennt. */
+    var zeilen = dateien.map(function (d) {
+      return '<a class="konto-datei" href="' + d.url + '" rel="noopener">'
+        + '<span>' + d.label + '</span>'
+        + '<span class="konto-pfeil" aria-hidden="true">&#8595;</span></a>';
     }).join('');
+
+    demo.innerHTML = '<details class="konto-klapp" open>'
+      + '<summary>Download the demo</summary>'
+      + '<div class="konto-dateien">' + zeilen + '</div></details>';
     demo.hidden = false;
 
     var fehlt = document.getElementById('demo-fehlt');

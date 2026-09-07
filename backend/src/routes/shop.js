@@ -67,11 +67,15 @@ router.get('/products/:slug', (request, response) => {
        Seite keinen Knopf zeigt, der ins Leere fuehrt. */
     downloads: product.demo
       ? [
-          { id: 'mac', label: 'Demo für macOS', url: '/download/chain-macos',
+          /* Englisch, weil diese Auskunft die Produktseite fuellt und die auf
+             Englisch steht. Der Kontobereich beschriftet dieselben Dateien
+             selbst und auf Deutsch -- die Sprache gehoert zur Seite, nicht zur
+             Datei. */
+          { id: 'mac', label: 'Demo for macOS', url: '/download/chain-macos',
             da: config.chainDownloads.mac },
-          { id: 'windows', label: 'Demo für Windows', url: '/download/chain-windows',
+          { id: 'windows', label: 'Demo for Windows', url: '/download/chain-windows',
             da: config.chainDownloads.windows },
-          { id: 'manual', label: 'Handbuch', url: '/download/chain-manual',
+          { id: 'manual', label: 'Manual, PDF', url: '/download/chain-manual',
             da: config.chainDownloads.manual }
         ]
           /* Genannt wird die eigene Adresse, gefiltert wird nach dem Ziel: ein

@@ -230,36 +230,10 @@ document.documentElement.classList.add('rise-an');
     });
   }
 
-  /* 4. Die Abschnittsleiste markiert, in welchem Abschnitt man gerade ist.
-        Ohne das ist sie ein Sprungbrett, aber keine Orientierung. */
-  var punkte = [].slice.call(document.querySelectorAll('.chain-nav a'));
-
-  if (punkte.length && 'IntersectionObserver' in window) {
-    var ziele = punkte.map(function (a) {
-      return document.querySelector(a.getAttribute('href'));
-    }).filter(Boolean);
-
-    var sichtbare = new Set();
-
-    var markierer = new IntersectionObserver(function (eintraege) {
-      eintraege.forEach(function (e) {
-        if (e.isIntersecting) sichtbare.add(e.target); else sichtbare.delete(e.target);
-      });
-
-      /* Der oberste sichtbare Abschnitt gewinnt — sonst springt die Marke,
-         sobald zwei gleichzeitig im Bild stehen. */
-      var oben = null;
-      sichtbare.forEach(function (el) {
-        if (!oben || el.getBoundingClientRect().top < oben.getBoundingClientRect().top) oben = el;
-      });
-
-      punkte.forEach(function (a) {
-        a.classList.toggle('hier', !!oben && a.getAttribute('href') === '#' + oben.id);
-      });
-    }, { rootMargin: '-64px 0px -55% 0px' });
-
-    ziele.forEach(function (el) { markierer.observe(el); });
-  }
+  /* Die Abschnittsleiste ist am 08.09. entfallen, und mit ihr der Beobachter,
+     der markierte, in welchem Abschnitt man gerade steht. Er lief bei jedem
+     Scrollen ueber fuenf Ziele und hatte danach nichts mehr, dem er es sagen
+     konnte. Die Sprungmarken selbst bleiben, sie stehen jetzt im Text. */
 })();
 
 /* ---- Block 2 von 2, unveraendert uebernommen ---- */
