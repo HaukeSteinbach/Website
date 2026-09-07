@@ -20,7 +20,6 @@ the file handoff. Both are bundled into one Docker image.
 | | |
 |---|---|
 | `steinbach-chain.html` | EQ, saturation, transient shaping, limiter — CLAP/VST3/AU |
-| `steinbach-eq.html` | redirect only; the product was renamed to Steinbach Chain |
 | `steinbach-head-tracker.html` | head tracking for binaural mixing |
 | `reclight.html` | studio status light, pre-order |
 | `ir-maker.html` | impulse response generator, runs in the browser |

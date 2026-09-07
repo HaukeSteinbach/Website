@@ -25,7 +25,7 @@
 
   /**
    * @param {object} o
-   * @param {string} o.raum          Thema ohne Präfix, z. B. "steinbach-eq"
+   * @param {string} o.raum          Thema ohne Präfix, z. B. "steinbach-chain"
    * @param {function} o.holeToken   () -> Promise<string> — frisches JWT
    * @param {object} o.ich           beliebige Daten, die die anderen sehen
    * @param {function} o.aufOp       (name, daten, vonWem) bei fremder Änderung
