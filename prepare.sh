@@ -146,7 +146,7 @@ else
 fi
 
 # ── 4. Der Shop ──────────────────────────────────────────────────────────────
-schritt "4 von 4 · Shop und Chain-Downloads"
+schritt "4 von 4 · Der Shop"
 
 cat <<EOF
   ${B}Ohne diesen Schritt bleibt der Kaufknopf verborgen${N} und auf den
@@ -191,35 +191,10 @@ else
   ok "übersprungen — der Kaufknopf bleibt vorerst verborgen"
 fi
 
-# Die Dateien hinter dem Chain-Download. Feste Adressen, absichtlich nicht je
-# Käufer: was dort hängt, ist die Demo, also dieselbe Datei für alle. Was hier
-# leer bleibt, taucht auf der Seite gar nicht erst als Knopf auf — besser als
-# ein Knopf, der ins Leere führt.
-cat <<EOF
-
-  ${B}Die Dateien zu Steinbach Chain.${N} Am besten ein öffentlicher R2-Bucket
-  mit eigener Domain, dann liefert Cloudflare aus. Was noch nicht fertig ist,
-  mit Enter überspringen.
-
-EOF
-
-CHAIN_BLOCK=""
-chain_frage() {                            # chain_frage SCHLUESSEL "Beschriftung"
-  local key="$1" text="$2" wert
-  printf '  %-18s > ' "$text"
-  read -r wert
-  if [ -n "$wert" ]; then
-    CHAIN_BLOCK="$CHAIN_BLOCK
-$key=$wert"
-    ok "$text übernommen"
-  fi
-}
-
-chain_frage CHAIN_DOWNLOAD_MAC "macOS-Installer"
-chain_frage CHAIN_DOWNLOAD_WIN "Windows-Installer"
-chain_frage CHAIN_MANUAL_URL   "Handbuch (PDF)"
-
-[ -z "$CHAIN_BLOCK" ] && ok "keine Adressen — die Demoknöpfe bleiben vorerst aus"
+# Die Adressen der Chain-Dateien werden hier nicht mehr gefragt: sie stehen im
+# Code (backend/src/lib/config.js). Es sind oeffentliche Adressen, und im Code
+# sind sie beim Ausrollen schon da, statt eine Frage zu sein, die man bei jeder
+# Einrichtung wieder beantwortet.
 
 # ── Datei schreiben ──────────────────────────────────────────────────────────
 umask 077
@@ -271,7 +246,6 @@ SESSION_SECRET=$GEHEIMNIS
 $SMTP_BLOCK
 
 $SHOP_BLOCK
-$CHAIN_BLOCK
 
 MAIL_FROM_EMAIL=mail@haukesteinbach.de
 NOTIFICATION_EMAIL=mail@haukesteinbach.de

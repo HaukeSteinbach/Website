@@ -9,6 +9,21 @@ const corsAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+/* Der oeffentliche Bucket mit den Chain-Dateien.
+ *
+ * Er steht hier im Code und nicht in einer Umgebungsvariablen, und das ist
+ * Absicht: es ist eine oeffentliche Adresse, kein Geheimnis -- sie steht auf
+ * jeder Produktseite. Im Code ist sie versioniert, nachvollziehbar und beim
+ * Ausrollen schon da; als Variable waere sie ein Handgriff mehr auf dem
+ * Server, den jemand vergessen kann, und dann fehlen die Knoepfe, ohne dass
+ * es jemandem auffaellt.
+ *
+ * Dasselbe Muster wie bei den Preisen in lib/shop.js, aus demselben Grund.
+ *
+ * Die Umgebungsvariablen darunter behalten Vorrang. Sie sind der Weg, den
+ * Speicher zu wechseln, ohne auf einen Neubau zu warten. */
+const R2 = 'https://pub-216066da653143cdb9f2708814e66df0.r2.dev';
+
 export const config = {
   port,
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -53,9 +68,9 @@ export const config = {
        Windows und das Handbuch. Einen Messbericht gab es hier nie, und eine
        Variable dafuer bereitzuhalten hiess, auf eine Datei zu warten, die
        niemand baut. */
-    mac: process.env.CHAIN_DOWNLOAD_MAC || '',
-    windows: process.env.CHAIN_DOWNLOAD_WIN || '',
-    manual: process.env.CHAIN_MANUAL_URL || ''
+    mac: process.env.CHAIN_DOWNLOAD_MAC || `${R2}/Steinbach-Chain-macOS.pkg`,
+    windows: process.env.CHAIN_DOWNLOAD_WIN || `${R2}/Steinbach-Chain-Windows.exe`,
+    manual: process.env.CHAIN_MANUAL_URL || `${R2}/Steinbach-Chain-User-Manual.pdf`
   },
 
   s3Endpoint: process.env.S3_ENDPOINT || '',

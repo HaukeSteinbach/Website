@@ -124,20 +124,12 @@ frage STRIPE_WEBHOOK_SECRET \
   "https://dashboard.stripe.com/webhooks/create?events=checkout.session.completed"
 
 schritt "3. Die Dateien hinter dem Download"
-hinweis "Feste Adressen, absichtlich nicht je Käufer und nicht ablaufend: was"
-hinweis "hier hängt, ist die Demo, also das vollständige Plug-in, das der"
-hinweis "Schlüssel freischaltet. Am besten ein öffentlicher R2-Bucket mit"
-hinweis "eigener Domain, dann liefert Cloudflare aus und der Server bleibt frei."
-hinweis "Was leer bleibt, taucht auf der Seite gar nicht erst als Knopf auf."
-frage CHAIN_DOWNLOAD_MAC \
-  "Adresse der macOS-Fassung (leer lassen, wenn sie noch nicht liegt)." \
-  "https://dash.cloudflare.com/?to=/:account/r2/overview" nein
-frage CHAIN_DOWNLOAD_WIN \
-  "Adresse der Windows-Fassung." \
-  "" nein
-frage CHAIN_MANUAL_URL \
-  "Adresse des Handbuchs als PDF." \
-  "" nein
+hinweis "Nichts zu tun: die drei Adressen stehen im Code (backend/src/lib/config.js)."
+hinweis "Es sind oeffentliche Adressen, kein Geheimnis, und im Code sind sie beim"
+hinweis "Ausrollen schon da, statt ein Handgriff zu sein, den jemand vergisst."
+hinweis "Umziehen laesst sich der Speicher weiterhin ueber CHAIN_DOWNLOAD_MAC,"
+hinweis "CHAIN_DOWNLOAD_WIN und CHAIN_MANUAL_URL, die haben Vorrang."
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 schritt "4. Was sonst noch nötig ist"
