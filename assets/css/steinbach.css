@@ -3408,3 +3408,162 @@ fieldset.form-group > legend {
     padding: 1.1rem;
   }
 }
+
+
+/* ==========================================================================
+   14  ACCOUNT
+   --------------------------------------------------------------------------
+   Der Kontobereich. Er hat wenig zu zeigen und soll wenig zeigen: die Adresse,
+   den Code, danach den Schlüssel und die Dateien. Alles andere wäre im Weg.
+   ========================================================================== */
+
+.konto-feld { display: block; margin-bottom: 1.25rem; }
+.konto-feld span {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-2);
+  margin-bottom: 0.55rem;
+}
+.konto-feld input {
+  width: 100%;
+  padding: 0.95rem 1.05rem;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  color: var(--grey);
+  font-family: var(--geo);
+  font-size: 1rem;
+}
+.konto-feld input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+/* Der Code wird abgelesen und abgetippt, oft von einem zweiten Gerät. Weite
+   Laufweite und Mono, damit 0 und O sich nicht ähneln. */
+#feld-code {
+  font-family: var(--mono);
+  letter-spacing: 0.4em;
+  font-size: 1.35rem;
+}
+
+.konto-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--grey-2);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.konto-link:hover { color: var(--accent); }
+
+.konto-wer {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  color: var(--grey-2);
+  text-transform: uppercase;
+}
+/* Leer bedeutet: es gibt nichts zu sagen. Ohne diese Zeile stand ein roter
+   Strich ohne Text auf der Seite, weil .note seine Marke auch ohne Inhalt
+   zeichnet. min-height faellt damit auch weg, der Platz wird erst gebraucht,
+   wenn wirklich etwas darin steht. */
+.konto-meldung { margin-top: 2rem; }
+.konto-meldung:empty { display: none; }
+
+.konto-kauf {
+  border: 1px solid var(--hair);
+  background: var(--panel);
+  padding: 1.75rem;
+  margin-top: 2rem;
+}
+.konto-produkt {
+  font-family: var(--fat);
+  font-weight: 400;
+  font-size: 1.5rem;
+  margin: 0;
+  text-transform: uppercase;
+}
+.konto-wann {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  color: var(--grey-3);
+  margin: 0.5rem 0 1.5rem;
+}
+
+/* Der Schlüssel ist der Grund, warum jemand diese Seite öffnet. Er steht
+   deshalb ganz, umbricht statt abzuschneiden, und lässt sich mit einem Griff
+   kopieren. Ein abgeschnittener Schlüssel wäre wertlos. */
+.konto-schluessel {
+  border: 1px solid var(--hair);
+  border-left: 2px solid var(--accent);
+  background: var(--black);
+  padding: 1.1rem 1.25rem;
+}
+.konto-schluessel-titel {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--grey-2);
+  margin-bottom: 0.6rem;
+}
+.konto-schluessel code {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.92rem;
+  color: var(--grey);
+  word-break: break-all;
+  user-select: all;
+}
+.konto-kopie {
+  margin-top: 0.9rem;
+  padding: 0.5rem 0.9rem;
+  background: transparent;
+  border: 1px solid var(--hair);
+  color: var(--grey-2);
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.konto-kopie:hover { border-color: var(--accent); color: var(--grey); }
+
+.konto-klapp { margin-top: 1.5rem; border-top: 1px solid var(--hair); }
+.konto-klapp summary {
+  padding: 1rem 0;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-2);
+  list-style: none;
+}
+.konto-klapp summary::-webkit-details-marker { display: none; }
+.konto-klapp summary::after { content: ' +'; color: var(--accent); }
+.konto-klapp[open] summary::after { content: ' –'; }
+.konto-klapp summary:hover { color: var(--grey); }
+
+.konto-dateien { padding-bottom: 1rem; }
+.konto-datei {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--hair);
+  color: var(--grey);
+  text-decoration: none;
+  font-size: 0.94rem;
+}
+.konto-datei:hover { color: var(--accent); }
+.konto-pfeil { color: var(--grey-3); }
+.konto-datei:hover .konto-pfeil { color: var(--accent); }

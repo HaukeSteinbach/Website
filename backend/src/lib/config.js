@@ -35,6 +35,26 @@ export const config = {
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
 
+  /* Wo die Chain-Dateien liegen.
+
+     NICHT ROTIEREND UND NICHT JE KAEUFER, mit Absicht: was hier haengt, ist
+     die Demo, also das vollstaendige Plug-in ohne Zeitgrenze, das der
+     Lizenzschluessel freischaltet. Dieselbe Datei bekommt auf der
+     Produktseite ohnehin jeder. Ein persoenlicher Link waere damit ein
+     Versprechen von Schutz, den es nicht gibt, und er liefe irgendwann ab --
+     ausgerechnet dann, wenn jemand nach zwei Jahren einen neuen Rechner
+     aufsetzt. Eine feste Adresse hinter Cloudflare laesst sich stattdessen
+     zwischenspeichern und fortsetzen.
+
+     Ueber Umgebungsvariablen, damit die Dateien nach R2 oder auf eine eigene
+     Domain umziehen koennen, ohne dass hier jemand Code anfasst. */
+  chainDownloads: {
+    mac: process.env.CHAIN_DOWNLOAD_MAC || '',
+    windows: process.env.CHAIN_DOWNLOAD_WIN || '',
+    manual: process.env.CHAIN_MANUAL_URL || '',
+    report: process.env.CHAIN_REPORT_URL || ''
+  },
+
   s3Endpoint: process.env.S3_ENDPOINT || '',
   /* R2 has no regions; 'auto' is what the S3 SDK wants to see. */
   s3Region: process.env.S3_REGION || 'auto',

@@ -6,6 +6,9 @@ Disallow: /upload.html
 Disallow: /admin.html
 Disallow: /release-links.html
 Disallow: /order.html
+# Anmeldeseite des Kontobereichs: nichts fuer die Suche, sie traegt
+# zusaetzlich noindex im Kopf.
+Disallow: /account.html
 
 # Die Linkseite zur Filament EP. Sie ist zum Verschicken gedacht, steht
 # nirgends verlinkt und traegt zusaetzlich noindex im Kopf.

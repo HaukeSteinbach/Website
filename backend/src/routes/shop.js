@@ -12,6 +12,7 @@ import express from 'express';
 import { config } from '../lib/config.js';
 import { fail, ok } from '../lib/http.js';
 import { buildInvoicePdf } from '../lib/invoice-pdf.js';
+import { buildLicenceKey } from '../lib/licences.js';
 import { sendOrderConfirmationEmail, sendOrderNoticeEmail } from '../lib/mail.js';
 import {
   addOrderEvent,
@@ -59,7 +60,19 @@ router.get('/products/:slug', (request, response) => {
     priceCents: product.priceCents,
     currency: CURRENCY,
     available: isShopConfigured() && isStorageConfigured(),
-    testMode: isShopConfigured() && isTestMode()
+    testMode: isShopConfigured() && isTestMode(),
+    /* Die Demo und ihre Nachbarn. Oeffentlich, weil sie oeffentlich sind: es
+       ist dieselbe Datei, die jeder bekommt, und der Schluessel ist das, was
+       persoenlich ist. Was nicht hinterlegt ist, faellt hier heraus, damit die
+       Seite keinen Knopf zeigt, der ins Leere fuehrt. */
+    downloads: product.demo
+      ? [
+          { id: 'mac', label: 'Demo für macOS', url: config.chainDownloads.mac },
+          { id: 'windows', label: 'Demo für Windows', url: config.chainDownloads.windows },
+          { id: 'manual', label: 'Handbuch', url: config.chainDownloads.manual },
+          { id: 'report', label: 'Messbericht', url: config.chainDownloads.report }
+        ].filter((eintrag) => eintrag.url)
+      : []
   });
 });
 
@@ -93,18 +106,36 @@ router.post('/checkout', requireShop, async (request, response, next) => {
           }
         }
       }],
-      /* A parcel needs somewhere to go. */
-      shipping_address_collection: { allowed_countries: ALLOWED_COUNTRIES },
-      shipping_options: shippingOptions(),
+      /* A parcel needs somewhere to go. A download does not: for Chain the
+         two shipping lines fall away entirely, so Stripe neither asks for a
+         delivery address nor offers a postage option. Asking anyway would be
+         a field the buyer fills in for nothing and an address kept without a
+         reason. The billing address stays, it belongs on the invoice. */
+      ...(product.shipped
+        ? {
+            shipping_address_collection: { allowed_countries: ALLOWED_COUNTRIES },
+            shipping_options: shippingOptions()
+          }
+        : {}),
       billing_address_collection: 'required',
       phone_number_collection: { enabled: false },
       /* Shown above Stripe's pay button. Both notices are required of a German
          seller and this is the last moment the buyer sees before paying. */
       custom_text: {
         submit: {
-          message: 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet. '
-            + 'Es gilt das gesetzliche Widerrufsrecht von 14 Tagen — eine E-Mail '
-            + 'an mail@haukesteinbach.de genügt.'
+          /* Digital goods need the second sentence: without that consent the
+             fourteen days keep running after the download, with it they end at
+             the moment of delivery (§ 356 Abs. 5 BGB). It has to be given
+             before paying and it has to be visible, which is why it stands
+             here and not in the terms. */
+          message: product.shipped
+            ? 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet. '
+              + 'Es gilt das gesetzliche Widerrufsrecht von 14 Tagen. Eine E-Mail '
+              + 'an mail@haukesteinbach.de genügt.'
+            : 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet. '
+              + 'Mit dem Kauf verlangst du den sofortigen Beginn der Lieferung und '
+              + 'bestätigst, dass dein Widerrufsrecht mit der Bereitstellung des '
+              + 'Lizenzschlüssels erlischt.'
         }
       },
       success_url: `${origin}/order.html?session={CHECKOUT_SESSION_ID}`,
@@ -222,6 +253,27 @@ async function recordPaidSession(session) {
 
   let aktuell = order;
   let pdf = null;
+
+  /* 0. Der Lizenzschluessel, falls das Produkt einen hat.
+     ZUERST, weil die Bestaetigungsmail ihn traegt: waere er spaeter dran,
+     bekaeme der Kaeufer eine Mail ohne den einen Teil, auf den er wartet.
+     Er faellt aus der Rechnungsnummer und dem Namen, steht also fest, sobald
+     die Bestellung angelegt ist -- nichts zu wuerfeln, nichts zu speichern,
+     was nicht ohnehin schon da waere. Trotzdem wird er in der Bestellung
+     abgelegt: so ist im Nachhinein belegt, was ausgeliefert wurde, auch wenn
+     sich das Format irgendwann aendert. */
+  if (product.keyword && !aktuell.licenceKey) {
+    const { order: mitSchluessel } = await updateOrder(aktuell.id, (draft) => {
+      draft.licenceKey = buildLicenceKey({
+        invoiceNumber: draft.invoiceNumber,
+        buyerName: draft.buyer?.name,
+        keyword: product.keyword
+      });
+      addOrderEvent(draft, 'licence_issued', { key: draft.licenceKey });
+    });
+
+    aktuell = mitSchluessel;
+  }
 
   /* 1. Rechnung, falls sie noch fehlt. */
   if (!aktuell.invoiceKey) {

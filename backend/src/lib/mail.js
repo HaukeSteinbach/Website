@@ -98,6 +98,11 @@ export async function sendRevisionAcknowledgementEmail({ project, revision }) {
 
 export async function sendOrderConfirmationEmail({ order, invoicePdf }) {
   const buyer = order.buyer || {};
+  /* Ein Download kennt keine Lieferadresse und wartet auf kein Paket. Steht
+     der Schluessel dran, ist es Software, und dann traegt die Mail ihn und den
+     Weg zum Programm -- nicht den Satz, dass sich bald jemand ums Porto
+     kuemmert. */
+  const istSoftware = Boolean(order.licenceKey);
   const anschrift = [
     buyer.name,
     buyer.line1,
@@ -115,12 +120,30 @@ export async function sendOrderConfirmationEmail({ order, invoicePdf }) {
     order.shippingCents ? `Versand — ${euro(order.shippingCents)}` : '',
     `Gesamt — ${euro(order.totalCents)}`,
     '',
-    'Lieferadresse:',
-    anschrift,
-    '',
-    'Sobald das Paket rausgeht, bekommst du noch eine Nachricht.',
-    '',
-    'Widerrufsrecht: 14 Tage, eine E-Mail an mail@haukesteinbach.de genügt.',
+    ...(istSoftware
+      ? [
+          'Dein Lizenzschlüssel:',
+          order.licenceKey,
+          '',
+          'So kommst du an die Software: lade die Demo von haukesteinbach.de,',
+          'installiere sie und trage den Schlüssel einmal ein. Die Demo ist die',
+          'vollständige Fassung, der Schlüssel schaltet sie frei. Geprüft wird er',
+          'auf deinem Rechner, nicht bei uns.',
+          '',
+          'Alles noch einmal nachschlagen, inklusive Handbuch und Download:',
+          'haukesteinbach.de/account.html',
+          '',
+          'Widerrufsrecht: mit der Bereitstellung des Schlüssels ist es erloschen,',
+          'weil du dem sofortigen Beginn der Lieferung zugestimmt hast.'
+        ]
+      : [
+          'Lieferadresse:',
+          anschrift,
+          '',
+          'Sobald das Paket rausgeht, bekommst du noch eine Nachricht.',
+          '',
+          'Widerrufsrecht: 14 Tage, eine E-Mail an mail@haukesteinbach.de genügt.'
+        ]),
     '',
     'Hauke Steinbach',
     'haukesteinbach.de'
@@ -139,9 +162,24 @@ export async function sendOrderConfirmationEmail({ order, invoicePdf }) {
         `<strong style="color:#D6D6D6">Gesamt &mdash; ${euro(order.totalCents)}</strong>`,
         '',
         'Die Rechnung liegt dieser Mail als PDF bei.',
-        'Sobald das Paket rausgeht, bekommst du noch eine Nachricht.',
-        '',
-        'Widerrufsrecht: 14 Tage, eine E-Mail genügt.'
+        ...(istSoftware
+          ? [
+              '',
+              'Dein Lizenzschlüssel:',
+              `<strong style="color:#E94560;font-family:monospace;word-break:break-all">${escapeHtml(order.licenceKey)}</strong>`,
+              '',
+              'Lade die Demo, installiere sie und trage den Schlüssel einmal ein. '
+                + 'Die Demo ist die vollständige Fassung, der Schlüssel schaltet sie frei.',
+              'Download, Handbuch und dieser Schlüssel jederzeit unter '
+                + '<a href="https://haukesteinbach.de/account.html" style="color:#E94560">haukesteinbach.de/account.html</a>.',
+              '',
+              'Widerrufsrecht: mit der Bereitstellung des Schlüssels erloschen.'
+            ]
+          : [
+              'Sobald das Paket rausgeht, bekommst du noch eine Nachricht.',
+              '',
+              'Widerrufsrecht: 14 Tage, eine E-Mail genügt.'
+            ])
       ]
     }),
     attachments: invoicePdf
@@ -350,6 +388,48 @@ export async function sendDocumentEmail({ document, pdf, message }) {
           contentType: 'application/pdf'
         }]
       : []
+  });
+}
+
+/**
+ * Der Anmeldecode fuer den Kontobereich, an den Kaeufer.
+ *
+ * Nicht sendLoginCodeEmail: die geht ans Studio und sagt Dinge, die einen
+ * Kunden nichts angehen. Und sie darf hier auch inhaltlich nicht stehen,
+ * denn hier gibt es kein Passwort, das jemand kennen koennte -- der Satz
+ * "dann kennt jemand dein Passwort" waere schlicht falsch.
+ */
+export async function sendAccountCodeEmail({ to, code, minutes }) {
+  return sendToCustomer({
+    to,
+    subject: `Dein Anmeldecode ${code}`,
+    text: [
+      `Dein Code: ${code}`,
+      '',
+      `Er gilt ${minutes} Minuten und lässt sich einmal verwenden.`,
+      '',
+      'Damit kommst du an deinen Lizenzschlüssel, den Download und das',
+      'Handbuch: haukesteinbach.de/account.html',
+      '',
+      'Hast du keinen Code angefordert, ignoriere diese Mail. Ohne den Code',
+      'passiert nichts, und ein Passwort gibt es hier nicht.',
+      '',
+      'Hauke Steinbach',
+      'haukesteinbach.de'
+    ].join('\n'),
+    html: buildHtml({
+      heading: 'Dein Anmeldecode',
+      lead: 'Kontobereich',
+      lines: [
+        `<strong style="color:#E94560;font-size:28px;letter-spacing:.18em;font-family:monospace">${escapeHtml(code)}</strong>`,
+        '',
+        `Gültig ${minutes} Minuten, einmal verwendbar.`,
+        '',
+        'Damit kommst du an deinen Lizenzschlüssel, den Download und das Handbuch.',
+        '',
+        'Hast du keinen Code angefordert, ignoriere diese Mail. Ohne den Code passiert nichts.'
+      ]
+    })
   });
 }
 

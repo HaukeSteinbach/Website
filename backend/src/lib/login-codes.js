@@ -11,8 +11,12 @@
  * codes for a login they never passed the password of.
  *
  * The codes live in memory. A restart forgets the pending ones, which costs a
- * fresh login and nothing else — and it means a code cannot survive on disk
+ * fresh login and nothing else, and it means a code cannot survive on disk
  * anywhere.
+ *
+ * The same mechanism serves the customer account area, where there is no
+ * password before it: there the code IS the login, and the address it was sent
+ * to is signed into the challenge — see `subject` below.
  */
 
 import { createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
@@ -44,7 +48,7 @@ function sweep(now) {
  * in the clear — what stays here is its HMAC, so a memory dump does not hand
  * over a working code.
  */
-export function issueLoginCode(now = Date.now()) {
+export function issueLoginCode(now = Date.now(), subject = '') {
   sweep(now);
 
   /* Kein Punkt im Bezeichner: der trennt gleich Kennung von Signatur. */
@@ -59,8 +63,17 @@ export function issueLoginCode(now = Date.now()) {
   });
 
   /* The browser holds the id plus a signature over it, so it cannot invent a
-     challenge of its own. */
-  return { challenge: `${challengeId}.${sign(challengeId)}`, code };
+     challenge of its own.
+
+     WHAT `subject` IS FOR. The admin login has nothing to bind to: there is
+     one account and the password was already checked. The account area has:
+     a code was sent to ONE address, and it must not be usable to open
+     somebody else's. The address is therefore signed into the challenge, and
+     verifyLoginCode is given the address the browser now claims. Differ the
+     two, the signature does not match and the code is worth nothing. Without
+     this, whoever had a valid code could name any address in the second step
+     and read that person's purchases. */
+  return { challenge: `${challengeId}.${sign(`${challengeId}|${subject}`)}`, code };
 }
 
 /**
@@ -69,12 +82,12 @@ export function issueLoginCode(now = Date.now()) {
  * Returns one of: 'ok', 'expired', 'invalid'. A used or exhausted challenge is
  * dropped, so a code works exactly once and guessing gets five tries.
  */
-export function verifyLoginCode(challenge, code, now = Date.now()) {
+export function verifyLoginCode(challenge, code, now = Date.now(), subject = '') {
   sweep(now);
 
   const [challengeId, signature] = String(challenge || '').split('.');
 
-  if (!challengeId || !signature || sign(challengeId) !== signature) {
+  if (!challengeId || !signature || sign(`${challengeId}|${subject}`) !== signature) {
     return 'invalid';
   }
 

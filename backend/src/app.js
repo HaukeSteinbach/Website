@@ -15,6 +15,7 @@ import adminRoutes from './routes/admin.js';
 import bookingRoutes from './routes/bookings.js';
 import publicRoutes, { deliveryPageHandler } from './routes/public.js';
 import shopRoutes from './routes/shop.js';
+import accountRoutes from './routes/account.js';
 import releasePageRoutes from './routes/release-pages.js';
 
 const app = express();
@@ -195,6 +196,11 @@ const RETIRED = {
 Object.entries(RETIRED).forEach(([from, to]) => {
   app.get(from, (_request, response) => response.redirect(301, to));
 });
+
+/* Der Kontobereich der Kaeufer. Eigener Weg, eigenes Cookie, nichts vom
+   Adminbereich: hier meldet sich an, wer gekauft hat, und sieht ausschliesslich
+   die eigenen Kaeufe. */
+app.use('/api/v1/account', accountRoutes);
 
 app.use(releasePageRoutes);
 app.use(express.static(config.publicDir, { index: 'index.html' }));

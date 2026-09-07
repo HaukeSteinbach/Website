@@ -29,11 +29,39 @@
     return (cents / 100).toFixed(2).replace('.', ',') + ' €';
   }
 
+  /* Die Demo und das Handbuch, falls die Seite einen Platz dafuer hat und der
+     Server Adressen nennt. Beides faellt einzeln aus: eine Seite ohne den
+     Block bleibt unberuehrt, ein Server ohne Adressen laesst den Hinweis
+     stehen, dass die Dateien noch kommen. */
+  function zeigeDateien(dateien) {
+    var demo = document.getElementById('demo-links');
+    if (!demo || !dateien.length) return;
+
+    demo.innerHTML = dateien.map(function (d, i) {
+      return '<a class="btn' + (i === 0 ? ' fill' : '') + '" href="' + d.url
+        + '" rel="noopener">' + d.label + '</a>';
+    }).join('');
+    demo.hidden = false;
+
+    var fehlt = document.getElementById('demo-fehlt');
+    if (fehlt) fehlt.hidden = true;
+  }
+
   /* Is the shop open? */
   fetch('/api/v1/public/shop/products/' + button.dataset.product)
     .then(function (response) { return response.ok ? response.json() : null; })
     .then(function (product) {
-      if (!product || !product.available) return;
+      if (!product) return;
+
+      /* ZUERST die Demo, DANN der Kaufknopf. Die beiden haengen an
+         verschiedenen Bedingungen: die Dateien liegen, sobald ihre Adressen
+         hinterlegt sind, der Kaufknopf braucht zusaetzlich Stripe und die
+         Ablage. Stand das hier hinter der Pruefung auf available, verschwand
+         mit einem geschlossenen Laden auch der Download -- also genau das,
+         was jemand vor dem Kauf haben soll. */
+      zeigeDateien(product.downloads || []);
+
+      if (!product.available) return;
 
       button.textContent = 'Buy for ' + euro(product.priceCents);
       buy.hidden = false;
@@ -43,6 +71,8 @@
         var note = document.getElementById('shop-test-note');
         if (note) note.hidden = false;
       }
+
+
     })
     .catch(function () { /* shop stays hidden, pre-order stays visible */ });
 

@@ -894,10 +894,28 @@
      zudem eine Zusage ueber die Zukunft. Stehen bleibt, was zugesagt ist:
      eine Lizenz, eine Zahlung, kein Abo. -->
           <p class="price-sub">One licence &middot; One payment &middot; No subscription</p>
-          <div class="btn-row">
-            <a class="btn fill" href="contact.html">Buy now</a>
-            <a class="btn" href="contact.html">Download the demo first</a>
-          </div>
+          <!-- Der Kaufknopf erscheint erst, wenn der Server sagt, dass der Laden offen
+     ist: ohne Stripe-Schluessel oder ohne Ablage waere er ein Knopf, der beim
+     Klick versagt. Solange bleibt der Weg ueber die Kontaktseite stehen, und
+     der funktioniert. assets/js/shop.js macht das, dieselbe Datei wie bei
+     RecLight. -->
+<div class="btn-row" id="shop-fallback">
+<a class="btn fill" href="contact.html">Buy now</a>
+<a class="btn" href="#demo-download">Download the demo first</a>
+</div>
+
+<div class="btn-row" id="shop-buy" hidden>
+<button type="button" class="btn fill" id="buy-button" data-product="chain">Buy for 49 &euro;</button>
+<a class="btn" href="#demo-download">Download the demo first</a>
+</div>
+
+<p class="note mono" id="shop-test-note" hidden>Test mode, no real payment is taken.</p>
+<div class="handoff-status" id="shop-status" role="status" aria-live="polite"></div>
+
+<!-- Wer schon gekauft hat, sucht seinen Schluessel meist genau hier: auf der
+     Produktseite, nicht in einer alten Mail. Ein Satz, kein Menuepunkt. -->
+<p class="note" style="margin-top:18px">Already bought it?
+<a href="account.html">Your key and downloads</a>.</p>
           <p class="note">No VAT is charged under &sect; 19 UStG. The licence key arrives by
           email with your invoice and is entered once. It is checked on your machine,
           so Chain keeps working whether or not this website does.</p>
@@ -923,7 +941,26 @@
     </section>
     </div>
 
-    <div class="sticky" id="sticky">
+    <!-- ============================== DEMO ============================== -->
+<div class="cwrap" id="demo-download">
+<section>
+  <p class="kicker rise">Demo</p>
+  <h2 class="fat rise">Try it<br>on your mix</h2>
+  <div class="rule rise"></div>
+  <p class="deck rise">The demo is the complete plug-in. No time limit, no
+  quality cut, no silence every few minutes. A licence key removes the reminder,
+  nothing else.</p>
+  <!-- Die Liste faellt automatisch weg, wenn keine Adresse hinterlegt ist:
+       ein Downloadknopf, der auf nichts zeigt, ist schlimmer als keiner.
+       assets/js/shop.js holt die Adressen vom Server. -->
+  <div class="btn-row rise" id="demo-links" style="margin-top:32px" hidden></div>
+  <p class="note rise" id="demo-fehlt">The installers go up with the release.
+  Write to <a href="contact.html">mail@haukesteinbach.de</a> if you want them
+  earlier.</p>
+</section>
+</div>
+
+<div class="sticky" id="sticky">
       <p class="what"><b>Steinbach Chain</b> &middot; 49 &euro; &middot; Demo unlimited, full quality</p>
       <div class="btn-row" style="margin:0">
         <a class="btn" href="#hear">Hear it</a>
@@ -968,6 +1005,7 @@
 <script src="assets/js/cookie-consent.js"></script>
 <script src="assets/js/steinbach-ui.js"></script>
 
+<script src="assets/js/shop.js"></script>
 <script src="assets/js/chain-page.js"></script>
 
 

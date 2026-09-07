@@ -1,7 +1,8 @@
 /**
  * The shop catalogue.
  *
- * One product for now — RecLight, a physical thing that gets posted. Prices and
+ * Two products: RecLight, a physical thing that gets posted, and Steinbach
+ * Chain, a plug-in that is downloaded. Prices and
  * shipping live here rather than in the Stripe dashboard, so what is charged is
  * versioned with the code and a change is reviewable. The browser only ever
  * sends a slug; everything about money is resolved on this side.
@@ -26,6 +27,32 @@ export const PRODUCTS = {
     /* Physical goods: the buyer's address is needed to post it. */
     shipped: true,
     weightNote: 'Small parcel'
+  },
+
+  chain: {
+    slug: 'chain',
+    name: 'Steinbach Chain',
+    description: 'Channel strip plug-in for CLAP, VST3 and AU, one licence',
+    invoiceDescription: 'Steinbach Chain, Kanalzug-Plug-in für CLAP, VST3 und AU, eine Lizenz',
+    /* Cents. steinbach-chain.html has said 49 € since it went up; the page and
+       this line have to be changed together. */
+    priceCents: 4900,
+    page: 'steinbach-chain.html',
+    /* Nothing is posted, so Stripe must not ask for an address: a delivery
+       address for a download is a field the buyer fills in for nothing and a
+       piece of personal data kept without a reason. */
+    shipped: false,
+    /* The word that goes into the licence key, between the name and "Key". */
+    keyword: 'Chain',
+    /* WHY THE DOWNLOAD IS NOT PER BUYER. What is downloaded is the demo: the
+       complete plug-in without a time limit, which is turned into the full
+       version by entering the key. So the file behind this link is the same
+       file the product page hands to anyone who asks, and dressing it up as a
+       personal link would suggest a protection that is not there while costing
+       every buyer a link that expires. One address, cached by Cloudflare,
+       resumable, and it still works in a year when someone sets up a new
+       machine. The licence is what is personal, not the file. */
+    demo: true
   }
 };
 
