@@ -183,7 +183,13 @@ const RETIRED = {
      Sampleinstrumente stehen. Sie hier ein zweites Mal zu fuehren, hiess zwei
      Seiten zum selben Produkt zu pflegen. Der Verweis geht auf das Original,
      damit Lesezeichen und die Google-Treffer nicht ins Leere laufen. */
-  '/orgel.html': 'https://steinbach-instruments.de/historic-organ.html'
+  '/orgel.html': 'https://steinbach-instruments.de/historic-organ.html',
+  /* Aus Steinbach EQ ist Steinbach Chain geworden, dasselbe Produkt unter
+     neuem Namen. Die alte Adresse stand im Sitemap, war intern verlinkt und
+     steht in den Google-Treffern. Ohne diese Zeile laufen Treffer und
+     Lesezeichen ins Leere und der aufgebaute Rang verfaellt, statt auf die
+     neue Seite ueberzugehen. 301, weil der Umzug endgueltig ist. */
+  '/steinbach-eq.html': '/steinbach-chain.html'
 };
 
 Object.entries(RETIRED).forEach(([from, to]) => {

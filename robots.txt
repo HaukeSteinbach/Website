@@ -5,6 +5,7 @@ Allow: /
 Disallow: /upload.html
 Disallow: /admin.html
 Disallow: /release-links.html
+Disallow: /order.html
 Disallow: /d/
 
 # Interne Bereiche. Beide tragen zusätzlich noindex im Kopf — das hier hält
