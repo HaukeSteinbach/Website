@@ -373,7 +373,7 @@ export async function deleteDraft(id) {
 /**
  * Wie die Datei heißt, wenn sie auf dem Rechner landet.
  *
- * Die Nummer, sonst nichts — AN-2026-08-30-0001.pdf, HS-2026-08-30-0001.pdf.
+ * Die Nummer, sonst nichts — AN-2026-08-30-0001.pdf, 2026-08-30-0001.pdf.
  * Sie trägt ihr Kürzel bereits: AN für Angebote, HS für Rechnungen aus diesem
  * Haus. Ein zusätzliches A- oder R- davor sagt dasselbe zweimal und macht den
  * Namen nur länger.

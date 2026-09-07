@@ -9,7 +9,7 @@
  *
  * Two kinds of invoice meet in here and must not be confused:
  *
- *   - the ones this site issued, numbered HS-YYYY-MM-DD-NNNN, which live in
+ *   - the ones this site issued, numbered YYYY-MM-DD-NNNN, which live in
  *     orders.js and are generated on demand;
  *   - the ones Onlydesk issued before the move, numbered YYYY-MM-DD-NNNN,
  *     which are finished documents. They are kept verbatim, never renumbered

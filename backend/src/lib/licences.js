@@ -4,7 +4,7 @@
  * THE FORMAT IS HAUKE'S, and it is deliberate:
  *
  *     <invoice number>-<first name>-<last name>-<product>-Key
- *     HS-2026-09-04-0002-Hauke-Steinbach-Chain-Key
+ *     2026-09-04-0002-Hauke-Steinbach-Chain-Key
  *
  * It is guessable by anyone who knows the shape, and that is an accepted
  * trade rather than an oversight. The reasoning: the demo is the full plug-in
@@ -86,10 +86,9 @@ export function splitName(fullName) {
 /**
  * Build the key for one order.
  *
- * The invoice number goes in as it was issued, prefix and all. That prefix
- * exists because steinbach-instruments.de counts under the same tax number
- * (see orders.js), and a key that quotes a shortened number would no longer
- * name the document it belongs to.
+ * Die Rechnungsnummer geht so hinein, wie sie ausgestellt wurde. Ein
+ * Schluessel, der eine gekuerzte oder verzierte Nummer zitiert, benennt das
+ * Dokument nicht mehr, zu dem er gehoert -- und genau dafuer steht sie darin.
  */
 export function buildLicenceKey({ invoiceNumber, buyerName, keyword }) {
   if (!invoiceNumber) throw new Error('Ein Lizenzschlüssel braucht die Rechnungsnummer.');

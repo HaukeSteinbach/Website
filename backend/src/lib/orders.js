@@ -54,17 +54,23 @@ async function writeIndex(index, etag) {
 /* ---------------------------------------------------------------------------
    Invoice numbers
    ---------------------------------------------------------------------------
-   HS-YYYY-MM-DD-NNNN, counted per day in Europe/Berlin. The prefix is not
-   decoration: steinbach-instruments.de issues YYYY-MM-DD-NNNN from its own
-   counter under the same tax number, and § 14 UStG wants every invoice number
-   the issuer hands out to be unique. Without the prefix both shops would print
-   2026-08-28-0001 on the same day. The counter lives
-   in the same object as the orders, so drawing a number and storing the order
-   it belongs to is one atomic write: a number can never be issued twice, and
-   none can go missing between two writes.
-   --------------------------------------------------------------------------- */
+   YYYY-MM-DD-NNNN, counted per day in Europe/Berlin. Der Zaehler liegt im
+   selben Objekt wie die Bestellungen, also sind das Ziehen einer Nummer und
+   das Ablegen der Bestellung, zu der sie gehoert, EIN Schreibvorgang: keine
+   Nummer kann zweimal vergeben werden, und keine zwischen zwei Schreibvorgaengen
+   verlorengehen.
 
-const INVOICE_PREFIX = 'HS-';
+   HIER STAND BIS ZUM 08.09. EIN KUERZEL "HS-" DAVOR, und der Grund dafuer
+   besteht weiter: steinbach-instruments.de stellt unter derselben Steuernummer
+   aus demselben Format aus, und § 14 UStG will jede Nummer, die ein Aussteller
+   vergibt, nur einmal. Entstehen dort und hier am selben Tag je eine erste
+   Rechnung, tragen beide 2026-09-08-0001.
+
+   Hauke hat entschieden, dass auf einer Rechnung kein Kuerzel steht. Wer das
+   spaeter absichern will, ohne das Format anzufassen, laesst die beiden
+   Zaehler in verschiedenen Bereichen laufen -- hier zum Beispiel ab 5001 --
+   statt ein Zeichen davorzusetzen. Das waere eine Zeile in nextInvoiceNumber.
+   --------------------------------------------------------------------------- */
 
 function berlinDate(now = new Date()) {
   /* en-CA gives YYYY-MM-DD, which is what the number wants. */
@@ -75,7 +81,7 @@ function nextInvoiceNumber(index, now) {
   const day = berlinDate(now);
   const next = (index.invoiceCounters[day] || 0) + 1;
   index.invoiceCounters[day] = next;
-  return `${INVOICE_PREFIX}${day}-${String(next).padStart(4, '0')}`;
+  return `${day}-${String(next).padStart(4, '0')}`;
 }
 
 /**
