@@ -3,35 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steinbach EQ | Multiband EQ, Saturation &amp; Transient Plugin (AU, VST3)</title>
-    <meta name="description" content="EQ, multiband saturation and multiband transient shaping in one macOS plugin. Analogue character with precise control. AU and VST3 for Apple Silicon and Intel.">
-    <link rel="canonical" href="https://haukesteinbach.de/steinbach-eq.html">
+    <title>Steinbach EQ is now Steinbach Chain | Steinbach</title>
+
+    <!-- ======================================================================
+         WEITERLEITUNG. Diese Seite bleibt stehen, weil sie es muss.
+
+         Sie war von zwoelf anderen Seiten der Website verlinkt, steht in
+         Suchmaschinen und in Lesezeichen. Ersatzlos entfernt liefen alle
+         diese Wege ins Leere, und wer das Geraet unter seinem alten Namen
+         sucht, faende gar nichts mehr — nicht einmal den Hinweis, dass es
+         das Geraet noch gibt.
+
+         Drei Dinge tun hier ihre Arbeit, unabhaengig voneinander:
+
+           1. <link rel="canonical"> sagt der Suchmaschine, welche Seite die
+              gueltige ist. Die Rangfolge, die "steinbach-eq.html" ueber die
+              Jahre gesammelt hat, geht damit auf die neue Adresse ueber.
+           2. <meta http-equiv="refresh"> schickt den Besucher nach drei
+              Sekunden weiter. Drei und nicht null, damit der Hinweis unten
+              gelesen werden kann, bevor die Seite wechselt — sonst steht der
+              Besucher auf einer fremden Seite und weisz nicht, warum.
+           3. Der sichtbare Hinweis samt Link. Er ist der einzige der drei,
+              der auch ohne Skript und ohne befolgtes refresh funktioniert,
+              und deshalb der wichtigste.
+
+         BESSER WAERE EIN 301 vom Server. Ein Meta-Refresh ist eine Notloesung
+         im Dokument; eine echte Umleitung im nginx spart den Umweg ganz und
+         legt keinen Eintrag in den Zurueck-Verlauf. Die passende Zeile fuer
+         nginx/ steht in der Uebergabe. Bis dahin traegt diese Datei es.
+         ====================================================================== -->
+    <link rel="canonical" href="https://haukesteinbach.de/steinbach-chain.html">
+    <meta http-equiv="refresh" content="3; url=steinbach-chain.html">
+
+    <meta name="description" content="Steinbach EQ is now Steinbach Chain. The plugin grew into a full channel strip and was renamed for it. This page forwards to the new one.">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Steinbach">
     <meta property="og:locale" content="en_GB">
-    <meta property="og:title" content="Steinbach EQ | Multiband EQ, Saturation &amp; Transient Plugin (AU, VST3)">
-    <meta property="og:description" content="EQ, multiband saturation and multiband transient shaping in one macOS plugin. Analogue character with precise control. AU and VST3 for Apple Silicon and Intel.">
-    <meta property="og:url" content="https://haukesteinbach.de/steinbach-eq.html">
-    <meta property="og:image" content="https://haukesteinbach.de/assets/images/og-steinbach-eq.jpg">
+    <meta property="og:title" content="Steinbach EQ is now Steinbach Chain | Steinbach">
+    <meta property="og:description" content="Steinbach EQ is now Steinbach Chain. The plugin grew into a full channel strip and was renamed for it. This page forwards to the new one.">
+    <meta property="og:url" content="https://haukesteinbach.de/steinbach-chain.html">
+    <meta property="og:image" content="https://haukesteinbach.de/assets/images/og-steinbach-chain.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="Steinbach EQ, multiband EQ, saturation and transient plugin">
-    <meta name="twitter:image" content="https://haukesteinbach.de/assets/images/og-steinbach-eq.jpg">
+    <meta property="og:image:alt" content="Steinbach Chain, channel strip plugin with EQ, saturation, transient shaping and a limiter">
+    <meta name="twitter:image" content="https://haukesteinbach.de/assets/images/og-steinbach-chain.jpg">
     <meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Steinbach EQ",
-"applicationCategory":"MultimediaApplication","operatingSystem":"macOS 11 or newer",
-"softwareVersion":"1.3","url":"https://haukesteinbach.de/steinbach-eq.html",
-"description":"EQ, multiband saturation and multiband transient shaping in one macOS plugin. Analogue character with precise control. AU and VST3 for Apple Silicon and Intel.",
-"offers":{"@type":"Offer","price":"29","priceCurrency":"EUR",
-"url":"https://www.patreon.com/Steinbach/posts/steinbach-eq-vst-162986878"},
-"author":{"@id":"https://haukesteinbach.de/#studio"}}
-</script>
+
     <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
     <link rel="stylesheet" href="assets/css/steinbach.css">
     <link rel="preload" href="assets/fonts/archivo-black-400-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="assets/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="assets/fonts/jetbrains-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+<style>
+/* Nur das Noetige. Die Seite hat einen einzigen Zweck und soll ihn in einem
+   Bildschirm erledigen, ohne dass jemand scrollen muss. */
+.umzug{border:1px solid var(--hair);border-left:4px solid var(--accent);
+  background:var(--panel);padding:clamp(24px,4vw,40px);margin:0 0 2.5rem;
+  max-width:74ch}
+.umzug p{color:var(--grey-2);max-width:66ch}
+.umzug p:first-of-type{color:var(--grey);font-size:1.06rem}
+.umzug b{color:var(--grey)}
+.umzug .warte{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--grey-3);margin:1.6rem 0 0}
+.altname{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--grey-3)}
+</style>
 </head>
 <body>
 
@@ -53,16 +90,16 @@
             <a class="nav-item" href="mastering.html">Mastering</a>
             <a class="nav-item" href="recordings.html">Studio</a>
 
-            <div class="nav-group">
+            <div class="nav-group" id="more">
                 <a class="nav-item" href="#more" aria-haspopup="true">More <i class="caret" aria-hidden="true"></i></a>
                 <div class="drop">
                     <a href="https://steinbach-instruments.de" target="_blank" rel="noopener noreferrer">
                         <span class="drop-t">Multisampler <i class="ext" aria-hidden="true">&#8599;</i></span>
                         <span class="drop-s">Interactive sample instruments</span>
                     </a>
-                    <a href="steinbach-eq.html">
-                        <span class="drop-t">Steinbach EQ</span>
-                        <span class="drop-s">AU &middot; VST3 &middot; macOS &middot; Windows</span>
+                    <a href="steinbach-chain.html">
+                        <span class="drop-t">Steinbach Chain</span>
+                        <span class="drop-s">Formerly Steinbach EQ &middot; CLAP &middot; VST3 &middot; AU</span>
                     </a>
                     <a href="steinbach-head-tracker.html">
                         <span class="drop-t">Head Tracker</span>
@@ -86,270 +123,38 @@
     </header>
 
     <header class="page-head">
-        <p class="kicker">Plugin for macOS</p>
-        <h1>Steinbach <br class="br-lg">EQ</h1>
-        <p class="page-lede">EQ, multiband saturation and multiband transient shaping in one plugin</p>
-        <p class="page-deck">Shape your sound with precision, add analogue character, and control transients per frequency band. All three modules run at once, on every sample, with zero added latency.</p>
-        <div class="badges">
-            <span>Version 1.3</span><span>AU</span><span>VST3</span><span>macOS</span><span>Zero latency</span>
-        </div>
-        <div class="btn-row">
-            <a class="btn fill" href="#buy">Get it for 29 &euro;</a>
-            <a class="btn" href="#video">Watch the mix demo</a>
-        </div>
+        <p class="kicker">This page has moved</p>
+        <h1>Steinbach <br class="br-lg">Chain</h1>
+        <p class="page-lede altname">Formerly Steinbach EQ</p>
         <div class="page-head-rule" aria-hidden="true"></div>
     </header>
 
     <main>
+        <div class="umzug">
+            <p><b>Steinbach EQ is now Steinbach Chain.</b> Nothing has been
+            discontinued and nothing has been taken away. The plugin grew into a
+            full channel strip and was renamed for what it had become.</p>
 
-        <!-- ================= SIGNAL CHAIN ================= -->
-        <section class="sec" aria-labelledby="chain-title">
-            <p class="kicker">Signal chain</p>
-            <h2 class="fat sec-h2" id="chain-title">Three processors, <br class="br-lg">one plugin</h2>
-            <p class="copy">All three modules run simultaneously at all times. The panel switcher changes only what is displayed, not what is processing. Every session uses all three.</p>
+            <p>The equaliser, the saturation and the transient shaping you know are
+            still there. They now sit in an order you set yourself, in front of a
+            limiter, with a level matched comparison and a null test to check the
+            result.</p>
 
-            <div class="cards four">
-                <div class="card">
-                    <h3>EQ</h3>
-                    <p class="card-role">8-band parametric</p>
-                    <p>Sculpt tone and frequency balance.</p>
-                </div>
-                <div class="card">
-                    <h3>SAT</h3>
-                    <p class="card-role">4-band saturator</p>
-                    <p>Add analogue harmonic character.</p>
-                </div>
-                <div class="card">
-                    <h3>TR</h3>
-                    <p class="card-role">4-band transient shaper</p>
-                    <p>Control attack and sustain, per band.</p>
-                </div>
-                <div class="card">
-                    <h3>CLIP</h3>
-                    <p class="card-role">Output clipper</p>
-                    <p>Soft or hard limiter at &minus;1 dBFS.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= EQ MODULE ================= -->
-        <section class="sec" aria-labelledby="eq-title">
-            <p class="kicker">EQ module</p>
-            <h2 class="fat sec-h2" id="eq-title">Eight bands that never <br class="br-lg">flatter themselves</h2>
-            <p class="copy">Make bold cuts and boosts without losing your loudness reference. Auto Gain compensates the output automatically, so what you hear is the actual tonal change, not a louder version convincing you it sounds better.</p>
-
-            <figure class="figure">
-                <div class="shot ui" style="aspect-ratio:1440 / 676">
-                    <video src="assets/Video/steinbach-eq/clip_eq.mp4"
-                           poster="assets/Video/steinbach-eq/poster_eq.jpg"
-                           autoplay loop muted playsinline preload="none"
-                           width="1440" height="676"
-                           aria-label="Screen recording: EQ bands being shaped while the analyser runs"></video>
-                </div>
-                <figcaption>Eight bands, the analyser and auto gain, live.</figcaption>
-            </figure>
-
-            <dl class="factrow detail four">
-                <div class="fact">
-                    <dt>7 filter types</dt>
-                    <dd>Low Cut, Low Shelf, Bell, Notch, High Shelf, High Cut, Band Pass. Right-click any handle to switch type and slope.</dd>
-                </div>
-                <div class="fact">
-                    <dt>Up to 48 dB/oct</dt>
-                    <dd>Butterworth cascade up to 8th order. Removes problem frequencies without phase smearing the rest of the signal.</dd>
-                </div>
-                <div class="fact">
-                    <dt>Click-free at any speed</dt>
-                    <dd>Per-block coefficient interpolation and 15 ms pre-smoothing eliminate zipper noise, even under fast automation.</dd>
-                </div>
-                <div class="fact">
-                    <dt>64-bit filter states</dt>
-                    <dd>TDF-II biquad processing stays stable at extreme Q values, very low frequencies and high sample rates.</dd>
-                </div>
-            </dl>
-        </section>
-
-        <!-- ================= SAT MODULE ================= -->
-        <section class="sec" aria-labelledby="sat-title">
-            <p class="kicker">SAT module</p>
-            <h2 class="fat sec-h2" id="sat-title">Analogue character, <br class="br-lg">per frequency band</h2>
-            <p class="copy">Saturate the low-mids for warmth without muddying the highs. Drive the presence range for bite without touching the bass. Independent saturation per band means you only add harmonic content exactly where you want it.</p>
-
-            <figure class="figure">
-                <div class="shot ui" style="aspect-ratio:1440 / 676">
-                    <video src="assets/Video/steinbach-eq/clip_sat.mp4"
-                           poster="assets/Video/steinbach-eq/poster_sat.jpg"
-                           autoplay loop muted playsinline preload="none"
-                           width="1440" height="676"
-                           aria-label="Screen recording: per-band saturation drive being raised"></video>
-                </div>
-                <figcaption>Drive raised on one band at a time.</figcaption>
-            </figure>
-
-            <dl class="factrow detail">
-                <div class="fact">
-                    <dt>Iron waveshaper</dt>
-                    <dd>Models transformer-core saturation with asymmetric drive, generating even harmonics for a musical, analogue sound. Harder on positive peaks, softer on negative, creating the push and pull of a real analogue circuit.</dd>
-                </div>
-                <div class="fact">
-                    <dt>Linkwitz-Riley crossover</dt>
-                    <dd>Three adjustable crossover points split the signal at 4th order with flat power reconstruction. Saturate each band without frequency-range bleed.</dd>
-                </div>
-                <div class="fact">
-                    <dt>Console stereo simulation</dt>
-                    <dd>Unlink left and right for independent per-band drive amounts, widening the stereo image through asymmetric harmonic content on each side.</dd>
-                </div>
-            </dl>
-        </section>
-
-        <!-- ================= TR MODULE ================= -->
-        <section class="sec" aria-labelledby="tr-title">
-            <p class="kicker">TR module</p>
-            <h2 class="fat sec-h2" id="tr-title">Sharper kick, tighter snare, <br class="br-lg">more room</h2>
-            <p class="copy">A dual-envelope follower detects attack and sustain phases in real time. Boost the attack to add punch or reduce it to tame harshness. Extend the sustain for presence or cut it to tighten a mix. All of this per band, without touching the EQ.</p>
-
-            <figure class="figure">
-                <div class="shot ui" style="aspect-ratio:1440 / 676">
-                    <video src="assets/Video/steinbach-eq/clip_tr.mp4"
-                           poster="assets/Video/steinbach-eq/poster_tr.jpg"
-                           autoplay loop muted playsinline preload="none"
-                           width="1440" height="676"
-                           aria-label="Screen recording: transient attack and sustain being adjusted"></video>
-                </div>
-                <figcaption>Attack and sustain, shaped per band.</figcaption>
-            </figure>
-
-            <dl class="factrow detail">
-                <div class="fact">
-                    <dt>Dual-envelope detection</dt>
-                    <dd>Fast and slow IIR followers separate transient peaks from sustained tails. The ratio between them identifies exactly when attack starts and ends.</dd>
-                </div>
-                <div class="fact">
-                    <dt>Attack and sustain, independent</dt>
-                    <dd>Set different gains for each phase, from &minus;24 to +24 dB. Add snap to a kick without making the room ring, or open up a room mic without making it punchy.</dd>
-                </div>
-                <div class="fact">
-                    <dt>Speed control</dt>
-                    <dd>Adjusts detection from 0.5 ms for sharp clicks and snare hits to 200 ms for room ambience and bass sustain. Dial it to match any source.</dd>
-                </div>
-            </dl>
-        </section>
-
-        <!-- ================= NEW IN 1.3 ================= -->
-        <section class="sec" aria-labelledby="new-title">
-            <p class="kicker">New in 1.3</p>
-            <h2 class="fat sec-h2" id="new-title">Dynamic bands, a chain <br class="br-lg">you can rearrange</h2>
-            <p class="copy">Version 1.3 is the largest update so far. Every band can now work dynamically, the three modules can be dragged into any order, and presets live in the plugin window instead of a system menu.</p>
-
-            <figure class="figure">
-                <div class="shot ui" style="aspect-ratio:1440 / 676">
-                    <video src="assets/Video/steinbach-eq/clip_presets.mp4"
-                           poster="assets/Video/steinbach-eq/poster_presets.jpg"
-                           autoplay loop muted playsinline preload="none"
-                           width="1440" height="676"
-                           aria-label="Screen recording: the preset browser opening over a blurred plugin window"></video>
-                </div>
-                <figcaption>The preset browser, new in 1.3.</figcaption>
-            </figure>
-
-            <ul class="speclist">
-                <li>
-                    <strong>Dynamic EQ</strong>
-                    <span>Right-click a band and make it dynamic. A bipolar ratio compresses or expands, and the ghost band shows the movement live.</span>
-                </li>
-                <li>
-                    <strong>Reorderable chain</strong>
-                    <span>Drag EQ, SAT and TR into whichever order the material needs. The modules animate into place.</span>
-                </li>
-                <li>
-                    <strong>Preset browser</strong>
-                    <span>An in-window overlay over a blurred backdrop, with 17 presets. Cmd+click auditions one without closing it.</span>
-                </li>
-                <li>
-                    <strong>Gain-matched A/B</strong>
-                    <span>On Cmd+B, without the shortcut leaking through to your DAW.</span>
-                </li>
-                <li>
-                    <strong>Quieter CLIP stage</strong>
-                    <span>A numerical fault in the DC blocker was producing audible crackle on bass-heavy material. Its noise floor is now 87&nbsp;dB lower.</span>
-                </li>
-            </ul>
-        </section>
-
-        <!-- ================= MIX DEMO ================= -->
-        <section class="sec" id="video" aria-labelledby="demo-title">
-            <p class="kicker">Mix demo</p>
-            <h2 class="fat sec-h2" id="demo-title">Hear it on <br class="br-lg">a real mix</h2>
-            <p class="copy">From raw tracks to finished result, Steinbach EQ on a full mix session.</p>
-
-            <div class="slot embed">
-                <iframe data-consent-category="external-media"
-                        data-consent-src="https://www.youtube.com/embed/qGw49MycNhM?start=12&amp;rel=0&amp;playsinline=1"
-                        title="Steinbach EQ mix demo" loading="lazy"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowfullscreen></iframe>
-            </div>
-        </section>
-
-        <!-- ================= SPECS ================= -->
-        <section class="sec" aria-labelledby="specs-title">
-            <p class="kicker">Specifications</p>
-            <h2 class="fat sec-h2" id="specs-title">What you get</h2>
-
-            <dl class="factrow four">
-                <div class="fact">
-                    <dt>Formats</dt>
-                    <dd>AU &middot; VST3<span class="fact-sub">Logic, Ableton, Reaper and more</span></dd>
-                </div>
-                <div class="fact">
-                    <dt>Platform</dt>
-                    <dd>macOS 11+<span class="fact-sub">Apple Silicon and Intel</span></dd>
-                </div>
-                <div class="fact">
-                    <dt>Sample rates</dt>
-                    <dd>44.1 &ndash; 192 kHz<span class="fact-sub">All standard rates</span></dd>
-                </div>
-                <div class="fact">
-                    <dt>Latency</dt>
-                    <dd>Zero samples<span class="fact-sub">No look-ahead processing</span></dd>
-                </div>
-                <div class="fact">
-                    <dt>EQ bands</dt>
-                    <dd>8<span class="fact-sub">7 types &middot; 6&ndash;48 dB/oct</span></dd>
-                </div>
-                <div class="fact">
-                    <dt>SAT bands</dt>
-                    <dd>4<span class="fact-sub">0&ndash;24 dB drive per band</span></dd>
-                </div>
-                <div class="fact">
-                    <dt>TR bands</dt>
-                    <dd>4<span class="fact-sub">&plusmn;24 dB attack and sustain</span></dd>
-                </div>
-                <div class="fact">
-                    <dt>Output clip</dt>
-                    <dd>&minus;1 dBFS<span class="fact-sub">Soft (tanh) or hard mode</span></dd>
-                </div>
-            </dl>
-        </section>
-
-        <!-- ================= BUY ================= -->
-        <section class="sec" id="buy" aria-labelledby="buy-title">
-            <p class="kicker">Get it</p>
-            <h2 class="fat sec-h2" id="buy-title">Get <br class="br-lg">Steinbach EQ</h2>
-
-            <p class="price">
-                <span class="price-value">29 &euro;</span>
-                <span class="price-sub">One-time payment &middot; Free updates &middot; via Patreon</span>
-            </p>
-
-            <p class="copy">Available through Patreon. You get the AU and VST3 versions for Apple Silicon and Intel, DAW preset support, and every update that follows.</p>
+            <p>If you own Steinbach EQ and are unsure what the change means for your
+            licence, write to <a href="contact.html">the studio</a> and you will get
+            a straight answer.</p>
 
             <div class="btn-row">
-                <a class="btn fill" href="https://www.patreon.com/Steinbach/posts/steinbach-eq-vst-162986878" target="_blank" rel="noopener noreferrer">Buy on Patreon <i class="ext" aria-hidden="true">&#8599;</i></a>
-                <a class="btn" href="contact.html">Questions first? Get in touch</a>
+                <a class="btn fill" href="steinbach-chain.html">Go to Steinbach Chain</a>
+                <a class="btn" href="contact.html">Ask about my licence</a>
             </div>
-        </section>
 
+            <!-- Der Hinweis auf die automatische Weiterleitung steht bewusst
+                 unter dem Knopf und nicht darueber: wer ohne Skript und ohne
+                 befolgtes refresh hier landet, soll erst den Weg sehen und dann
+                 erfahren, dass es auch von allein gegangen waere. -->
+            <p class="warte">You will be taken there automatically in a moment.</p>
+        </div>
     </main>
 
     <footer class="foot">

@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steinbach Chain | Channel Strip with Level Matched Comparison (CLAP, VST3, AU)</title>
+    <meta name="description" content="Steinbach Chain, formerly Steinbach EQ. EQ, saturation, transient shaping and a limiter in one window, with level matched comparison, a null test and meters that measure hearing. CLAP, VST3 and AU for macOS and Windows.">
+    <link rel="canonical" href="https://haukesteinbach.de/steinbach-chain.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Steinbach">
+    <meta property="og:locale" content="en_GB">
+    <meta property="og:title" content="Steinbach Chain | Channel Strip with Level Matched Comparison (CLAP, VST3, AU)">
+    <meta property="og:description" content="Steinbach Chain, formerly Steinbach EQ. EQ, saturation, transient shaping and a limiter in one window, with level matched comparison, a null test and meters that measure hearing. CLAP, VST3 and AU for macOS and Windows.">
+    <meta property="og:url" content="https://haukesteinbach.de/steinbach-chain.html">
+    <meta property="og:image" content="https://haukesteinbach.de/assets/images/og-steinbach-chain.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Steinbach Chain, channel strip plugin with EQ, saturation, transient shaping and a limiter">
+    <meta name="twitter:image" content="https://haukesteinbach.de/assets/images/og-steinbach-chain.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+<!-- Der Preis steht in den strukturierten Daten, so wie ihn auch reclight.html
+     und steinbach-head-tracker.html fuehren. Was hier BEWUSST FEHLT, ist
+     availability: die beiden anderen Seiten melden InStock, weil man dort
+     wirklich kaufen kann. Fuer Chain gibt es noch keinen Kaufweg, und eine
+     Verfuegbarkeitsmeldung waere damit eine Behauptung ohne Deckung. Preis und
+     Waehrung sind belegt, die Verfuegbarkeit nicht — also nur die ersten
+     beiden. Kommt der Shop, kommt die Zeile dazu.
+     Keine Mehrwertsteuerangabe im Schema: nach § 19 UStG wird gar keine
+     erhoben, und valueAddedTaxIncluded:false hiesse, sie komme noch obendrauf. -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Steinbach Chain",
+"alternateName":"Steinbach EQ",
+"applicationCategory":"MultimediaApplication","operatingSystem":"macOS, Windows",
+"url":"https://haukesteinbach.de/steinbach-chain.html",
+"image":"https://haukesteinbach.de/assets/images/og-steinbach-chain.jpg",
+"description":"Steinbach Chain, formerly Steinbach EQ. EQ, saturation, transient shaping and a limiter in one window, with level matched comparison, a null test and meters that measure hearing. CLAP, VST3 and AU for macOS and Windows.",
+"offers":{"@type":"Offer","price":"49","priceCurrency":"EUR",
+"url":"https://haukesteinbach.de/steinbach-chain.html#buy"},
+"author":{"@id":"https://haukesteinbach.de/#studio"}}
+</script>
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <link rel="stylesheet" href="assets/css/steinbach.css">
+    <link rel="preload" href="assets/fonts/archivo-black-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/jetbrains-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+<style>
+/* ==========================================================================
+   STEINBACH CHAIN — Produktseite.
+
+   Uebernommen aus dem abgenommenen Entwurf und in die Website eingehaengt.
+   Was hier NICHT mehr steht, weil assets/css/steinbach.css es schon liefert:
+   die @font-face-Saetze, die Farb- und Maszmarken (--black bis --edge), der
+   Grundsatz fuer body und html, und die Rail am rechten Rand. Alles Uebrige
+   ist unveraendert, nur unter .chain gehaengt, damit es die Kopfleiste, das
+   Menue und den Fussbereich der Website nicht ueberschreibt.
+
+   Bewegung: nach den Regeln von Emil Kowalskis Skills, und zwar nur dort, wo
+   sie etwas leistet. Die Regeln, die hier tatsaechlich angewendet sind:
+
+     · Eigene Kurven statt der eingebauten. cubic-bezier(0.23,1,0.32,1) fuer
+       alles Eintretende, weil die CSS-Vorgaben zu weich sind.
+     · Nie ease-in in der Oberflaeche. Es verzoegert genau den Moment, den das
+       Auge am genauesten beobachtet.
+     · Nie von scale(0). Nichts in der Wirklichkeit entsteht aus dem Nichts,
+       also 0.96 plus Deckkraft.
+     · Nur transform und opacity animieren. Alles andere kostet Layout.
+     · Unter 300 ms fuer alles, was bedient wird. Laenger nur, wo etwas erklaert
+       wird — der Kopfbereich darf.
+     · prefers-reduced-motion heiszt weniger und sanfter, nicht null: Deckkraft
+       bleibt, Bewegung geht.
+   ========================================================================== */
+
+:root{
+  /* Die drei Kurven. Staerker als die eingebauten, deshalb ueberhaupt eigene.
+     Der Rest der Marken steht in steinbach.css, Abschnitt 2. */
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  --ease-in-out:cubic-bezier(.77,0,.175,1);
+  --body:'Poppins',system-ui,-apple-system,Segoe UI,sans-serif;
+}
+
+.chain{font-family:var(--body);font-size:16px;line-height:1.65}
+
+/* Innerer Traeger. Die Breite und der Platz fuer die Rail kommen schon von
+   .wrap der Website; hier bleibt nur ein Block, damit die Abschnitte ihre
+   eigenen Trennlinien behalten. */
+.chain .cwrap{display:block}
+
+/* ---- Typografie -------------------------------------------------------- */
+.chain .fat{font-family:var(--fat);text-transform:uppercase;letter-spacing:-.012em;
+  line-height:.92;color:var(--grey);margin:0}
+.chain h1{font-size:clamp(3rem,9vw,8rem)}
+.chain h2{font-size:clamp(2rem,4.8vw,3.8rem)}
+.chain h3{font-family:var(--fat);text-transform:uppercase;font-size:1rem;margin:0 0 10px}
+/* steinbach.css macht aus .kicker eine gefuellte Akzentflaeche mit schwarzer
+   Schrift (Abschnitt 3). Auf dieser Seite ist der Kicker eine Zeile in der
+   Akzentfarbe auf schwarzem Grund — ohne die drei Ruecknahmen unten stand hier
+   ein roter Balken, in dem die Schrift unsichtbar war, weil sie die Farbe des
+   Balkens trug. Deshalb display, background und padding ausdruecklich zurueck. */
+.chain .kicker{display:block;background:none;padding:0;
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 16px}
+.chain .deck{font-size:1.16rem;color:var(--grey-2);max-width:58ch;margin:24px 0 0}
+.chain .copy{color:var(--grey-2);max-width:64ch}
+.chain .rule{width:88px;height:4px;background:var(--accent);margin:26px 0 0}
+.chain section{padding:clamp(64px,9vw,112px) 0;border-top:1px solid var(--hair);
+  position:relative}
+
+/* ---- Knoepfe -----------------------------------------------------------
+   :active mit scale(.97) — ein Knopf muss auf den Druck antworten, sonst
+   wirkt die Seite tot. 120 ms, weil Rueckmeldung sofort sein muss. ---------- */
+.chain .btn{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;
+  text-transform:uppercase;padding:16px 28px;border:1px solid var(--grey-3);
+  color:var(--grey);text-decoration:none;display:inline-block;
+  background:transparent;cursor:pointer;
+  transition:transform 120ms var(--ease-out),background-color 160ms ease,
+             border-color 160ms ease,color 160ms ease}
+.chain .btn:hover{border-color:var(--grey-2);background:#0E0E0E;color:var(--grey)}
+.chain .btn:active{transform:scale(.97)}
+.chain .btn.fill{background:var(--accent);border-color:var(--accent);
+  color:var(--on-accent);font-weight:500}
+.chain .btn.fill:hover{background:#F2536E;border-color:#F2536E;color:var(--on-accent)}
+.chain .btn-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+
+/* ---- Kopfbereich mit der Kamerafahrt dahinter --------------------------
+   Die negativen Auszenmarken sind dieselbe Rechnung wie bei .bar in
+   steinbach.css: sie ziehen den Kopfbereich ueber die Polsterung von .wrap
+   hinaus auf die volle Breite, ohne den Text zu verschieben. Ohne sie saesze
+   die Kamerafahrt in einem Kasten mit weiszem Rand aus Grund. ------------- */
+/* gap:0, weil steinbach.css .hero als Raster mit Spaltenabstand fuehrt (der
+   Kopfbereich der Startseite) und gap auch im Flexkasten gilt. */
+.chain .hero{position:relative;min-height:100svh;display:flex;align-items:center;
+  gap:0;padding:calc(var(--bar-h) + 40px) 0 64px;border-top:0;overflow:hidden;
+  margin-left:calc(var(--edge) * -1);
+  margin-right:calc((var(--edge) + var(--rail)) * -1);
+  padding-left:var(--edge);
+  padding-right:calc(var(--edge) + var(--rail))}
+.chain .hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden;background:#000}
+.chain .hero-bg video,.chain .hero-bg img{width:100%;height:100%;object-fit:cover;
+  opacity:.42;filter:saturate(.85)}
+/* Der Verlauf ist der Grund, warum Text ueber Bewegtbild lesbar bleibt.
+   Ohne ihn muesste das Video dunkler sein und man saehe nichts mehr davon. */
+.chain .hero-bg::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,#000 0%,rgba(0,0,0,.92) 42%,rgba(0,0,0,.35) 100%),
+             linear-gradient(0deg,#000 0%,rgba(0,0,0,0) 40%)}
+.chain .hero .cwrap{position:relative;z-index:1;width:100%}
+
+/* ---- Eintreten beim Scrollen ------------------------------------------
+   16 px sind genug. Groeszere Wege sehen nach Effekt aus, kleinere nach
+   Absicht. ease-out, weil das Element eintritt. ------------------------- */
+.chain .rise{opacity:0;transform:translateY(16px);
+  transition:opacity 520ms var(--ease-out),transform 520ms var(--ease-out)}
+.chain .rise.in{opacity:1;transform:none}
+.chain .rise.d1{transition-delay:70ms}.chain .rise.d2{transition-delay:140ms}
+.chain .rise.d3{transition-delay:210ms}.chain .rise.d4{transition-delay:280ms}
+
+/* ---- Raster ------------------------------------------------------------ */
+/* Feste Spaltenzahl statt auto-fit. Mit auto-fit brach das Sechserraster auf
+   breiten Schirmen in vier plus zwei um, und die vier leeren Zellen der zweiten
+   Reihe standen als graue Flaeche da — der Rasterhintergrund scheint dort durch,
+   wo keine Zelle liegt. Drei Spalten teilen sechs Kacheln immer sauber. */
+.chain .grid{display:grid;gap:1px;background:var(--hair);border:1px solid var(--hair)}
+.chain .g2{grid-template-columns:1fr 1fr}
+.chain .g3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:1000px){.chain .g3{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.chain .g2,.chain .g3{grid-template-columns:1fr}}
+.chain .cell{background:var(--black);padding:32px;transition:background-color 200ms ease;
+  display:flex;flex-direction:column}
+.chain .cell:hover{background:#080808}
+.chain .split{display:grid;gap:48px;grid-template-columns:1fr 1fr;align-items:center}
+@media(max-width:880px){.chain .split{grid-template-columns:1fr}}
+
+/* ---- Der Umschalter, das Kernstueck ----------------------------------- */
+.chain .ab{border:1px solid var(--hair);background:var(--panel);padding:26px}
+.chain .ab-head{display:flex;justify-content:space-between;align-items:baseline;
+  gap:16px;margin-bottom:20px}
+.chain .ab-name{font-family:var(--fat);text-transform:uppercase;font-size:1.05rem}
+.chain .ab-tag{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;
+  color:var(--grey-3)}
+.chain .ab-switch{display:flex;border:1px solid var(--hair);position:relative;
+  isolation:isolate}
+.chain .ab-switch button{flex:1;background:none;border:0;color:var(--grey-2);
+  font-family:var(--mono);font-size:.7rem;letter-spacing:.16em;
+  text-transform:uppercase;padding:14px 0;cursor:pointer;position:relative;
+  z-index:1;transition:color 160ms ease}
+.chain .ab-switch button[aria-pressed="true"]{color:var(--on-accent)}
+/* Der Reiter faehrt, statt zu springen. 200 ms, ease-in-out, weil er sich auf
+   dem Bild bewegt und nicht eintritt. */
+.chain .ab-thumb{position:absolute;top:0;bottom:0;left:0;width:50%;
+  background:var(--accent);z-index:0;
+  transition:transform 200ms var(--ease-in-out)}
+.chain .ab-switch.b .ab-thumb{transform:translateX(100%)}
+.chain .offen{color:var(--accent)}
+.chain .ab-meta{font-family:var(--mono);font-size:.66rem;color:var(--grey-3);
+  margin-top:14px;letter-spacing:.06em}
+.chain .ab-play{width:100%;margin-top:10px;background:none;border:1px solid var(--hair);
+  color:var(--grey-2);font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;
+  text-transform:uppercase;padding:12px 0;cursor:pointer;
+  transition:transform 120ms var(--ease-out),color 160ms ease,border-color 160ms ease}
+.chain .ab-play:hover{color:var(--grey);border-color:var(--grey-3)}
+.chain .ab-play:active{transform:scale(.98)}
+/* Solange die Klangbeispiele nicht geschnitten sind, steht der Knopf still.
+   Ein Knopf, der auf eine fehlende Datei zeigt, ist schlechter als einer, der
+   sagt, dass er noch nichts hat. */
+.chain .ab-play[disabled]{cursor:not-allowed;color:var(--grey-3);
+  border-style:dashed}
+.chain .ab-play[disabled]:hover{color:var(--grey-3);border-color:var(--hair)}
+.chain .ab-play[disabled]:active{transform:none}
+.chain .ab-switch[aria-disabled="true"] button{cursor:not-allowed}
+
+/* ---- Zahlen ------------------------------------------------------------ */
+/* Sechs Zahlen, also drei Spalten — mit auto-fit riss es dieselbe graue Luecke
+   auf wie im Sechserraster darueber. */
+.chain .facts{display:grid;gap:1px;background:var(--hair);border:1px solid var(--hair);
+  grid-template-columns:1fr 1fr 1fr;margin-top:44px}
+@media(max-width:900px){.chain .facts{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.chain .facts{grid-template-columns:1fr}}
+.chain .fact{background:var(--black);padding:26px}
+.chain .fact dt{font-family:var(--mono);font-size:.63rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--grey-3);margin-bottom:0}
+/* text-transform ausdruecklich zurueck: steinbach.css stellt .fact dd auf
+   Groszbuchstaben, und aus „2 samples" wurde damit „2 SAMPLES". Die Zahlen
+   dieser Seite stehen gemischt, so wie sie abgenommen wurden. */
+.chain .fact dd{margin:12px 0 0;font-family:var(--fat);font-size:1.8rem;
+  color:var(--grey);text-transform:none;letter-spacing:-.012em}
+.chain .fact .sub{font-size:.82rem;color:var(--grey-2);margin-top:10px;line-height:1.55}
+
+/* ---- Klartext ---------------------------------------------------------- */
+.chain table{width:100%;border-collapse:collapse;margin-top:36px}
+.chain td{padding:20px 0;border-bottom:1px solid var(--hair);vertical-align:top}
+.chain td.what{width:32%;font-family:var(--mono);font-size:.77rem;color:var(--grey);
+  padding-right:28px}
+.chain td.why{color:var(--grey-2)}
+.chain td.why b{color:var(--grey);font-weight:500}
+
+/* ---- Preis und feste Leiste ------------------------------------------- */
+/* display zurueck auf block: steinbach.css baut .price als Flexzeile fuer sein
+   eigenes Preispaar aus .price-value und .price-sub. Hier steht die Zahl allein
+   im Element. */
+.chain .price{display:block;font-family:var(--fat);
+  font-size:clamp(2.6rem,6vw,4.6rem);line-height:1;
+  color:var(--grey);margin:0}
+.chain .price-sub{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;
+  color:var(--grey-2);text-transform:uppercase;margin-top:14px}
+/* Die Website gibt .note eine Akzentkante links. Auf dieser Seite traegt der
+   Umzugshinweis diese Kante, und zwei verschiedene Dinge duerfen nicht dasselbe
+   Zeichen fuehren — also hier zurueckgenommen. */
+.chain .note{border-left:0;padding-left:0;
+  font-size:.86rem;color:var(--grey-3);margin-top:20px;max-width:56ch}
+.chain .reassure{font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;
+  color:var(--grey-2);margin:18px 0 0}
+
+/* Der Hinweis auf die Umbenennung. Er steht bewusst im Akzent gerahmt und
+   nicht im Fliesztext: wer die Seite als Steinbach EQ kennt, soll ihn finden,
+   ohne zu lesen. */
+.chain .rename{border:1px solid var(--hair);border-left:4px solid var(--accent);
+  background:var(--panel);padding:22px 26px;margin:0 0 8px}
+.chain .rename p{margin:0;color:var(--grey-2);max-width:70ch}
+.chain .rename p + p{margin-top:10px}
+.chain .rename b{color:var(--grey);font-weight:500}
+.chain .rename .kicker{margin-bottom:10px}
+
+.chain .sticky{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;
+  align-items:center;justify-content:space-between;gap:18px;padding:14px 32px;
+  background:rgba(0,0,0,.94);border-top:1px solid var(--hair);
+  padding-right:calc(32px + var(--rail));
+  transform:translateY(110%);transition:transform 260ms var(--ease-out)}
+.chain .sticky.show{transform:none}
+.chain .sticky .what{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--grey-2)}
+.chain .sticky .what b{color:var(--grey);font-weight:400}
+.chain .sticky .btn{padding:12px 22px}
+@media(max-width:700px){.chain .sticky .what{display:none}}
+
+/* ---- Abschnittsleiste --------------------------------------------------
+   Sie steht da, damit man weisz, wo man ist und was noch kommt. Eine lange
+   Seite ohne Inhaltsverzeichnis zwingt zum Scrollen auf Verdacht. Sie klebt
+   unter der Kopfleiste der Website, nicht an deren Stelle: --bar-h ist die
+   Hoehe, die steinbach.css fuer .bar angibt (99 px am Schreibtisch, 80 auf
+   dem Telefon — die Marke wird dort neu gesetzt).
+
+   Die zweite Zeile ist der Grund, warum es ueberhaupt zwei Regeln braucht.
+   Die Kopfleiste der Website faehrt beim Herunterscrollen weg (.bar-hidden,
+   translateY(-100%)). Sie bleibt dabei im Layout stehen, also blieb diese
+   Leiste auf --bar-h kleben und schwebte mit einem leeren Streifen darueber,
+   durch den der Text lief. Der Geschwisterwaehler zieht sie in diesem Fall
+   auf null nach; 0,28 s ist dieselbe Dauer, die steinbach.css fuer die
+   Kopfleiste angibt, damit sich beide zusammen bewegen.
+   ------------------------------------------------------------------------ */
+.chain-nav{position:sticky;top:var(--bar-h);z-index:45;height:56px;display:flex;
+  transition:top .28s ease;
+  align-items:center;justify-content:space-between;gap:20px;
+  margin-left:calc(var(--edge) * -1);
+  margin-right:calc((var(--edge) + var(--rail)) * -1);
+  padding-left:var(--edge);
+  padding-right:calc(var(--edge) + var(--rail));
+  background:rgba(0,0,0,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--hair)}
+.chain-nav .marke{font-family:var(--fat);font-size:.8rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--grey)}
+.chain-nav .punkte{display:flex;gap:26px}
+.chain-nav a{font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--grey-3);text-decoration:none;
+  transition:color 160ms ease}
+.chain-nav a:hover{color:var(--grey)}
+.chain-nav a.hier{color:var(--accent)}
+.bar.bar-hidden ~ .chain-nav{top:0}
+@media(max-width:820px){.chain-nav .punkte{display:none}}
+@media (prefers-reduced-motion:reduce){.chain-nav{transition:none}}
+
+/* ---- Einwaende als Aufklapper ------------------------------------------
+   Vier ausgeschriebene Antworten untereinander sind eine Wand. Zugeklappt
+   sieht man die vier Fragen auf einen Blick und liest nur, was einen angeht.
+   ------------------------------------------------------------------------ */
+.chain .qa{border-top:1px solid var(--hair)}
+.chain .qa:last-of-type{border-bottom:1px solid var(--hair)}
+.chain .qa summary{list-style:none;cursor:pointer;padding:24px 0;display:flex;
+  align-items:center;justify-content:space-between;gap:20px;
+  font-family:var(--fat);text-transform:uppercase;font-size:1rem;
+  color:var(--grey);transition:color 160ms ease}
+.chain .qa summary::-webkit-details-marker{display:none}
+.chain .qa summary:hover{color:#fff}
+/* Das Zeichen dreht, statt ausgetauscht zu werden — eine Drehung sagt
+   „dasselbe, anderer Zustand", ein Wechsel sagt „etwas Neues". */
+.chain .qa .zeichen{flex:none;width:14px;height:14px;position:relative}
+.chain .qa .zeichen::before,.chain .qa .zeichen::after{content:'';position:absolute;
+  background:var(--accent);transition:transform 200ms var(--ease-in-out)}
+.chain .qa .zeichen::before{left:0;right:0;top:6px;height:2px}
+.chain .qa .zeichen::after{top:0;bottom:0;left:6px;width:2px}
+.chain .qa[open] .zeichen::after{transform:scaleY(0)}
+.chain .qa .antwort{padding:0 0 26px;color:var(--grey-2);max-width:68ch}
+.chain .qa .antwort p{margin:0 0 12px}
+.chain .qa .antwort p:last-child{margin:0}
+
+/* ---- Modulkacheln: eine Schleife je Modul, laeuft nur beim Ueberfahren.
+   Seitenverhaeltnis fest aus der Auslieferung 964x386, damit vor dem Laden
+   nichts springt. ---- */
+.chain .modul{position:relative;display:block;width:100%;aspect-ratio:964/386;
+  background:#0b0b0c;border:1px solid var(--hair);margin-bottom:20px;
+  cursor:pointer}
+.chain .modul video,.chain .modul img{position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;display:block;max-width:none}
+.chain .modul:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* SAT und ROUTING zeichnen nichts, was sich mit dem Signal bewegt: drei
+   Aufnahmen ueber zwei Durchlaeufe der Tonspur kamen pixelgleich zurueck.
+   Eine Schleife, in der nichts passiert, ist schlechter als ein Standbild
+   -- also auch kein Zeiger, der eine Bewegung verspricht, die nicht kommt. */
+.chain .modul.still{cursor:default}
+
+/* ---- Weniger Bewegung, nicht keine ------------------------------------ */
+@media (prefers-reduced-motion:reduce){
+  .chain .rise{transform:none;transition:opacity 240ms ease}
+  .chain .ab-thumb{transition:none}
+  .chain .btn:active{transform:none}
+  .chain .sticky{transition:none}
+  .chain .hero-bg video{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- amplitude tick rail, filled by assets/js/steinbach-ui.js -->
+<div class="rail" aria-hidden="true"></div>
+
+<div class="wrap">
+
+    <header class="bar">
+        <a class="mark" href="index.html">Steinbach</a>
+
+        <button class="burger" type="button" aria-expanded="false" aria-controls="nav" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+
+        <nav class="nav" id="nav">
+            <a class="nav-item" href="index.html">Home</a>
+            <a class="nav-item" href="mixing.html">Mixing</a>
+            <a class="nav-item" href="mastering.html">Mastering</a>
+            <a class="nav-item" href="recordings.html">Studio</a>
+
+            <div class="nav-group" id="more">
+                <a class="nav-item" href="#more" aria-haspopup="true">More <i class="caret" aria-hidden="true"></i></a>
+                <div class="drop">
+                    <a href="https://steinbach-instruments.de" target="_blank" rel="noopener noreferrer">
+                        <span class="drop-t">Multisampler <i class="ext" aria-hidden="true">&#8599;</i></span>
+                        <span class="drop-s">Interactive sample instruments</span>
+                    </a>
+                    <a href="steinbach-chain.html">
+                        <span class="drop-t">Steinbach Chain</span>
+                        <span class="drop-s">Formerly Steinbach EQ &middot; CLAP &middot; VST3 &middot; AU</span>
+                    </a>
+                    <a href="steinbach-head-tracker.html">
+                        <span class="drop-t">Head Tracker</span>
+                        <span class="drop-s">Binaural head tracking &middot; AU &middot; VST3</span>
+                    </a>
+                    <a href="reclight.html">
+                        <span class="drop-t">RecLight</span>
+                        <span class="drop-s">Studio Status LED &middot; 30 &euro;</span>
+                    </a>
+                    <a href="ir-maker.html">
+                        <span class="drop-t">IR Maker</span>
+                        <span class="drop-s">Impulse response generator</span>
+                    </a>
+                    <a href="scores-archive.html">
+                        <span class="drop-t">Scores &amp; Sketches</span>
+                        <span class="drop-s">Non-exclusive score archive</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <nav class="chain-nav" aria-label="On this page">
+        <span class="marke">Steinbach Chain</span>
+        <span class="punkte">
+            <a href="#problem">The problem</a>
+            <a href="#beweis">The proof</a>
+            <a href="#hear">Hear it</a>
+            <a href="#views">Inside</a>
+            <a href="#buy">Buy</a>
+        </span>
+    </nav>
+
+    <div class="chain">
+
+    <!-- ============================== KOPF ============================== -->
+    <section class="hero">
+      <div class="hero-bg">
+        <!-- Der erste echte Render aus dem Plugin, StreifzugDemo.
+             Stumm, in Schleife, ohne Bedienelemente: Hintergrund, kein Inhalt.
+             Laeuft mit halber Geschwindigkeit — das setzt das Skript unten, nicht
+             die Datei. So bleibt die Vorlage unangetastet und die Entscheidung
+             umkehrbar. Die Vorlage hat 120 Bilder je Sekunde, halbiert bleiben
+             also 60 echte uebrig: kein Ruckeln, kein Zwischenbildrechnen.
+             poster traegt das erste Bild, damit vor dem Start nichts blitzt und
+             wer kein Video mag trotzdem etwas sieht. -->
+        <video id="hero-video" autoplay muted loop playsinline preload="none"
+               poster="assets/Video/steinbach-chain/streifzug-loop.jpg">
+          <!-- AV1 zuerst: gleiche Vorlage, ein Drittel der Groesze, und in den
+               dunklen Flaechen sogar sauberer als die H.264-Fassung. Wer AV1 nicht
+               abspielen kann — Safari ohne Hardwaredecoder — nimmt die zweite
+               Zeile. Der Browser waehlt selbst, es laedt immer nur eine Datei. -->
+          <source data-src="assets/Video/steinbach-chain/streifzug-loop.av1.mp4" type='video/mp4; codecs="av01.0.12M.08"'>
+          <source data-src="assets/Video/steinbach-chain/streifzug-loop.h264.mp4" type='video/mp4; codecs="avc1.640028"'>
+        </video>
+      </div>
+
+      <div class="cwrap">
+        <p class="kicker rise d1">Steinbach Chain &middot; CLAP &middot; VST3 &middot; AU</p>
+        <h1 class="fat rise d2">Your plugins<br>have never<br>heard your mix.</h1>
+        <div class="rule rise d2"></div>
+        <p class="deck rise d3">They were voiced on a solo track, one at a time, by
+        someone listening to nothing else. Chain was built the other way round —
+        for the level a band really has when forty of them are playing.</p>
+
+        <div class="btn-row rise d4">
+          <a class="btn fill" href="#buy">Try it on your own mix</a>
+          <a class="btn" href="#hear">Hear the difference</a>
+        </div>
+<!-- „Instant download" ist gestrichen, solange es keinen Download gibt: der
+     Knopf im Kaufteil zeigt noch auf die Kontaktseite. Kommt die echte
+     Ladeadresse, kann die Zeile zurueck. -->
+        <p class="reassure rise d4">Demo unlimited, full quality &middot;
+        macOS and Windows</p>
+        <p class="reassure rise d4" style="color:var(--grey-3)">Formerly Steinbach EQ.
+        Same plugin, grown into a whole channel strip, and renamed for it.</p>
+      </div>
+    </section>
+
+    <!-- ============================== DAS PROBLEM ============================== -->
+    <div class="cwrap" id="problem">
+    <section>
+      <p class="kicker rise">The thing nobody admits</p>
+      <h2 class="fat rise">You have<br>already had<br>this happen.</h2>
+      <div class="rule rise"></div>
+
+      <div class="split" style="margin-top:52px">
+        <div>
+          <p class="copy rise">You solo a track, switch something on, and it sounds
+          better. Then you play the song — and the thing you improved is harder to
+          hear than before.</p>
+          <p class="copy rise">Your ears are fine. Almost every plugin is voiced and
+          demonstrated on one track playing alone, and a mix is never heard that way.
+          Solo, the louder version wins. In a mix, the track that wins is the one that
+          leaves room for everything else.</p>
+          <p class="copy rise" style="color:var(--grey)">Chain is built around that
+          difference instead of ignoring it.</p>
+        </div>
+        <video class="rise" data-src="assets/Video/steinbach-chain/chain-wechsel.mp4" data-film
+               poster="assets/Video/steinbach-chain/chain-wechsel.jpg"
+               autoplay muted loop playsinline preload="none"
+               style="width:100%;display:block;border:1px solid var(--hair)"></video>
+      </div>
+    </section>
+    </div>
+
+    <!-- ============================== DIE DREI BELEGE ============================== -->
+    <div class="cwrap" id="beweis">
+    <section>
+      <p class="kicker rise">How it knows</p>
+      <h2 class="fat rise">Three ways it<br>stops you<br>fooling yourself</h2>
+      <div class="rule rise"></div>
+      <p class="deck rise">Every plugin claims to sound good. These are the parts you
+      can check.</p>
+
+      <div class="grid g3 rise" style="margin-top:48px">
+        <div class="cell">
+          <h3>It matches the level</h3>
+          <p class="mono" style="font-size:.66rem;color:var(--accent);letter-spacing:.14em">
+            HOLD CMD+B</p>
+          <p class="copy" style="font-size:.94rem">Louder always sounds better, so the
+          comparison takes loudness out of it. Chain applies the inverse of its own
+          level change to the bypassed signal, and freezes the match the moment you
+          press — you hear tone, not volume.</p>
+        </div>
+        <div class="cell">
+          <h3>It measures hearing</h3>
+          <p class="mono" style="font-size:.66rem;color:var(--accent);letter-spacing:.14em">
+            SONE &middot; ACUM &middot; ASPER</p>
+          <p class="copy" style="font-size:.94rem">A peak meter answers whether
+          something will clip — rarely the question you have. These six answer what it
+          will sound like, and they move before you reach for the headphones.</p>
+        </div>
+        <div class="cell">
+          <h3>It shows what changed</h3>
+          <p class="mono" style="font-size:.66rem;color:var(--accent);letter-spacing:.14em">
+            WHITE OUT &middot; RED DIFFERENCE</p>
+          <p class="copy" style="font-size:.94rem">The delayed input minus the output,
+          across eighty bands. Red is what Chain added or took away — and red where
+          you meant to touch nothing means a setting reaches too far.</p>
+        </div>
+      </div>
+
+      <!-- Der Analysator im Lauf, achtzig Baender und die vier Werte darunter.
+           Gleiche Machart wie die Modulkacheln: ein Loopdurchlauf lang, still bis
+           zum Ueberfahren, ohne Ueberfahren laedt nur das Standbild. -->
+      <div class="modul rise" data-modul tabindex="0" aria-label="Analyser and null test, preview"
+           style="aspect-ratio:956/194;margin-top:1px;border-top:0">
+        <video muted loop playsinline preload="none" poster="assets/Video/steinbach-chain/nulltest.jpg">
+          <source src="assets/Video/steinbach-chain/nulltest.av1.mp4"  type='video/mp4; codecs="av01.0.05M.08"'>
+          <source src="assets/Video/steinbach-chain/nulltest.h264.mp4" type='video/mp4; codecs="avc1.640028"'>
+        </video>
+      </div>
+      <p class="copy rise" style="font-size:.82rem;color:var(--grey);margin-top:12px">
+        Eighty bands, and loudness, sharpness, roughness and prominence read live
+        underneath. Running on the demo loop.</p>
+    </section>
+    </div>
+
+    <!-- ============================== HOEREN ============================== -->
+    <div class="cwrap" id="hear">
+    <section>
+      <p class="kicker rise">Judge it yourself</p>
+      <h2 class="fat rise">Same loudness.<br>Now decide.</h2>
+      <div class="rule rise"></div>
+      <p class="deck rise">Every pair below is matched to the same loudness, so the
+      louder one cannot win. That is the whole argument of this plugin, applied to
+      its own demo.</p>
+
+      <!-- DIE VIER KLANGBEISPIELE SIND NOCH NICHT GESCHNITTEN. Die Dateien
+           media/*-dry.mp3 und *-wet-matched.mp3 gibt es nicht, deshalb steht
+           hier kein Knopf, der auf eine 404 zeigt: data-quelle ist entfernt,
+           das Skript uebergeht die Felder, und die Schalter sagen selbst, dass
+           sie noch nichts haben. Sobald die Dateien liegen, kommt an jedem Feld
+           data-quelle="assets/audio/steinbach-chain/<name>" zurueck und der
+           Knopf verliert disabled — mehr ist nicht zu tun. -->
+      <div class="grid g2 rise" style="margin-top:48px">
+        <div class="cell">
+          <div class="ab">
+            <div class="ab-head"><span class="ab-name">One frequency</span>
+              <span class="ab-tag">SAT BELL &middot; 2,5 kHz</span></div>
+            <div class="ab-switch" aria-disabled="true"><div class="ab-thumb"></div>
+              <button type="button" aria-pressed="true" disabled>Before</button>
+              <button type="button" aria-pressed="false" disabled>After</button></div>
+            <button type="button" class="ab-play" disabled>Audio in preparation</button>
+            <p class="ab-meta">Matched to the same loudness &middot; <span class="offen">figure pending</span></p>
+          </div>
+          <p class="copy" style="font-size:.92rem;margin-top:18px">A bell saturates one
+          frequency and leaves the rest alone — bite exactly where the mix needs it,
+          without dirtying anything around it.
+          <span class="offen">Measured figures follow once the final audio is in.</span></p>
+        </div>
+
+        <div class="cell">
+          <div class="ab">
+            <div class="ab-head"><span class="ab-name">A whole mix</span>
+              <span class="ab-tag">BUS &middot; MIX 3</span></div>
+            <div class="ab-switch" aria-disabled="true"><div class="ab-thumb"></div>
+              <button type="button" aria-pressed="true" disabled>Before</button>
+              <button type="button" aria-pressed="false" disabled>After</button></div>
+            <button type="button" class="ab-play" disabled>Audio in preparation</button>
+            <p class="ab-meta">Matched to the same loudness &middot; <span class="offen">figure pending</span></p>
+          </div>
+          <p class="copy" style="font-size:.92rem;margin-top:18px">The same mix, gently
+          driven. Nothing dramatic happens — that is the point. At equal loudness you
+          are hearing tone, not level.</p>
+        </div>
+
+        <div class="cell">
+          <div class="ab">
+            <div class="ab-head"><span class="ab-name">Guitar</span>
+              <span class="ab-tag">WIRE CRUNCH</span></div>
+            <div class="ab-switch" aria-disabled="true"><div class="ab-thumb"></div>
+              <button type="button" aria-pressed="true" disabled>Before</button>
+              <button type="button" aria-pressed="false" disabled>After</button></div>
+            <button type="button" class="ab-play" disabled>Audio in preparation</button>
+            <p class="ab-meta">Matched to the same loudness &middot; <span class="offen">figure pending</span></p>
+          </div>
+          <p class="copy" style="font-size:.92rem;margin-top:18px">One of the three
+          dirty presets, deliberately the roughest of the collection. Three decibels
+          had to come off to make this comparison fair.</p>
+        </div>
+
+        <div class="cell">
+          <div class="ab">
+            <div class="ab-head"><span class="ab-name">Transients</span>
+              <span class="ab-tag">TR &middot; NO THRESHOLD</span></div>
+            <div class="ab-switch" aria-disabled="true"><div class="ab-thumb"></div>
+              <button type="button" aria-pressed="true" disabled>Before</button>
+              <button type="button" aria-pressed="false" disabled>After</button></div>
+            <button type="button" class="ab-play" disabled>Audio in preparation</button>
+            <p class="ab-meta">Matched to the same loudness &middot; <span class="offen">figure pending</span></p>
+          </div>
+          <p class="copy" style="font-size:.92rem;margin-top:18px">Attack and sustain,
+          per band, with nothing to set that decides what counts as a transient — only
+          how much of it you want.</p>
+        </div>
+      </div>
+
+      <p class="note rise" style="max-width:64ch">Every pair is matched to the same
+      loudness, and the correction applied is printed above it so you can undo it.
+      The raw, unmatched versions sit next to them. The audio itself is still being
+      cut, so the players above are quiet for now.</p>
+    </section>
+    </div>
+
+    <!-- ============================== WAS ES ERSETZT ============================== -->
+    <div class="cwrap">
+    <section>
+      <p class="kicker rise">On one channel</p>
+      <h2 class="fat rise">Five windows,<br>or one.</h2>
+      <div class="rule rise"></div>
+
+      <div class="grid g2 rise" style="margin-top:48px">
+        <div class="cell">
+          <p class="mono" style="font-size:.66rem;color:var(--grey-3);letter-spacing:.16em">
+            WHAT IS THERE NOW</p>
+          <p style="font-size:1.05rem;line-height:2;margin:18px 0 0;color:var(--grey-2)">
+            An equaliser<br>A saturator, or two<br>A transient shaper<br>A limiter<br>
+            A meter to check what happened</p>
+          <p class="copy" style="font-size:.9rem;margin-top:22px">Five plugins, five
+          latencies, five level changes to keep straight — and still no way to hear
+          the whole lot against the untouched signal at the same volume.</p>
+        </div>
+        <div class="cell" style="background:var(--panel)">
+          <p class="mono" style="font-size:.66rem;color:var(--accent);letter-spacing:.16em">
+            WITH CHAIN</p>
+          <p style="font-size:1.05rem;line-height:2;margin:18px 0 0">
+            One window<br>One latency, reported honestly<br>One level, matched for you<br>
+            One display showing what changed<br>
+            <span style="color:var(--grey-3)">Nothing left to keep straight</span></p>
+          <p class="copy" style="font-size:.9rem;margin-top:22px;color:var(--grey-2)">
+          You set the order of EQ, saturation and transients. The limiter always
+          stands last, because it is the only stage that makes a promise about the
+          output level.</p>
+        </div>
+      </div>
+    </section>
+    </div>
+
+    <!-- ============================== SECHS ANSICHTEN ============================== -->
+    <div class="cwrap" id="views">
+    <section>
+      <p class="kicker rise">One window</p>
+      <h2 class="fat rise">Six views.<br>All running<br>at once.</h2>
+      <div class="rule rise"></div>
+      <p class="deck rise">The bar on the right decides what you look at — never what
+      is switched on.</p>
+
+      <div class="grid g2 rise" style="margin-top:48px">
+        <div class="cell"><div class="modul" data-modul tabindex="0" aria-label="EQ, preview">
+          <video muted loop playsinline preload="none" poster="assets/Video/steinbach-chain/modul-eq.jpg">
+            <source src="assets/Video/steinbach-chain/modul-eq.av1.mp4"  type='video/mp4; codecs="av01.0.05M.08"'>
+            <source src="assets/Video/steinbach-chain/modul-eq.h264.mp4" type='video/mp4; codecs="avc1.640028"'>
+          </video></div><h3>EQ</h3>
+          <p class="copy" style="font-size:.9rem">Eight bands, seven filter types,
+          slopes up to a brickwall, and a dynamic section on every one. Worked on the
+          curve, not on a row of knobs.</p></div>
+        <div class="cell"><div class="modul still">
+          <img src="assets/Video/steinbach-chain/modul-sat.jpg" alt="SAT, four bands with transfer curve and drive"
+               loading="lazy" width="964" height="386"></div><h3>SAT</h3>
+          <p class="copy" style="font-size:.9rem">Four bands, four characters, and four
+          bells that saturate a single frequency and leave the rest alone.</p></div>
+        <div class="cell"><div class="modul" data-modul tabindex="0" aria-label="TR, preview">
+          <video muted loop playsinline preload="none" poster="assets/Video/steinbach-chain/modul-tr.jpg">
+            <source src="assets/Video/steinbach-chain/modul-tr.av1.mp4"  type='video/mp4; codecs="av01.0.05M.08"'>
+            <source src="assets/Video/steinbach-chain/modul-tr.h264.mp4" type='video/mp4; codecs="avc1.640028"'>
+          </video></div><h3>TR</h3>
+          <p class="copy" style="font-size:.9rem">Attack and sustain per band, no
+          threshold to guess at, and a hundred lamellae showing where the transients
+          actually kick.</p></div>
+        <div class="cell"><div class="modul" data-modul tabindex="0" aria-label="CLIP, preview">
+          <video muted loop playsinline preload="none" poster="assets/Video/steinbach-chain/modul-clip.jpg">
+            <source src="assets/Video/steinbach-chain/modul-clip.av1.mp4"  type='video/mp4; codecs="av01.0.05M.08"'>
+            <source src="assets/Video/steinbach-chain/modul-clip.h264.mp4" type='video/mp4; codecs="avc1.640028"'>
+          </video></div><h3>CLIP</h3>
+          <p class="copy" style="font-size:.9rem">A lookahead limiter and a clipper.
+          Safety roof or effect, and it holds the sample peak exactly.</p></div>
+        <div class="cell"><div class="modul still">
+          <img src="assets/Video/steinbach-chain/modul-routing.jpg" alt="ROUTING, module order, EQ mode and crossover"
+               loading="lazy" width="964" height="386"></div><h3>ROUT</h3>
+          <p class="copy" style="font-size:.9rem">Module order, EQ mode, crossover
+          type, the quality ladder, analog mode, presets.</p></div>
+        <div class="cell"><div class="modul" data-modul tabindex="0" aria-label="OUT, preview">
+          <video muted loop playsinline preload="none" poster="assets/Video/steinbach-chain/modul-out.jpg">
+            <source src="assets/Video/steinbach-chain/modul-out.av1.mp4"  type='video/mp4; codecs="av01.0.05M.08"'>
+            <source src="assets/Video/steinbach-chain/modul-out.h264.mp4" type='video/mp4; codecs="avc1.640028"'>
+          </video></div><h3>OUT</h3>
+<!-- „with units" ist gestrichen: eine der sechs Groeszen, die Annoyance,
+     traegt laut Handbuch keine Einheit. -->
+          <p class="copy" style="font-size:.9rem">The psychoacoustic analyser, the null
+          test, six measured values, and the fader.</p></div>
+      </div>
+    </section>
+    </div>
+
+    <!-- ============================== KLARTEXT ============================== -->
+    <div class="cwrap">
+    <section>
+      <p class="kicker rise">Without the jargon</p>
+      <h2 class="fat rise">What that<br>buys you</h2>
+      <div class="rule rise"></div>
+
+      <table class="rise">
+        <tr><td class="what">Matched comparison</td>
+          <td class="why"><b>Louder always sounds better, even when it is worse.</b>
+          Chain evens out the volume when you switch.</td></tr>
+        <tr><td class="what">Six measured values</td>
+          <td class="why"><b>A peak meter tells you if it will clip.</b> Not whether it
+          will wear you out. These do.</td></tr>
+        <tr><td class="what">The null test</td>
+          <td class="why"><b>You see what you changed.</b> Not roughly — exactly
+          where.</td></tr>
+        <tr><td class="what">Saturation bells</td>
+          <td class="why"><b>Warmth exactly where it is missing</b>, instead of
+          thickening the parts that were already fine.</td></tr>
+        <tr><td class="what">Voiced at &minus;18 dBFS</td>
+          <td class="why"><b>Knobs that work where your music actually sits.</b> Most
+          plugins do nothing over the first two thirds of their travel.</td></tr>
+        <tr><td class="what">Bit transparent at zero</td>
+          <td class="why"><b>Off really is off</b> — not almost. Chain can sit on the
+          channel and cost nothing.</td></tr>
+      </table>
+    </section>
+    </div>
+
+    <!-- ============================== ZAHLEN ============================== -->
+    <div class="cwrap">
+    <section>
+      <p class="kicker rise">Measured, not claimed</p>
+      <h2 class="fat rise">The numbers<br>are public</h2>
+      <div class="rule rise"></div>
+      <p class="deck rise">Everything here is measured and printed in the manual. So
+      are the findings still open — we would rather you read them than discover
+      them.</p>
+
+      <div class="facts rise">
+        <div class="fact"><dt>Reference level</dt><dd>&minus;18 dBFS</dd>
+          <div class="sub">Where a band really sits inside a mix.</div></div>
+        <div class="fact"><dt>Latency, Zero Lat</dt><dd>2 samples</dd>
+          <div class="sub">Reported honestly, not rounded to nothing.</div></div>
+        <div class="fact"><dt>Component sets</dt><dd>7</dd>
+          <div class="sub">A real circuit, solved once per sample.</div></div>
+        <div class="fact"><dt>Analyser bands</dt><dd>80 ERB</dd>
+          <div class="sub">On the hearing scale, not a logarithmic one.</div></div>
+        <!-- KORRIGIERT gegen Handbuch 0.1.0 und die technische Dokumentation.
+             Der Entwurf trug hier 93,5 dB/oct; diese Zahl steht in keiner
+             Quelle. Der Brickwall ist ein Butterworth sechzehnter Ordnung,
+             also 96 dB je Oktave (Tabelle 3.2), und der Kasten „Die Raste 54
+             ist keine Steilheit" sagt ausdruecklich, dass der Flankenwert 54
+             keine Angabe in dB je Oktave ist. Die Ecke liegt auf
+             -3,0103 dB, in jeder Ordnung. -->
+        <div class="fact"><dt>Brickwall slope</dt><dd>96 dB/oct</dd>
+          <div class="sub">Butterworth, sixteenth order. Corner at &minus;3,0103 dB.</div></div>
+        <!-- Das Handbuch sagt „bit transparent", nicht „bit identical", und
+             nennt keine Zahl 0,00 dB. Also die Formulierung des Handbuchs. -->
+        <div class="fact"><dt>At drive zero</dt><dd>Bit transparent</dd>
+          <div class="sub">With no drive anywhere, and no latency either.</div></div>
+      </div>
+
+      <p class="note rise">CLAP is the native format. VST3 and AU are produced from
+      the same binary, so the three cannot sound different from one another.</p>
+    </section>
+    </div>
+
+    <!-- ============================== EINWAENDE ============================== -->
+    <div class="cwrap">
+    <section>
+      <p class="kicker rise">Before you decide</p>
+      <h2 class="fat rise">The four things<br>you are<br>wondering</h2>
+      <div class="rule rise"></div>
+
+      <div style="margin-top:46px" class="rise">
+        <details class="qa"><summary>Do I really need another channel strip?<i class="zeichen"></i></summary>
+          <div class="antwort"><p>Probably not another one. This is not a better EQ
+          than the one you own — it is the same tools with a way to tell whether a
+          move helped. If you already compare level matched and read a null test, you
+          have most of it. If you do not, that is what this buys.</p></div></details>
+
+        <details class="qa"><summary>What will it cost my CPU?<i class="zeichen"></i></summary>
+          <div class="antwort"><p>With no drive anywhere the saturation stage is bit
+          transparent and costs no latency at all.</p>
+          <p>Analog mode solves a real circuit once per sample and is the expensive
+          setting: roughly a third of one core per instance, more with the wavefolder.
+          The quality ladder lets you choose, and the manual prints the measured
+          figures rather than a promise.</p></div></details>
+
+        <details class="qa"><summary>Will the latency fit my session?<i class="zeichen"></i></summary>
+          <div class="antwort"><p>Chain reports only latency that actually occurs, and
+          reports it again whenever it changes.</p>
+          <p>On the bottom rung it is two samples — and it says two rather than
+          rounding to zero. With the lookahead limiter on it is 81 samples at 48 kHz.
+          Linear phase costs 91 ms and says so.</p></div></details>
+
+        <details class="qa"><summary>What if it does not work for me?<i class="zeichen"></i></summary>
+          <div class="antwort"><p>Take the demo. It runs unlimited, on as many tracks
+          as you like, and nothing is done to the sound — no interruptions, no noise,
+          no bypass every few minutes. We are asking you to judge this on how it
+          sounds, so degrading the sound would be a strange way to begin.</p>
+          <p>The one thing it will not do is remember. Nothing is saved with your
+          session, which makes it useless for real work and perfect for deciding.</p>
+          </div></details>
+      </div>
+    </section>
+    </div>
+
+    <!-- ============================== KAUFEN ============================== -->
+    <div class="cwrap" id="buy">
+    <section>
+      <p class="kicker rise">Steinbach Chain</p>
+      <h2 class="fat rise">Put it on<br>your mix</h2>
+      <div class="rule rise"></div>
+
+      <div class="rename rise" style="margin-top:44px">
+        <p class="kicker">If you came here looking for Steinbach EQ</p>
+        <p><b>You are in the right place.</b> Steinbach EQ is now Steinbach Chain.
+        The name changed because the plugin did: the equaliser, the saturation and
+        the transient shaping it always had now sit in front of a limiter, in an
+        order you set yourself, with a level matched comparison and a null test to
+        check the result.</p>
+        <p>Nothing has been taken away and nothing has been discontinued. If you
+        own Steinbach EQ and are unsure what that means for your licence, write to
+        <a href="contact.html" style="color:var(--accent)">the studio</a> and you
+        will get a straight answer.</p>
+      </div>
+
+      <div class="split rise" style="margin-top:48px">
+        <div>
+          <p class="price">49 &euro;</p>
+<!-- Der Entwurf trug hier „Three machines · Updates included". Beides steht
+     weder im Handbuch noch in der Preisvorgabe, und „Updates included" ist
+     zudem eine Zusage ueber die Zukunft. Stehen bleibt, was zugesagt ist:
+     eine Lizenz, eine Zahlung, kein Abo. -->
+          <p class="price-sub">One licence &middot; One payment &middot; No subscription</p>
+          <div class="btn-row">
+            <a class="btn fill" href="contact.html">Buy now</a>
+            <a class="btn" href="contact.html">Download the demo first</a>
+          </div>
+          <p class="note">No VAT is charged under &sect; 19 UStG. The licence key arrives by
+          email with your invoice and is entered once. It is checked on your machine,
+          so Chain keeps working whether or not this website does.</p>
+          <p class="note">One payment, no subscription, no dongle, and no account to
+          create. The demo has no time limit. The price is the price; there are no
+          discount rounds to wait for.</p>
+          <p class="note" style="color:var(--grey-2)">Manual and the full measurement
+          report are public, including what is still open. Read them before you
+          decide — that is what they are for.</p>
+        </div>
+        <video data-src="assets/Video/steinbach-chain/chain-streifzug.mp4" data-film
+               poster="assets/Video/steinbach-chain/chain-streifzug.jpg"
+               autoplay muted loop playsinline preload="none"
+               style="width:100%;display:block;border:1px solid var(--hair)"></video>
+      </div>
+    </section>
+    </div>
+
+    <div class="sticky" id="sticky">
+      <p class="what"><b>Steinbach Chain</b> &middot; 49 &euro; &middot; Demo unlimited, full quality</p>
+      <div class="btn-row" style="margin:0">
+        <a class="btn" href="#hear">Hear it</a>
+        <a class="btn fill" href="#buy">Buy</a>
+      </div>
+    </div>
+
+    </div><!-- /.chain -->
+
+    <footer class="foot">
+        <div class="foot-top">
+            <div>
+                <p class="foot-mark">Steinbach</p>
+                <p class="mono foot-note">Production &middot; Mixing &middot; Mastering<br>Hamburg, Germany</p>
+            </div>
+            <div>
+                <h4>Support my work</h4>
+                <ul>
+                    <li><a href="https://patreon.com/Steinbach" target="_blank" rel="noopener noreferrer">Patreon <i class="ext" aria-hidden="true">&#8599;</i></a></li>
+                    <li><a href="https://www.instagram.com/steinbach.wctw/" target="_blank" rel="noopener noreferrer">Instagram <i class="ext" aria-hidden="true">&#8599;</i></a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="impressum.html">Legal notice</a></li>
+                    <li><a href="datenschutz.html">Privacy policy</a></li>
+                    <li><a href="agb.html">Terms</a></li>
+                    <li><a href="widerruf.html">Withdrawal</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="foot-base mono">
+            <span>&copy; 2025 Steinbach. All rights reserved.</span>
+            <span>Hamburg</span>
+        </div>
+    </footer>
+
+</div>
+
+<script src="assets/js/cookie-consent.js"></script>
+<script src="assets/js/steinbach-ui.js"></script>
+
+<script>
+/* ---------------------------------------------------------------------------
+   Drei kleine Dinge, mehr braucht die Seite nicht.
+
+   Die Rail baut hier NICHT mehr auf: das macht assets/js/steinbach-ui.js fuer
+   die ganze Website. Stuende der Bau hier noch einmal, saeszen vierzig Striche
+   am Rand statt zwanzig.
+
+   Alles hoert auf prefers-reduced-motion: wer weniger Bewegung eingestellt hat,
+   bekommt die Inhalte sofort und ohne Weg, aber nicht weniger Inhalt.
+   --------------------------------------------------------------------------- */
+(function () {
+  var ruhig = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* 1. Eintreten beim Scrollen. Einmal und nie wieder — etwas, das bei jedem
+        Vorbeiscrollen erneut hereinfliegt, wird beim zweiten Mal laestig. */
+  var teile = document.querySelectorAll('.chain .rise');
+
+  if (!('IntersectionObserver' in window) || ruhig) {
+    teile.forEach(function (el) { el.classList.add('in'); });
+  } else {
+    var beobachter = new IntersectionObserver(function (eintraege) {
+      eintraege.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('in');
+        beobachter.unobserve(e.target);
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.05 });
+
+    teile.forEach(function (el) { beobachter.observe(el); });
+  }
+
+  /* 2. Der A/B-Umschalter.
+
+     Beide Dateien laufen gleichzeitig und an derselben Stelle; umgeschaltet
+     wird nur, welche zu hoeren ist. Nur so springt der Vergleich nicht in der
+     Zeit, und man vergleicht wirklich denselben Takt.
+
+     Uebergeblendet wird ueber 20 ms statt hart geschaltet — ein harter Wechsel
+     mitten in der Welle knackt, und dieses Knacken hoert man dann als
+     Unterschied zwischen den Fassungen, obwohl es keiner ist.
+
+     Der Ton startet erst auf Klick. Eine Seite, die von allein Krach macht,
+     wird geschlossen, bevor irgendein Argument gelesen wurde.
+
+     Solange kein data-quelle gesetzt ist, uebergeht die Schleife das Feld: die
+     vier Beispiele sind noch nicht geschnitten, und ein Knopf, der eine
+     fehlende Datei anfordert, ist schlimmer als einer, der stillsteht. */
+  document.querySelectorAll('.chain .ab').forEach(function (feld) {
+    var quelle = feld.dataset.quelle;
+    if (!quelle) return;
+
+    var schalter = feld.querySelector('.ab-switch');
+    var knoepfe = schalter.querySelectorAll('button');
+    var abspielen = feld.querySelector('.ab-play');
+    var ctx, quellen, verstaerker, laeuft = false;
+
+    function aufbauen() {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      var dateien = [quelle + '-dry.mp3', quelle + '-wet-matched.mp3'];
+
+      quellen = dateien.map(function (pfad) {
+        var el = new Audio(pfad);
+        el.loop = true;
+        el.crossOrigin = 'anonymous';
+        el.preload = 'auto';
+        return el;
+      });
+
+      verstaerker = quellen.map(function (el, i) {
+        var g = ctx.createGain();
+        g.gain.value = i === 0 ? 1 : 0;
+        ctx.createMediaElementSource(el).connect(g).connect(ctx.destination);
+        return g;
+      });
+    }
+
+    function waehlen(i) {
+      knoepfe.forEach(function (k, j) { k.setAttribute('aria-pressed', String(i === j)); });
+      schalter.classList.toggle('b', i === 1);
+
+      if (!verstaerker) return;
+      var jetzt = ctx.currentTime;
+      verstaerker.forEach(function (g, j) {
+        g.gain.cancelScheduledValues(jetzt);
+        g.gain.setValueAtTime(g.gain.value, jetzt);
+        g.gain.linearRampToValueAtTime(i === j ? 1 : 0, jetzt + 0.02);
+      });
+    }
+
+    knoepfe.forEach(function (knopf, i) {
+      knopf.addEventListener('click', function () { waehlen(i); });
+    });
+
+    abspielen.addEventListener('click', function () {
+      if (!ctx) aufbauen();
+      if (ctx.state === 'suspended') ctx.resume();
+
+      if (laeuft) {
+        quellen.forEach(function (el) { el.pause(); });
+        laeuft = false;
+        abspielen.textContent = 'Play';
+        return;
+      }
+
+      /* Gemeinsam auf null, damit beide wirklich denselben Takt spielen. */
+      quellen.forEach(function (el) { el.currentTime = 0; });
+      Promise.all(quellen.map(function (el) { return el.play(); }))
+        .then(function () { laeuft = true; abspielen.textContent = 'Stop'; })
+        .catch(function () { abspielen.textContent = 'Audio blocked'; });
+    });
+  });
+
+  /* 3. Die Kaufleiste. Beobachtet Kopf und Kaufteil, statt mit Scrollhoehen zu
+        rechnen — das ist auf dem Telefon verlaesslicher und in eingebetteten
+        Vorschaufenstern ueberhaupt das Einzige, was funktioniert. */
+  var leiste = document.getElementById('sticky');
+  var kopf = document.querySelector('.chain .hero');
+  var kauf = document.getElementById('buy');
+  var kopfDa = true, kaufDa = false;
+
+  function pruefen() { leiste.classList.toggle('show', !kopfDa && !kaufDa); }
+
+  if ('IntersectionObserver' in window && leiste && kopf && kauf) {
+    new IntersectionObserver(function (e) { kopfDa = e[0].isIntersecting; pruefen(); },
+      { threshold: 0 }).observe(kopf);
+    new IntersectionObserver(function (e) { kaufDa = e[0].isIntersecting; pruefen(); },
+      { threshold: 0.08 }).observe(kauf);
+  }
+
+  /* 3b. Der Kopf-Film laeuft mit halber Geschwindigkeit.
+
+         Ueber playbackRate statt ueber eine langsamere Datei: die Vorlage bleibt
+         unangetastet, es entsteht kein zweiter Render, und der Wert ist eine
+         Zahl statt einer Neukodierung. Preis dafuer: die 24 Bilder je Sekunde
+         werden zu effektiv zwoelf, jedes Bild steht doppelt so lange. Bei einer
+         so langsamen Fahrt faellt das kaum auf; falls doch, rechnen wir eine
+         Fassung mit Zwischenbildern.
+
+         Neu gesetzt wird bei jedem Schleifendurchlauf, weil einige Browser den
+         Wert beim Neustart auf eins zuruecksetzen. */
+  var kopfFilm = document.getElementById('hero-video');
+
+  /* SCHMALE SCHIRME LADEN KEIN VIDEO. Nicht "spielen es nicht ab", sondern
+     laden es nicht: die Quellen stehen als data-src im Markup und werden hier
+     erst gesetzt. Ohne src zeigt das Element sein poster, und das ist auf dem
+     Handy ohnehin fast das ganze Bild, weil die Schrift darueber liegt.
+     Gespart werden damit 1,8 MB auf einer Verbindung, die sie am wenigsten
+     hat. Wer kein JavaScript hat, sieht ebenfalls das Standbild. */
+  var SCHMAL = window.matchMedia('(max-width: 720px)');
+
+  /* Dieselbe Regel fuer die beiden Fahrten im Text. Sie trugen autoplay, und
+     autoplay sticht preload="none": der Browser laedt sie sonst auch dann,
+     wenn niemand sie je sieht. */
+  if (!SCHMAL.matches) {
+    Array.prototype.forEach.call(document.querySelectorAll('.chain video[data-film]'),
+      function (f) {
+        f.src = f.getAttribute('data-src');
+        var an = function () {
+          var q = f.play(); if (q && q.catch) q.catch(function () {});
+        };
+        an();
+        ['loadeddata', 'canplay'].forEach(function (e) { f.addEventListener(e, an); });
+      });
+  }
+
+  if (kopfFilm && !SCHMAL.matches) {
+    Array.prototype.forEach.call(kopfFilm.querySelectorAll('source[data-src]'),
+      function (q) { q.src = q.getAttribute('data-src'); });
+    kopfFilm.preload = 'auto';
+    kopfFilm.load();
+    /* Ein play() direkt nach load() kommt zu frueh und wird abgewiesen, ohne
+       dass jemand es merkt: das autoplay-Attribut half hier nicht, weil beim
+       Auswerten des Markups noch keine Quelle dranstand. Also nach dem Laden
+       noch einmal anklopfen, und zwar bei beiden Meldungen -- welche zuerst
+       kommt, haengt vom Browser ab. */
+    var anlaufen = function () {
+      var q = kopfFilm.play(); if (q && q.catch) q.catch(function () {});
+    };
+    anlaufen();
+    ['loadeddata', 'canplay'].forEach(function (e) {
+      kopfFilm.addEventListener(e, anlaufen);
+    });
+
+    var TEMPO = 0.5;
+    var langsam = function () { kopfFilm.playbackRate = TEMPO; };
+
+    langsam();
+    ['loadedmetadata', 'play', 'seeked', 'ratechange'].forEach(function (e) {
+      kopfFilm.addEventListener(e, function () {
+        if (kopfFilm.playbackRate !== TEMPO) langsam();
+      });
+    });
+  }
+
+  /* 4. Die Abschnittsleiste markiert, in welchem Abschnitt man gerade ist.
+        Ohne das ist sie ein Sprungbrett, aber keine Orientierung. */
+  var punkte = [].slice.call(document.querySelectorAll('.chain-nav a'));
+
+  if (punkte.length && 'IntersectionObserver' in window) {
+    var ziele = punkte.map(function (a) {
+      return document.querySelector(a.getAttribute('href'));
+    }).filter(Boolean);
+
+    var sichtbare = new Set();
+
+    var markierer = new IntersectionObserver(function (eintraege) {
+      eintraege.forEach(function (e) {
+        if (e.isIntersecting) sichtbare.add(e.target); else sichtbare.delete(e.target);
+      });
+
+      /* Der oberste sichtbare Abschnitt gewinnt — sonst springt die Marke,
+         sobald zwei gleichzeitig im Bild stehen. */
+      var oben = null;
+      sichtbare.forEach(function (el) {
+        if (!oben || el.getBoundingClientRect().top < oben.getBoundingClientRect().top) oben = el;
+      });
+
+      punkte.forEach(function (a) {
+        a.classList.toggle('hier', !!oben && a.getAttribute('href') === '#' + oben.id);
+      });
+    }, { rootMargin: '-64px 0px -55% 0px' });
+
+    ziele.forEach(function (el) { markierer.observe(el); });
+  }
+})();
+</script>
+
+<script>
+/* Modulkacheln: Ueberfahren startet, Verlassen haelt an und spult zurueck.
+   Weil das Standbild das erste Bild der Schleife ist, sieht man den
+   Uebergang nicht. */
+(function(){
+  var ruhig  = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var schmal = window.matchMedia('(max-width: 720px)');
+  /* Auf dem Handy bleibt es beim Standbild. Die Kacheln tragen
+     preload="none", es faellt also kein Byte, solange niemand sie
+     startet -- und starten kann sie hier niemand. */
+  if (schmal.matches) return;
+  document.querySelectorAll('.chain [data-modul]').forEach(function(box){
+    var v = box.querySelector('video');
+    if (!v) return;
+    function los(){
+      if (ruhig.matches) return;          /* Wer weniger Bewegung will, behaelt das Standbild. */
+      var q = v.play(); if (q && q.catch) q.catch(function(){});
+    }
+    function halt(){ v.pause(); try { v.currentTime = 0; } catch(e){} }
+    box.addEventListener('mouseenter', los);
+    box.addEventListener('mouseleave', halt);
+    /* Tastfeld kennt kein Ueberfahren: dort schaltet ein Tippen. Mit Maus
+       laeuft das Video beim Klick schon, wird also nicht abgeschaltet. */
+    box.addEventListener('click', function(){ v.paused ? los() : halt(); });
+    box.addEventListener('focus', los);
+    box.addEventListener('blur',  halt);
+    box.addEventListener('keydown', function(ev){
+      if (ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); v.paused ? los() : halt(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
