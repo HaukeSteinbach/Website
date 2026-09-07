@@ -49,10 +49,13 @@ export const config = {
      Ueber Umgebungsvariablen, damit die Dateien nach R2 oder auf eine eigene
      Domain umziehen koennen, ohne dass hier jemand Code anfasst. */
   chainDownloads: {
+    /* Drei Dateien, mehr liegt nicht im Bucket: Installer fuer macOS und
+       Windows und das Handbuch. Einen Messbericht gab es hier nie, und eine
+       Variable dafuer bereitzuhalten hiess, auf eine Datei zu warten, die
+       niemand baut. */
     mac: process.env.CHAIN_DOWNLOAD_MAC || '',
     windows: process.env.CHAIN_DOWNLOAD_WIN || '',
-    manual: process.env.CHAIN_MANUAL_URL || '',
-    report: process.env.CHAIN_REPORT_URL || ''
+    manual: process.env.CHAIN_MANUAL_URL || ''
   },
 
   s3Endpoint: process.env.S3_ENDPOINT || '',

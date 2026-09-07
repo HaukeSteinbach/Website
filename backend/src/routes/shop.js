@@ -69,8 +69,7 @@ router.get('/products/:slug', (request, response) => {
       ? [
           { id: 'mac', label: 'Demo für macOS', url: config.chainDownloads.mac },
           { id: 'windows', label: 'Demo für Windows', url: config.chainDownloads.windows },
-          { id: 'manual', label: 'Handbuch', url: config.chainDownloads.manual },
-          { id: 'report', label: 'Messbericht', url: config.chainDownloads.report }
+          { id: 'manual', label: 'Handbuch', url: config.chainDownloads.manual }
         ].filter((eintrag) => eintrag.url)
       : []
   });

@@ -218,7 +218,6 @@ $key=$wert"
 chain_frage CHAIN_DOWNLOAD_MAC "macOS-Installer"
 chain_frage CHAIN_DOWNLOAD_WIN "Windows-Installer"
 chain_frage CHAIN_MANUAL_URL   "Handbuch (PDF)"
-chain_frage CHAIN_REPORT_URL   "Messbericht (PDF)"
 
 [ -z "$CHAIN_BLOCK" ] && ok "keine Adressen — die Demoknöpfe bleiben vorerst aus"
 

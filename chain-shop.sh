@@ -138,9 +138,6 @@ frage CHAIN_DOWNLOAD_WIN \
 frage CHAIN_MANUAL_URL \
   "Adresse des Handbuchs als PDF." \
   "" nein
-frage CHAIN_REPORT_URL \
-  "Adresse des Messberichts als PDF." \
-  "" nein
 
 # ─────────────────────────────────────────────────────────────────────────────
 schritt "4. Was sonst noch nötig ist"

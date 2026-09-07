@@ -114,13 +114,12 @@ function sessionEmail(request) {
 function downloadsFor(product) {
   if (product?.slug !== 'chain') return [];
 
-  const { mac, windows, manual, report } = config.chainDownloads;
+  const { mac, windows, manual } = config.chainDownloads;
 
   return [
     { id: 'mac', label: 'macOS, Apple Silicon und Intel', kind: 'installer', url: mac },
     { id: 'windows', label: 'Windows, 64 Bit', kind: 'installer', url: windows },
-    { id: 'manual', label: 'Handbuch, PDF', kind: 'document', url: manual },
-    { id: 'report', label: 'Messbericht, PDF', kind: 'document', url: report }
+    { id: 'manual', label: 'Handbuch, PDF', kind: 'document', url: manual }
   ].filter((entry) => entry.url);
 }
 
