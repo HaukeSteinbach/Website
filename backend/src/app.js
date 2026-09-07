@@ -197,6 +197,46 @@ Object.entries(RETIRED).forEach(([from, to]) => {
   app.get(from, (_request, response) => response.redirect(301, to));
 });
 
+/* --------------------------------------------------------------------------
+   Die Downloads zu Steinbach Chain
+   --------------------------------------------------------------------------
+   DREI FESTE ADRESSEN AUF UNSERER EIGENEN DOMAIN, die auf den Bucket zeigen.
+   Warum nicht gleich die Bucket-Adresse in die Seite schreiben:
+
+   Diese Adressen stehen in Bestaetigungsmails, die Kaeufer jahrelang
+   aufheben, und im Kontobereich, den jemand nach einem Rechnerwechsel wieder
+   oeffnet. Eine r2.dev-Adresse traegt die Kontonummer und ist gedrosselt;
+   eine eigene Domain auf dem Bucket ginge erst, wenn die ganze Zone samt MX
+   zu Cloudflare umzieht. Beides sind Entscheidungen, die sich aendern
+   koennen -- und mit dieser Weiche aendert sich dann EINE Umgebungsvariable,
+   waehrend jede verschickte Adresse weiter stimmt.
+
+   302 und nicht 301: eine dauerhafte Weiterleitung wird vom Browser
+   gespeichert, und zwar auch dann noch, wenn das Ziel laengst ein anderes
+   ist. Genau die Freiheit, um die es hier geht, waere damit verspielt.
+
+   Was nicht hinterlegt ist, antwortet mit 404 statt auf eine leere Adresse zu
+   schicken. Die Seite zeigt solche Knoepfe ohnehin nicht an. */
+const CHAIN_DATEIEN = {
+  '/download/chain-macos': () => config.chainDownloads.mac,
+  '/download/chain-windows': () => config.chainDownloads.windows,
+  '/download/chain-manual': () => config.chainDownloads.manual
+};
+
+Object.entries(CHAIN_DATEIEN).forEach(([pfad, ziel]) => {
+  app.get(pfad, (_request, response) => {
+    const adresse = ziel();
+
+    if (!adresse) {
+      return response.status(404).type('text/plain; charset=utf-8').send(
+        'Diese Datei steht noch nicht bereit. Schreib an mail@haukesteinbach.de.'
+      );
+    }
+
+    return response.redirect(302, adresse);
+  });
+});
+
 /* Der Kontobereich der Kaeufer. Eigener Weg, eigenes Cookie, nichts vom
    Adminbereich: hier meldet sich an, wer gekauft hat, und sieht ausschliesslich
    die eigenen Kaeufe. */

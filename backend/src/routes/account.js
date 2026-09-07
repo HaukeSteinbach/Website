@@ -116,11 +116,18 @@ function downloadsFor(product) {
 
   const { mac, windows, manual } = config.chainDownloads;
 
+  /* Dieselbe Regel wie auf der Produktseite: genannt wird die feste Adresse
+     auf unserer Domain, gefiltert wird nach dem, was dahinter liegt. So steht
+     in einer Mail von heute eine Adresse, die auch dann noch gilt, wenn der
+     Bucket morgen woanders liegt. */
   return [
-    { id: 'mac', label: 'macOS, Apple Silicon und Intel', kind: 'installer', url: mac },
-    { id: 'windows', label: 'Windows, 64 Bit', kind: 'installer', url: windows },
-    { id: 'manual', label: 'Handbuch, PDF', kind: 'document', url: manual }
-  ].filter((entry) => entry.url);
+    { id: 'mac', label: 'macOS, Apple Silicon und Intel', kind: 'installer',
+      url: '/download/chain-macos', da: mac },
+    { id: 'windows', label: 'Windows, 64 Bit', kind: 'installer',
+      url: '/download/chain-windows', da: windows },
+    { id: 'manual', label: 'Handbuch, PDF', kind: 'document',
+      url: '/download/chain-manual', da: manual }
+  ].filter((entry) => entry.da).map(({ id, label, kind, url }) => ({ id, label, kind, url }));
 }
 
 /**
