@@ -134,7 +134,7 @@
     /* The rail starts BELOW the bar. Its height is not a fixed number — it
        comes from the padding plus the nav line, and it changes with the
        breakpoints — so it is measured rather than guessed and handed to the
-       stylesheet as --bar-h. Measured again on resize, because the nav wraps
+       stylesheet as --rail-top. Measured again on resize, because the nav wraps
        on narrow screens. Without this the first ticks sit behind the bar,
        which draws them over the black backdrop (rail z-index 60, bar 50). */
     /* Not just .bar: some pages stack a second sticky nav under it (the
@@ -170,13 +170,17 @@
     /* Measured on every scroll, not once on load: the Chain page has a second
        nav that only sticks further down, and the top bar hides itself when you
        scroll away. The stack is therefore not a fixed number. Only written
-       when it actually changed, so the browser does not restyle for nothing. */
+       when it actually changed, so the browser does not restyle for nothing.
+
+       The name matters: --bar-h is taken. The Chain page hangs the sticky top
+       of its second nav on it, so writing this value there made that nav push
+       itself down step by step while scrolling. */
     var letzteHoehe = -1;
     function railUnterDieLeiste() {
       var h = kopfhoehe();
       if (h === letzteHoehe) return;
       letzteHoehe = h;
-      document.documentElement.style.setProperty('--bar-h', h + 'px');
+      document.documentElement.style.setProperty('--rail-top', h + 'px');
     }
     kleberSammeln();
     railUnterDieLeiste();
