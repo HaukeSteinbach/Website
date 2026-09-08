@@ -578,8 +578,7 @@
           </div>
           <p class="copy" style="font-size:.92rem;margin-top:18px">A bell saturates one
           frequency and leaves the rest alone. Bite exactly where the mix needs it,
-          without dirtying anything around it.
-          <span class="offen">Measured figures follow once the final audio is in.</span></p>
+          without dirtying anything around it.</p>
         </div>
 
         <div class="cell">
@@ -605,7 +604,7 @@
               <button type="button" aria-pressed="true" disabled>Before</button>
               <button type="button" aria-pressed="false" disabled>After</button></div>
             <button type="button" class="ab-play" disabled>Audio in preparation</button>
-            <p class="ab-meta">Matched to the same loudness &middot; <span class="offen">figure pending</span></p>
+            <p class="ab-meta">Matched to the same loudness</p>
           </div>
           <p class="copy" style="font-size:.92rem;margin-top:18px">One of the three
           dirty presets, deliberately the roughest of the collection. Three decibels
@@ -614,7 +613,7 @@
 
         <div class="cell">
           <div class="ab" data-quelle="assets/audio/steinbach-chain/transients" data-a="-2.1" data-b="0">
-            <div class="ab-head"><span class="ab-name">Transients</span>
+            <div class="ab-head"><span class="ab-name">Tamed transients</span>
               <span class="ab-tag">TR &middot; NO THRESHOLD</span></div>
             <div class="ab-switch"><div class="ab-thumb"></div>
               <button type="button" aria-pressed="true">Before</button>
@@ -937,6 +936,23 @@
                     <li><a href="https://www.instagram.com/steinbach.wctw/" target="_blank" rel="noopener noreferrer">Instagram <i class="ext" aria-hidden="true">&#8599;</i></a></li>
                 </ul>
             </div>
+            <!-- Der Newsletter. Im Fuss, weil er dorthin gehoert: er drangt sich
+                 niemandem auf und ist trotzdem auf jeder Seite zu finden. Kein
+                 Feld erscheint, bevor der Server sagt, dass er ihn annehmen
+                 kann -- assets/js/newsletter.js macht das. -->
+            <div class="foot-brief" hidden>
+                <h4>Newsletter</h4>
+                <p class="mono foot-note">New plugins, new records, a few words on
+                how they were made. Rarely, and never your address to anyone else.</p>
+                <form class="foot-brief-form" novalidate>
+                    <label class="sr-only" for="brief-email">Your e-mail address</label>
+                    <input id="brief-email" type="email" required autocomplete="email"
+                           placeholder="you@example.com">
+                    <button type="submit" class="btn">Sign up</button>
+                </form>
+                <p class="mono foot-note" data-brief-status role="status" aria-live="polite"></p>
+            </div>
+
             <div>
                 <h4>Legal</h4>
                 <ul>
@@ -958,6 +974,7 @@
 
 <script src="assets/js/cookie-consent.js"></script>
 <script src="assets/js/steinbach-ui.js"></script>
+<script src="assets/js/newsletter.js"></script>
 
 <script src="assets/js/shop.js"></script>
 <script src="assets/js/chain-page.js"></script>

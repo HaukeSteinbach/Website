@@ -35,6 +35,19 @@ import {
 import { SERVICES as CATALOGUE, getService } from '../lib/catalogue.js';
 import { buildDocumentPdf } from '../lib/document-pdf.js';
 import {
+  confirmedSubscribers,
+  createLetter,
+  deleteLetter,
+  getLetter,
+  listLetters,
+  listSubscribers,
+  markDelivered,
+  markLetterSent,
+  purgeExpired,
+  stats as newsletterStats,
+  updateLetter
+} from '../lib/newsletter.js';
+import {
   createDraft,
   deleteDraft,
   documentFileName,
@@ -62,6 +75,7 @@ import {
   sendDocumentEmail,
   sendShippedEmail,
   sendLoginCodeEmail,
+  sendNewsletterEmail,
   studioRecipient
 } from '../lib/mail.js';
 import {
@@ -1645,6 +1659,164 @@ function allFiles(project) {
     ...(project.revisions || []).flatMap((revision) => revision.files || [])
   ];
 }
+
+/* ==========================================================================
+   NEWSLETTER
+   ==========================================================================
+   Der Verteiler und die Ausgaben. Eintragen, bestaetigen und abmelden liegen
+   nicht hier, sondern in routes/newsletter.js: das sind oeffentliche Wege ohne
+   Anmeldung, und sie gehoeren nicht hinter dieselbe Tuer wie die Kundenakten.
+   ========================================================================== */
+
+router.get('/newsletter/subscribers', requireAdmin, async (_request, response, next) => {
+  try {
+    const [liste, zahlen] = await Promise.all([listSubscribers(), newsletterStats()]);
+
+    /* Das Merkmal geht NICHT mit an die Oberflaeche. Es ist der Abmeldeschluessel
+       eines Menschen; im Adminbereich wird es nie gebraucht und waere dort nur
+       eine weitere Stelle, an der es auslaufen kann. */
+    return ok(response, {
+      stats: zahlen,
+      subscribers: liste.map(({ token, ...rest }) => rest)
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/newsletter/purge', requireAdmin, async (_request, response, next) => {
+  try {
+    const weg = await purgeExpired();
+    return ok(response, { removed: weg });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/newsletter/letters', requireAdmin, async (_request, response, next) => {
+  try {
+    return ok(response, { letters: await listLetters() });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/newsletter/letters', requireAdmin, async (request, response, next) => {
+  try {
+    const brief = await createLetter({
+      subject: request.body?.subject,
+      body: request.body?.body
+    });
+    return ok(response, { letter: brief });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch('/newsletter/letters/:id', requireAdmin, async (request, response, next) => {
+  try {
+    const brief = await updateLetter(request.params.id, {
+      subject: request.body?.subject,
+      body: request.body?.body
+    });
+
+    if (!brief) return fail(response, 404, 'not_found', 'Diese Ausgabe gibt es nicht.');
+    return ok(response, { letter: brief });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.delete('/newsletter/letters/:id', requireAdmin, async (request, response, next) => {
+  try {
+    const weg = await deleteLetter(request.params.id);
+    if (!weg) return fail(response, 409, 'already_sent',
+      'Eine verschickte Ausgabe wird nicht geloescht: sie liegt in fremden Postfaechern.');
+    return ok(response, {});
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * Eine Probe an die Studioadresse.
+ *
+ * Vor dem Versand an alle. Wer eine Ausgabe nicht einmal selbst gelesen hat,
+ * wie sie beim Empfaenger aussieht, sollte sie nicht an hunderte schicken.
+ */
+router.post('/newsletter/letters/:id/test', requireAdmin, async (request, response, next) => {
+  try {
+    const brief = await getLetter(request.params.id);
+    if (!brief) return fail(response, 404, 'not_found', 'Diese Ausgabe gibt es nicht.');
+
+    const ziel = String(request.body?.email || '').trim() || studioRecipient();
+    const ergebnis = await sendNewsletterEmail({
+      to: ziel,
+      subject: `[Probe] ${brief.subject}`,
+      body: brief.body,
+      unsubscribeUrl: `${config.appOrigin.replace(/\/$/, '')}/newsletter/unsubscribe?token=probe`
+    });
+
+    if (!ergebnis.sent) {
+      return fail(response, 502, 'send_failed', ergebnis.message || 'Die Probe ging nicht raus.');
+    }
+
+    return ok(response, { recipient: ziel });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * Der Versand.
+ *
+ * NACH JEDEM EMPFAENGER wird vermerkt, dass er Post hat, nicht am Ende. Bricht
+ * der Versand in der Mitte ab -- Netz weg, Server neu gestartet, Postausgang
+ * dicht --, dann setzt ein zweiter Anlauf dort fort, wo er stehengeblieben ist,
+ * statt allen die Ausgabe ein zweites Mal zu schicken.
+ *
+ * Zwischen zwei Mails liegt eine kurze Pause. Ein Postausgang, der auf einmal
+ * hunderte Nachrichten in einer Sekunde sieht, drosselt oder sperrt, und dann
+ * ist der Verteiler kaputt statt nur langsam.
+ */
+router.post('/newsletter/letters/:id/send', requireAdmin, async (request, response, next) => {
+  try {
+    const brief = await getLetter(request.params.id);
+    if (!brief) return fail(response, 404, 'not_found', 'Diese Ausgabe gibt es nicht.');
+
+    const empfaenger = await confirmedSubscribers();
+    const offen = empfaenger.filter((e) => !brief.deliveredTo.includes(e.email));
+
+    if (offen.length === 0) {
+      await markLetterSent(brief.id);
+      return ok(response, { sent: 0, failed: 0, message: 'Alle haben diese Ausgabe schon.' });
+    }
+
+    const wurzel = config.appOrigin.replace(/\/$/, '');
+    let raus = 0;
+    let daneben = 0;
+
+    for (const person of offen) {
+      const ergebnis = await sendNewsletterEmail({
+        to: person.email,
+        subject: brief.subject,
+        body: brief.body,
+        unsubscribeUrl: `${wurzel}/newsletter/unsubscribe?token=${encodeURIComponent(person.token)}`
+      });
+
+      await markDelivered(brief.id, person.email, ergebnis.sent, ergebnis.message);
+      if (ergebnis.sent) raus += 1; else daneben += 1;
+
+      await new Promise((weiter) => setTimeout(weiter, 250));
+    }
+
+    if (daneben === 0) await markLetterSent(brief.id);
+
+    return ok(response, { sent: raus, failed: daneben });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 export function deliveryUrl(token) {
   return `${config.appOrigin.replace(/\/$/, '')}/d/${token}`;

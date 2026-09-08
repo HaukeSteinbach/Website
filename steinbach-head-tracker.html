@@ -253,6 +253,23 @@
                     <li><a href="https://www.instagram.com/steinbach.wctw/" target="_blank" rel="noopener noreferrer">Instagram <i class="ext" aria-hidden="true">&#8599;</i></a></li>
                 </ul>
             </div>
+            <!-- Der Newsletter. Im Fuss, weil er dorthin gehoert: er drangt sich
+                 niemandem auf und ist trotzdem auf jeder Seite zu finden. Kein
+                 Feld erscheint, bevor der Server sagt, dass er ihn annehmen
+                 kann -- assets/js/newsletter.js macht das. -->
+            <div class="foot-brief" hidden>
+                <h4>Newsletter</h4>
+                <p class="mono foot-note">New plugins, new records, a few words on
+                how they were made. Rarely, and never your address to anyone else.</p>
+                <form class="foot-brief-form" novalidate>
+                    <label class="sr-only" for="brief-email">Your e-mail address</label>
+                    <input id="brief-email" type="email" required autocomplete="email"
+                           placeholder="you@example.com">
+                    <button type="submit" class="btn">Sign up</button>
+                </form>
+                <p class="mono foot-note" data-brief-status role="status" aria-live="polite"></p>
+            </div>
+
             <div>
                 <h4>Legal</h4>
                 <ul>
@@ -274,5 +291,6 @@
 
 <script src="assets/js/cookie-consent.js"></script>
 <script src="assets/js/steinbach-ui.js"></script>
+<script src="assets/js/newsletter.js"></script>
 </body>
 </html>

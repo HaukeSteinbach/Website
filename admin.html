@@ -66,6 +66,7 @@
                 <button type="button" class="admin-tab" id="tab-customers" role="tab" aria-selected="false">Customers</button>
                 <button type="button" class="admin-tab" id="tab-documents" role="tab" aria-selected="false">Invoices &amp; offers</button>
                 <button type="button" class="admin-tab" id="tab-bookings" role="tab" aria-selected="false">Studio time</button>
+                <button type="button" class="admin-tab" id="tab-newsletter" role="tab" aria-selected="false">Newsletter</button>
             </div>
             <div class="btn-row" id="booking-actions" hidden>
                 <button type="button" class="btn fill" id="new-booking">Propose studio time</button>
@@ -82,6 +83,11 @@
                 <button type="button" class="btn" id="import-open">Import from Onlydesk</button>
                 <button type="button" class="btn" id="pdfs-open">Import invoice PDFs</button>
                 <button type="button" class="btn" id="customer-refresh">Refresh</button>
+            </div>
+            <div class="btn-row" id="newsletter-actions" hidden>
+                <button type="button" class="btn fill" id="new-letter">Write an issue</button>
+                <button type="button" class="btn" id="newsletter-purge">Clear out unconfirmed</button>
+                <button type="button" class="btn" id="newsletter-refresh">Refresh</button>
             </div>
             <div class="btn-row" id="project-actions">
                 <button type="button" class="btn fill" id="new-project">New project</button>
@@ -258,6 +264,40 @@
             </div>
             <p class="admin-empty" id="bookings-empty" hidden>No studio time booked yet.</p>
 
+            <!-- Zwei Tabellen: die Ausgaben und der Verteiler. Die Ausgaben
+                 stehen oben, weil man haeufiger schreibt als nachsieht, wer
+                 draufsteht. -->
+            <div class="admin-table-wrap" id="letters-wrap" hidden>
+                <table class="admin-table" id="letters">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Written</th>
+                            <th>State</th>
+                            <th>Delivered</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="letters-body"></tbody>
+                </table>
+            </div>
+
+            <div class="admin-table-wrap" id="subscribers-wrap" hidden>
+                <table class="admin-table" id="subscribers">
+                    <thead>
+                        <tr>
+                            <th>Address</th>
+                            <th>State</th>
+                            <th>Signed up</th>
+                            <th>Confirmed</th>
+                            <th>Came from</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subscribers-body"></tbody>
+                </table>
+            </div>
+            <p class="admin-empty" id="newsletter-empty" hidden>Nobody has signed up yet.</p>
+
             <section class="handoff-card admin-new" id="pdfs-card" hidden>
                 <h2>Import invoice PDFs</h2>
                 <p>The invoice files from the tax folder. They are matched by their filename, which is the invoice number — 2026-05-18-0001.pdf.</p>
@@ -345,6 +385,32 @@
                     <tbody id="documents-body"></tbody>
                 </table>
             </div>
+            <!-- Newsletter schreiben. Nur Betreff und Text: eine Ausgabe, die
+                 Gestaltung braucht, um zu wirken, hat nichts zu sagen. Leerzeile
+                 trennt Absaetze, mehr Auszeichnung gibt es nicht, und genau das
+                 haelt die Mail in jedem Programm lesbar. -->
+            <section class="handoff-card admin-new" id="letter-card" hidden>
+                <h2>Write an issue</h2>
+                <label class="konto-feld">
+                    <span>Subject</span>
+                    <input id="letter-subject" type="text" maxlength="120"
+                           placeholder="What is new">
+                </label>
+                <label class="konto-feld">
+                    <span>Text</span>
+                    <textarea id="letter-body" rows="12"
+                              placeholder="Blank line between paragraphs."></textarea>
+                </label>
+                <p class="note" id="letter-count"></p>
+                <div class="btn-row">
+                    <button type="button" class="btn fill" id="letter-save">Save draft</button>
+                    <button type="button" class="btn" id="letter-test">Send a test to myself</button>
+                    <button type="button" class="btn" id="letter-send">Send to everyone</button>
+                    <button type="button" class="btn" id="letter-close">Close</button>
+                </div>
+                <div class="handoff-status" id="letter-status" role="status" aria-live="polite"></div>
+            </section>
+
             <section class="handoff-card admin-new" id="payments-card" hidden>
                 <h2>Import bank statement</h2>
                 <p>Export your account as CSV and drop it here. Nothing is marked paid until you have looked at what was found.</p>

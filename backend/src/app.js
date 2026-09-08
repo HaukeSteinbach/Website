@@ -16,6 +16,7 @@ import bookingRoutes from './routes/bookings.js';
 import publicRoutes, { deliveryPageHandler } from './routes/public.js';
 import shopRoutes from './routes/shop.js';
 import accountRoutes from './routes/account.js';
+import newsletterRoutes from './routes/newsletter.js';
 import releasePageRoutes from './routes/release-pages.js';
 
 const app = express();
@@ -241,6 +242,13 @@ Object.entries(CHAIN_DATEIEN).forEach(([pfad, ziel]) => {
    Adminbereich: hier meldet sich an, wer gekauft hat, und sieht ausschliesslich
    die eigenen Kaeufe. */
 app.use('/api/v1/account', accountRoutes);
+
+/* Der Newsletter, oeffentliche Seite. Unter /newsletter statt unter /api,
+   weil confirm und unsubscribe aus einem Mailprogramm heraus angeklickt
+   werden: eine Adresse, die jemand im Postfach sieht, sollte nicht nach
+   Schnittstelle aussehen. */
+app.use('/newsletter', newsletterRoutes);
+app.use('/api/v1/public/newsletter', newsletterRoutes);
 
 app.use(releasePageRoutes);
 app.use(express.static(config.publicDir, { index: 'index.html' }));

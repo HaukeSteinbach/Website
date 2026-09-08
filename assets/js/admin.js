@@ -278,6 +278,7 @@
   document.getElementById('tab-customers').addEventListener('click', function () { switchTab('customers'); });
   document.getElementById('tab-documents').addEventListener('click', function () { switchTab('documents'); });
   document.getElementById('tab-bookings').addEventListener('click', function () { switchTab('bookings'); });
+  document.getElementById('tab-newsletter').addEventListener('click', function () { switchTab('newsletter'); });
   document.getElementById('booking-refresh').addEventListener('click', loadBookings);
   document.getElementById('document-refresh').addEventListener('click', loadDocuments);
   document.getElementById('document-back').addEventListener('click', function () { switchTab('documents'); });
@@ -290,10 +291,10 @@
        scrolled past the tabs */
     var titel = {
       orders: 'Orders', customers: 'Customers', documents: 'Invoices & offers',
-      bookings: 'Studio time', projects: 'Projects'
+      bookings: 'Studio time', projects: 'Projects', newsletter: 'Newsletter'
     };
     document.getElementById('list-heading').textContent = titel[which] || 'Projects';
-    ['projects', 'orders', 'customers', 'documents', 'bookings'].forEach(function (name) {
+    ['projects', 'orders', 'customers', 'documents', 'bookings', 'newsletter'].forEach(function (name) {
       var knopf = document.getElementById('tab-' + name);
       knopf.classList.toggle('on', which === name);
       knopf.setAttribute('aria-selected', String(which === name));
@@ -302,17 +303,20 @@
     document.getElementById('customer-actions').hidden = which !== 'customers';
     document.getElementById('document-actions').hidden = which !== 'documents';
     document.getElementById('booking-actions').hidden = which !== 'bookings';
+    document.getElementById('newsletter-actions').hidden = which !== 'newsletter';
     document.getElementById('import-card').hidden = true;
     document.getElementById('new-customer-card').hidden = true;
     document.getElementById('payments-card').hidden = true;
     document.getElementById('pdfs-card').hidden = true;
     document.getElementById('new-booking-card').hidden = true;
+    document.getElementById('letter-card').hidden = true;
     newCard.hidden = true;
 
     if (which === 'orders') return loadOrders();
     if (which === 'customers') return loadCustomers();
     if (which === 'documents') return loadDocuments();
     if (which === 'bookings') return loadBookings();
+    if (which === 'newsletter') return loadNewsletter();
     return loadList();
   }
 
@@ -963,6 +967,226 @@
     return tag + ', ' + uhr(von) + '–' + uhr(bis);
   }
 
+  /* ----------------------------------------------------------------------
+     Newsletter
+     ----------------------------------------------------------------------
+     Zwei Listen und ein Schreibkasten. Was hier NICHT steht, ist Absicht:
+     keine Oeffnungsraten, keine Klickzaehlung, keine Zaehlpixel. Das haette
+     bedeutet, jede Ausgabe mit einem unsichtbaren Bild zu versehen und
+     mitzuschreiben, wer wann liest -- eine Ueberwachung, fuer die niemand
+     eingewilligt hat, als er nur den Newsletter wollte.
+     ---------------------------------------------------------------------- */
+
+  var briefe = [];
+  var offenerBrief = null;
+
+  function loadNewsletter() {
+    setStatus(listStatus, 'Loading…');
+
+    return Promise.all([api('/newsletter/subscribers'), api('/newsletter/letters')])
+      .then(function (beides) {
+        setStatus(listStatus, '');
+        renderNewsletter(beides[0], beides[1]);
+        show('list');
+      })
+      .catch(function (error) {
+        if (error.message.indexOf('session') === -1) setStatus(listStatus, error.message, 'error');
+      });
+  }
+
+  function renderNewsletter(verteiler, ausgaben) {
+    ['.admin-table-wrap', '#list-empty', '#orders-wrap', '#orders-empty',
+     '#customers-wrap', '#customers-empty', '#documents-wrap', '#documents-empty',
+     '#bookings-wrap', '#bookings-empty']
+      .forEach(function (sel) {
+        var el = document.querySelector(sel);
+        if (el) el.hidden = true;
+      });
+
+    var zahlen = verteiler.stats || {};
+    briefe = ausgaben.letters || [];
+
+    /* "Abgelaufen" steht bewusst mit dabei: das sind Adressen, die nie
+       bestaetigt haben und weg duerfen. Ohne die Zahl merkt niemand, dass sie
+       sich sammeln. */
+    document.getElementById('counts').innerHTML =
+      '<div><dt>Confirmed</dt><dd>' + (zahlen.confirmed || 0) + '</dd></div>' +
+      '<div><dt>Waiting</dt><dd>' + (zahlen.pending || 0) + '</dd></div>' +
+      '<div><dt>Expired</dt><dd class="' + (zahlen.expired ? 'is-alert' : '') + '">' +
+        (zahlen.expired || 0) + '</dd></div>' +
+      '<div><dt>Left</dt><dd>' + (zahlen.unsubscribed || 0) + '</dd></div>';
+
+    var leute = verteiler.subscribers || [];
+    document.getElementById('newsletter-empty').hidden = leute.length > 0 || briefe.length > 0;
+    document.getElementById('subscribers-wrap').hidden = leute.length === 0;
+    document.getElementById('letters-wrap').hidden = briefe.length === 0;
+
+    var ZUSTAND = { pending: 'Waiting', confirmed: 'Confirmed', unsubscribed: 'Left' };
+
+    document.getElementById('subscribers-body').innerHTML = leute.map(function (e) {
+      return '<tr>' +
+        '<td class="mono">' + escapeHtml(e.email) + '</td>' +
+        '<td><span class="admin-chip">' + escapeHtml(ZUSTAND[e.status] || e.status) + '</span></td>' +
+        '<td class="mono">' + escapeHtml(kurzesDatum(e.requestedAt)) + '</td>' +
+        '<td class="mono">' + escapeHtml(e.confirmedAt ? kurzesDatum(e.confirmedAt) : '—') + '</td>' +
+        '<td>' + escapeHtml(e.source || '—') + '</td>' +
+        '</tr>';
+    }).join('');
+
+    document.getElementById('letters-body').innerHTML = briefe.map(function (b) {
+      return '<tr>' +
+        '<td>' + escapeHtml(b.subject) + '</td>' +
+        '<td class="mono">' + escapeHtml(kurzesDatum(b.createdAt)) + '</td>' +
+        '<td><span class="admin-chip">' + (b.status === 'sent' ? 'Sent' : 'Draft') + '</span></td>' +
+        '<td class="mono">' + (b.deliveredTo || []).length +
+          ((b.failedTo || []).length ? ' <span class="is-alert">+' + b.failedTo.length + ' failed</span>' : '') +
+        '</td>' +
+        '<td><button type="button" class="btn btn-secondary" data-brief="' + escapeHtml(b.id) + '">' +
+          (b.status === 'sent' ? 'Read' : 'Open') + '</button></td>' +
+        '</tr>';
+    }).join('');
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-brief]'), function (knopf) {
+      knopf.addEventListener('click', function () {
+        var b = briefe.filter(function (x) { return x.id === knopf.dataset.brief; })[0];
+        if (b) briefOeffnen(b);
+      });
+    });
+  }
+
+  function kurzesDatum(iso) {
+    if (!iso) return '—';
+    try {
+      return new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeZone: 'Europe/Berlin' })
+        .format(new Date(iso));
+    } catch (e) { return ''; }
+  }
+
+  function briefOeffnen(b) {
+    offenerBrief = b || null;
+    var karte = document.getElementById('letter-card');
+    var betreff = document.getElementById('letter-subject');
+    var text = document.getElementById('letter-body');
+
+    betreff.value = b ? b.subject : '';
+    text.value = b ? b.body : '';
+
+    /* Eine verschickte Ausgabe ist ein Archivstueck: lesbar, nicht aenderbar.
+       Was in fremden Postfaechern liegt, holt niemand zurueck. */
+    var verschickt = Boolean(b && b.status === 'sent');
+    betreff.readOnly = verschickt;
+    text.readOnly = verschickt;
+    document.getElementById('letter-save').hidden = verschickt;
+    document.getElementById('letter-send').hidden = verschickt;
+    document.getElementById('letter-test').hidden = verschickt;
+
+    zaehlen();
+    setStatus(document.getElementById('letter-status'), verschickt
+      ? 'Sent on ' + kurzesDatum(b.sentAt) + '. This one can only be read.'
+      : '');
+    karte.hidden = false;
+  }
+
+  function zaehlen() {
+    var text = document.getElementById('letter-body').value;
+    var woerter = text.trim() ? text.trim().split(/\s+/).length : 0;
+    document.getElementById('letter-count').textContent =
+      woerter + (woerter === 1 ? ' word' : ' words')
+      + '. A blank line starts a new paragraph. No formatting beyond that.';
+  }
+
+  function briefSpeichern() {
+    var daten = {
+      subject: document.getElementById('letter-subject').value,
+      body: document.getElementById('letter-body').value
+    };
+    var status = document.getElementById('letter-status');
+
+    setStatus(status, 'Saving…');
+
+    var weg = offenerBrief
+      ? api('/newsletter/letters/' + offenerBrief.id, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(daten)
+        })
+      : api('/newsletter/letters', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(daten)
+        });
+
+    return weg
+      .then(function (antwort) {
+        offenerBrief = antwort.letter;
+        setStatus(status, 'Saved.');
+        return loadNewsletter().then(function () {
+          document.getElementById('letter-card').hidden = false;
+        });
+      })
+      .catch(function (error) { setStatus(status, error.message, 'error'); });
+  }
+
+  document.getElementById('new-letter').addEventListener('click', function () { briefOeffnen(null); });
+  document.getElementById('letter-close').addEventListener('click', function () {
+    document.getElementById('letter-card').hidden = true;
+    offenerBrief = null;
+  });
+  document.getElementById('letter-body').addEventListener('input', zaehlen);
+  document.getElementById('letter-save').addEventListener('click', briefSpeichern);
+
+  document.getElementById('letter-test').addEventListener('click', function () {
+    var status = document.getElementById('letter-status');
+
+    briefSpeichern().then(function () {
+      if (!offenerBrief) return;
+      setStatus(status, 'Sending the test…');
+      return api('/newsletter/letters/' + offenerBrief.id + '/test', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+      })
+        .then(function (a) { setStatus(status, 'Test sent to ' + a.recipient + '.'); })
+        .catch(function (error) { setStatus(status, error.message, 'error'); });
+    });
+  });
+
+  document.getElementById('letter-send').addEventListener('click', function () {
+    var status = document.getElementById('letter-status');
+
+    briefSpeichern().then(function () {
+      if (!offenerBrief) return;
+
+      /* Die Frage nennt die Zahl. "Wirklich senden?" beantwortet jeder mit ja;
+         "An 340 Leute?" liest man zweimal. */
+      var zahl = (document.querySelector('#counts dd') || {}).textContent || '?';
+      if (!window.confirm('Send "' + offenerBrief.subject + '" to ' + zahl
+        + ' confirmed addresses? This cannot be taken back.')) return;
+
+      setStatus(status, 'Sending. This takes a moment, one address at a time…');
+
+      return api('/newsletter/letters/' + offenerBrief.id + '/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+      })
+        .then(function (a) {
+          setStatus(status, 'Sent to ' + a.sent + '.'
+            + (a.failed ? ' ' + a.failed + ' did not go through; press send again to retry those.' : ''),
+            a.failed ? 'error' : '');
+          return loadNewsletter();
+        })
+        .catch(function (error) { setStatus(status, error.message, 'error'); });
+    });
+  });
+
+  document.getElementById('newsletter-refresh').addEventListener('click', loadNewsletter);
+
+  document.getElementById('newsletter-purge').addEventListener('click', function () {
+    if (!window.confirm('Delete every address that never confirmed within two weeks?')) return;
+
+    api('/newsletter/purge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+      .then(function (a) {
+        setStatus(listStatus, a.removed + ' removed.');
+        return loadNewsletter();
+      })
+      .catch(function (error) { setStatus(listStatus, error.message, 'error'); });
+  });
+
   function loadBookings() {
     setStatus(listStatus, 'Loading…');
 
@@ -1063,6 +1287,7 @@
 
   document.getElementById('new-booking-cancel').addEventListener('click', function () {
     document.getElementById('new-booking-card').hidden = true;
+    document.getElementById('letter-card').hidden = true;
   });
 
   document.getElementById('new-booking-form').addEventListener('submit', function (event) {
@@ -1107,6 +1332,7 @@
           setStatus(status, 'Proposal sent to ' + gesendet.sentTo + '.');
           document.getElementById('new-booking-form').reset();
           document.getElementById('new-booking-card').hidden = true;
+    document.getElementById('letter-card').hidden = true;
           loadBookings();
         });
       })
@@ -1127,6 +1353,7 @@
   document.getElementById('pdfs-cancel').addEventListener('click', function () {
     document.getElementById('pdfs-card').hidden = true;
     document.getElementById('new-booking-card').hidden = true;
+    document.getElementById('letter-card').hidden = true;
   });
 
   document.getElementById('pdfs-form').addEventListener('submit', function (event) {
@@ -1187,6 +1414,7 @@
     document.getElementById('payments-card').hidden = true;
     document.getElementById('pdfs-card').hidden = true;
     document.getElementById('new-booking-card').hidden = true;
+    document.getElementById('letter-card').hidden = true;
   });
 
   document.getElementById('payments-form').addEventListener('submit', function (event) {

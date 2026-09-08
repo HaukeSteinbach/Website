@@ -433,6 +433,91 @@ export async function sendAccountCodeEmail({ to, code, minutes }) {
   });
 }
 
+/* --------------------------------------------------------------------------
+   Newsletter
+   --------------------------------------------------------------------------
+   Zwei Mails: die Bestätigung, ohne die niemand auf den Verteiler kommt, und
+   die Ausgabe selbst.
+   -------------------------------------------------------------------------- */
+
+/**
+ * Die Bestätigungsmail.
+ *
+ * Sie ist selbst KEINE Werbung, und das ist wichtig: sie darf nur den Link
+ * enthalten und die Auskunft, was passiert, wenn man ihn nicht anklickt. Wer
+ * hier schon Neuigkeiten unterbringt, verschickt Werbung an jemanden, der noch
+ * nicht eingewilligt hat -- und macht damit genau den Fehler, den die doppelte
+ * Bestätigung verhindern soll.
+ */
+export async function sendNewsletterConfirmEmail({ to, url }) {
+  return sendToCustomer({
+    to,
+    subject: 'Bitte bestätige deine Anmeldung',
+    text: [
+      'Du möchtest den Newsletter von Steinbach bekommen.',
+      '',
+      'Ein Klick, dann ist es eingerichtet:',
+      url,
+      '',
+      'Warst du das nicht, ignoriere diese Mail. Ohne diesen Klick wird nichts',
+      'verschickt, und die Adresse wird nach zwei Wochen von selbst gelöscht.',
+      '',
+      'Hauke Steinbach',
+      'haukesteinbach.de'
+    ].join('\n'),
+    html: buildHtml({
+      heading: 'Anmeldung bestätigen',
+      lead: 'Newsletter',
+      lines: [
+        'Du möchtest den Newsletter von Steinbach bekommen. Ein Klick, dann ist es eingerichtet.',
+        '',
+        `<a href="${escapeHtml(url)}" style="color:#E94560">${escapeHtml(url)}</a>`,
+        '',
+        'Warst du das nicht, ignoriere diese Mail. Ohne diesen Klick wird nichts '
+          + 'verschickt, und die Adresse wird nach zwei Wochen von selbst gelöscht.'
+      ]
+    })
+  });
+}
+
+/**
+ * Eine Ausgabe an einen Empfänger.
+ *
+ * Der Abmeldelink steht in jeder Ausgabe, im Text und in der HTML-Fassung, und
+ * zusätzlich als List-Unsubscribe im Kopf der Mail: daraus baut Gmail den
+ * Abmeldeknopf neben dem Absender. Wer den findet, klickt nicht auf "Spam", und
+ * das ist der Unterschied zwischen einem Verteiler, der ankommt, und einem, der
+ * im Werbeordner landet.
+ */
+export async function sendNewsletterEmail({ to, subject, body, unsubscribeUrl }) {
+  const absaetze = String(body).split(/\n{2,}/).map((a) => a.trim()).filter(Boolean);
+
+  return sendSmtp({
+    to,
+    subject,
+    text: [
+      body,
+      '',
+      '—',
+      'Keine Lust mehr? Ein Klick genügt:',
+      unsubscribeUrl
+    ].join('\n'),
+    html: buildHtml({
+      heading: subject,
+      lead: 'Steinbach',
+      lines: [
+        ...absaetze.map((a) => escapeHtml(a).replace(/\n/g, '<br>')),
+        '',
+        `<a href="${escapeHtml(unsubscribeUrl)}" style="color:#8C8C8C">Abmelden</a>`
+      ]
+    }),
+    headers: {
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+    }
+  });
+}
+
 export async function sendLoginCodeEmail({ code, ip, minutes }) {
   return sendToStudio({
     subject: `Anmeldecode ${code}`,
@@ -696,7 +781,7 @@ export function describeMailSetup() {
   };
 }
 
-async function sendSmtp({ to, subject, text, html, replyTo, attachments }) {
+async function sendSmtp({ to, subject, text, html, replyTo, attachments, headers }) {
   try {
     const response = await getSmtpTransporter().sendMail({
       from: fromAddress(),
@@ -705,6 +790,8 @@ async function sendSmtp({ to, subject, text, html, replyTo, attachments }) {
       text,
       html,
       attachments,
+      /* Fuer List-Unsubscribe im Newsletter. Sonst ungenutzt. */
+      headers: headers || undefined,
       replyTo: replyTo || config.mailReplyTo || undefined
     });
 

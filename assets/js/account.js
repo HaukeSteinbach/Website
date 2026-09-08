@@ -42,9 +42,9 @@
     meldung.style.color = schlimm ? 'var(--bad)' : 'var(--grey-2)';
   }
 
-  /* Ein Aufruf, eine Fehlerbehandlung. Der Server antwortet immer mit
-     { ok, data } oder { ok:false, error:{ message } }, also wird hier genau
-     das ausgepackt und nichts geraten. */
+  /* Ein Aufruf, eine Fehlerbehandlung. Der Server antwortet FLACH: im guten
+     Fall die Nutzdaten selbst, im schlechten { error, message, details }.
+     Siehe backend/src/lib/http.js. */
   async function ruf(pfad, körper) {
     var antwort = await fetch(API + pfad, {
       method: körper ? 'POST' : 'GET',
@@ -57,14 +57,20 @@
     try { daten = await antwort.json(); } catch (e) { daten = null; }
 
     if (!antwort.ok) {
-      var grund = (daten && daten.error && daten.error.message)
+      /* Der Server antwortet bei einem Fehler mit { error, message, details },
+         alles auf einer Ebene -- siehe lib/http.js. Ich hatte hier zuerst
+         daten.error.message gelesen, also eine Ebene zu tief, und beim Prüfen
+         gegen einen selbstgebauten Server ist es nicht aufgefallen, weil der
+         die Form geliefert hat, die ich erwartet habe. Deshalb steht es jetzt
+         hier: die Antwort ist FLACH. */
+      var grund = (daten && daten.message)
         || 'Das hat gerade nicht geklappt. Versuch es später noch einmal.';
       var fehler = new Error(grund);
       fehler.status = antwort.status;
       throw fehler;
     }
 
-    return (daten && daten.data) || {};
+    return daten || {};
   }
 
   /* --------------------------------------------------------------------
