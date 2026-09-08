@@ -492,6 +492,20 @@ export async function sendNewsletterConfirmEmail({ to, url }) {
 export async function sendNewsletterEmail({ to, subject, body, unsubscribeUrl }) {
   const absaetze = String(body).split(/\n{2,}/).map((a) => a.trim()).filter(Boolean);
 
+  /* EINE ZEILE, DIE NUR EINE BILDADRESSE IST, WIRD ZUM BILD.
+     Mehr Auszeichnung gibt es bewusst nicht: eine Ausgabe, die Gestaltung
+     braucht, um zu wirken, hat nichts zu sagen.
+     Die Adresse muss absolut sein und auf haukesteinbach.de zeigen. Eingebettete
+     Daten (data:) sind hier nutzlos -- Gmail zeigt sie nicht an, das war beim
+     Bild in der Mailsignatur schon so. In der Textfassung bleibt die Adresse
+     als Adresse stehen, dort ist sie das Beste, was ein Bild sein kann. */
+  const istBild = (zeile) => /^https:\/\/\S+\.(?:jpg|jpeg|png|webp|gif)$/i.test(zeile);
+
+  const zuHtml = (absatz) => (istBild(absatz)
+    ? `<img src="${escapeHtml(absatz)}" alt="" width="512"`
+      + ' style="display:block;width:100%;max-width:512px;height:auto;border:1px solid #232323;margin:6px 0;">'
+    : escapeHtml(absatz).replace(/\n/g, '<br>'));
+
   return sendSmtp({
     to,
     subject,
@@ -506,7 +520,7 @@ export async function sendNewsletterEmail({ to, subject, body, unsubscribeUrl })
       heading: subject,
       lead: 'Steinbach',
       lines: [
-        ...absaetze.map((a) => escapeHtml(a).replace(/\n/g, '<br>')),
+        ...absaetze.map(zuHtml),
         '',
         `<a href="${escapeHtml(unsubscribeUrl)}" style="color:#8C8C8C">Abmelden</a>`
       ]
