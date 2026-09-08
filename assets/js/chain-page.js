@@ -100,26 +100,82 @@ document.documentElement.classList.add('rise-an');
 
     var pegel = [faktor(feld.dataset.a), faktor(feld.dataset.b)];
 
-    function aufbauen() {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      var dateien = [quelle + '-a.mp3', quelle + '-b.mp3'];
+    /* BEIDE DATEIEN GANZ HOLEN, ERST DANN SPIELEN.
 
-      quellen = dateien.map(function (pfad) {
-        var el = new Audio(pfad);
-        el.loop = true;
-        el.crossOrigin = 'anonymous';
-        el.preload = 'auto';
-        return el;
-      });
+       Der naheliegende Weg -- preload="auto" setzen und warten, bis buffered
+       die Dauer deckt -- fuehrt in eine Sackgasse: der Browser laedt nur so
+       weit vor, wie er zum Anfangen braucht, und bleibt dann stehen, solange
+       nichts spielt. Gemessen blieb er bei 60 Prozent haengen und kam nie
+       weiter, weil er auf das Abspielen wartete und wir auf ihn.
 
-      verstaerker = quellen.map(function (el, i) {
-        var g = ctx.createGain();
-        g.gain.value = i === 0 ? pegel[0] : 0;
-        ctx.createMediaElementSource(el).connect(g).connect(ctx.destination);
-        return g;
+       Also wird selbst geholt. fetch liefert die ganze Datei, der Fortschritt
+       ist echt gezaehlt statt geschaetzt, und die fertigen Bytes gehen als
+       blob-Adresse an das Audio-Element. Damit ist garantiert, dass beim
+       ersten Ton beide Fassungen vollstaendig da sind und keine mitten im
+       Vergleich nachladen muss. */
+    function holen(pfad, melden) {
+      return fetch(pfad).then(function (antwort) {
+        if (!antwort.ok) throw new Error('http ' + antwort.status);
+
+        var gesamt = Number(antwort.headers.get('content-length')) || 0;
+        if (!antwort.body || !gesamt) {
+          /* Ohne Laengenangabe oder ohne Stromleser: dann eben ohne Anzeige,
+             aber weiterhin vollstaendig. */
+          return antwort.blob();
+        }
+
+        var leser = antwort.body.getReader();
+        var stuecke = [];
+        var da = 0;
+
+        return (function weiter() {
+          return leser.read().then(function (ergebnis) {
+            if (ergebnis.done) return new Blob(stuecke);
+            stuecke.push(ergebnis.value);
+            da += ergebnis.value.length;
+            melden(da / gesamt);
+            return weiter();
+          });
+        })();
       });
     }
 
+    function aufbauen() {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      var pfade = [quelle + '-a.mp3', quelle + '-b.mp3'];
+      var stand = [0, 0];
+
+      function anzeigen() {
+        var mittel = (stand[0] + stand[1]) / 2;
+        abspielen.textContent = 'Loading ' + Math.round(mittel * 100) + ' %';
+      }
+
+      return Promise.all(pfade.map(function (pfad, i) {
+        return holen(pfad, function (anteil) { stand[i] = anteil; anzeigen(); });
+      })).then(function (brocken) {
+        quellen = brocken.map(function (blob) {
+          var el = new Audio(URL.createObjectURL(blob));
+          el.loop = true;
+          return el;
+        });
+
+        verstaerker = quellen.map(function (el, i) {
+          var g = ctx.createGain();
+          g.gain.value = i === 0 ? pegel[0] : 0;
+          ctx.createMediaElementSource(el).connect(g).connect(ctx.destination);
+          return g;
+        });
+      });
+    }
+
+    /* Umschalten heisst ueberblenden, nicht umstecken: 20 ms Rampe. Ein harter
+       Wechsel mitten in der Welle knackt, und dieses Knacken hoert man dann als
+       Unterschied zwischen den Fassungen, obwohl es keiner ist.
+
+       Die Zielwerte kommen aus pegel[], also aus dem Lautheitsausgleich -- die
+       leisere Seite bleibt auf 1, die lautere wird um ihre gemessene Differenz
+       abgesenkt. */
     function waehlen(i) {
       knoepfe.forEach(function (k, j) { k.setAttribute('aria-pressed', String(i === j)); });
       schalter.classList.toggle('b', i === 1);
@@ -138,9 +194,6 @@ document.documentElement.classList.add('rise-an');
     });
 
     abspielen.addEventListener('click', function () {
-      if (!ctx) aufbauen();
-      if (ctx.state === 'suspended') ctx.resume();
-
       if (laeuft) {
         quellen.forEach(function (el) { el.pause(); });
         laeuft = false;
@@ -148,11 +201,26 @@ document.documentElement.classList.add('rise-an');
         return;
       }
 
-      /* Gemeinsam auf null, damit beide wirklich denselben Takt spielen. */
-      quellen.forEach(function (el) { el.currentTime = 0; });
-      Promise.all(quellen.map(function (el) { return el.play(); }))
+      /* Waehrend des Ladens nicht anklickbar: ein zweiter Klick wuerde ein
+         zweites Mal holen und am Ende zweimal abspielen. */
+      abspielen.disabled = true;
+
+      var bereit = quellen
+        ? Promise.resolve()
+        : (abspielen.textContent = 'Loading 0 %', aufbauen());
+
+      bereit
+        .then(function () {
+          if (ctx.state === 'suspended') return ctx.resume();
+        })
+        .then(function () {
+          /* Gemeinsam auf null, damit beide wirklich denselben Takt spielen. */
+          quellen.forEach(function (el) { el.currentTime = 0; });
+          return Promise.all(quellen.map(function (el) { return el.play(); }));
+        })
         .then(function () { laeuft = true; abspielen.textContent = 'Stop'; })
-        .catch(function () { abspielen.textContent = 'Audio blocked'; });
+        .catch(function () { abspielen.textContent = 'Audio unavailable'; })
+        .then(function () { abspielen.disabled = false; });
     });
   });
 
