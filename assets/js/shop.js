@@ -49,7 +49,7 @@
     }).join('');
 
     demo.innerHTML = '<details class="konto-klapp" open>'
-      + '<summary>Download the demo</summary>'
+      + '<summary>Downloads</summary>'
       + '<div class="konto-dateien">' + zeilen + '</div></details>';
     demo.hidden = false;
 
