@@ -501,9 +501,13 @@ export async function sendNewsletterEmail({ to, subject, body, unsubscribeUrl })
      als Adresse stehen, dort ist sie das Beste, was ein Bild sein kann. */
   const istBild = (zeile) => /^https:\/\/\S+\.(?:jpg|jpeg|png|webp|gif)$/i.test(zeile);
 
+  /* Kein Rahmen: das Bild steht auf schwarzem Grund und traegt seinen eigenen
+     Rand mit. Eine Linie darum zieht genau die Grenze nach, die man nicht sehen
+     soll. Dafuer Luft darueber und darunter -- ein Bild, das den Text beruehrt,
+     wirkt wie eingeklemmt. */
   const zuHtml = (absatz) => (istBild(absatz)
     ? `<img src="${escapeHtml(absatz)}" alt="" width="512"`
-      + ' style="display:block;width:100%;max-width:512px;height:auto;border:1px solid #232323;margin:6px 0;">'
+      + ' style="display:block;width:100%;max-width:512px;height:auto;margin:28px 0;">'
     : escapeHtml(absatz).replace(/\n/g, '<br>'));
 
   return sendSmtp({
