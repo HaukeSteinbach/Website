@@ -867,10 +867,28 @@ function getSmtpTransporter() {
    Formatting
    -------------------------------------------------------------------------- */
 
+/**
+ * Der Rahmen jeder Mail.
+ *
+ * WARUM DER HINTERGRUND NICHT AM <body> HAENGT: Gmail wirft <html> und <body>
+ * weg und behaelt nur deren Inhalt. Alles, was dort an Farbe stand, war damit
+ * verloren -- dieselbe Mail kam in Apple Mail schwarz an und in Gmail als
+ * weisse Flaeche mit grauem Text. Gemeldet am 08.09. an zwei Postfaechern
+ * derselben Probe.
+ *
+ * Die Farbe sitzt deshalb an einem <div>, das Gmail stehen laesst, und zwar
+ * an zweien: das aeussere faerbt die Flaeche, das innere traegt den Satz. Am
+ * <body> bleibt sie zusaetzlich stehen, fuer alle Programme, die ihn behalten.
+ *
+ * Jede Zeile darin traegt ihre Farbe ausserdem selbst. Doppelt gemoppelt, aber
+ * ein Mailprogramm ist kein Browser: es gibt kein Erben, auf das man sich
+ * verlassen koennte.
+ */
 function buildHtml({ heading, lead, note, buttonUrl, buttonLabel, lines }) {
   return `<!DOCTYPE html>
-<html><body style="margin:0;background:#000000;color:#D6D6D6;font-family:Helvetica,Arial,sans-serif;">
-  <div style="max-width:560px;margin:0 auto;padding:40px 24px;">
+<html><body style="margin:0;padding:0;background:#000000;color:#D6D6D6;font-family:Helvetica,Arial,sans-serif;">
+  <div style="background:#000000;color:#D6D6D6;font-family:Helvetica,Arial,sans-serif;padding:1px 0;">
+  <div style="max-width:560px;margin:0 auto;padding:40px 24px;background:#000000;color:#D6D6D6;">
     <p style="margin:0 0 28px;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#E94560;">Steinbach</p>
     <h1 style="margin:0 0 10px;font-size:28px;line-height:1.1;color:#FFFFFF;">${escapeHtml(heading)}</h1>
     ${lead ? `<p style="margin:0 0 24px;color:#8C8C8C;font-size:14px;">${lead}</p>` : ''}
@@ -884,6 +902,7 @@ function buildHtml({ heading, lead, note, buttonUrl, buttonLabel, lines }) {
     <p style="margin:32px 0 0;padding-top:20px;border-top:1px solid #232323;color:#4A4A4A;font-size:12px;">
       Hauke Steinbach &middot; Hamburg &middot; <a href="mailto:mail@haukesteinbach.de" style="color:#8C8C8C;">mail@haukesteinbach.de</a>
     </p>
+  </div>
   </div>
 </body></html>`;
 }
