@@ -68,9 +68,21 @@ document.documentElement.classList.add('rise-an');
      Der Ton startet erst auf Klick. Eine Seite, die von allein Krach macht,
      wird geschlossen, bevor irgendein Argument gelesen wurde.
 
-     Solange kein data-quelle gesetzt ist, uebergeht die Schleife das Feld: die
-     vier Beispiele sind noch nicht geschnitten, und ein Knopf, der eine
-     fehlende Datei anfordert, ist schlimmer als einer, der stillsteht. */
+     Solange kein data-quelle gesetzt ist, uebergeht die Schleife das Feld: ein
+     Knopf, der eine fehlende Datei anfordert, ist schlimmer als einer, der
+     stillsteht.
+
+     DER LAUTHEITSAUSGLEICH LIEGT HIER, nicht in den Dateien. Gemessen (EBU
+     R 128, integriert) kamen die Paare unterschiedlich laut an: beim Bell war
+     B 1,9 LU lauter, beim Mix A 1,7 LU, bei den Transienten A 2,1 LU. Ohne
+     Ausgleich gewinnt schlicht die lautere Fassung, und genau das ist der
+     Vorwurf, den diese Seite an andere Plugins richtet.
+
+     Ausgeglichen wird ueber die Verstaerkung im Abspieler, nicht durch
+     Umrechnen der Dateien: eine mp3 noch einmal zu kodieren kostet Qualitaet,
+     und ausgerechnet auf einer Seite, auf der es ums Hoeren geht, waere das
+     der falsche Handel. data-a und data-b tragen die Korrektur in Dezibel,
+     angehoben wird nie, nur abgesenkt -- so kann nichts uebersteuern. */
   document.querySelectorAll('.chain .ab').forEach(function (feld) {
     var quelle = feld.dataset.quelle;
     if (!quelle) return;
@@ -80,9 +92,17 @@ document.documentElement.classList.add('rise-an');
     var abspielen = feld.querySelector('.ab-play');
     var ctx, quellen, verstaerker, laeuft = false;
 
+    /* Dezibel in einen Faktor. Ohne Angabe bleibt es bei 1, also unveraendert. */
+    function faktor(db) {
+      var zahl = parseFloat(db);
+      return isFinite(zahl) ? Math.pow(10, zahl / 20) : 1;
+    }
+
+    var pegel = [faktor(feld.dataset.a), faktor(feld.dataset.b)];
+
     function aufbauen() {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
-      var dateien = [quelle + '-dry.mp3', quelle + '-wet-matched.mp3'];
+      var dateien = [quelle + '-a.mp3', quelle + '-b.mp3'];
 
       quellen = dateien.map(function (pfad) {
         var el = new Audio(pfad);
@@ -94,7 +114,7 @@ document.documentElement.classList.add('rise-an');
 
       verstaerker = quellen.map(function (el, i) {
         var g = ctx.createGain();
-        g.gain.value = i === 0 ? 1 : 0;
+        g.gain.value = i === 0 ? pegel[0] : 0;
         ctx.createMediaElementSource(el).connect(g).connect(ctx.destination);
         return g;
       });
@@ -109,7 +129,7 @@ document.documentElement.classList.add('rise-an');
       verstaerker.forEach(function (g, j) {
         g.gain.cancelScheduledValues(jetzt);
         g.gain.setValueAtTime(g.gain.value, jetzt);
-        g.gain.linearRampToValueAtTime(i === j ? 1 : 0, jetzt + 0.02);
+        g.gain.linearRampToValueAtTime(i === j ? pegel[j] : 0, jetzt + 0.02);
       });
     }
 

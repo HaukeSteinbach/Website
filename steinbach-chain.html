@@ -556,23 +556,25 @@
       louder one cannot win. That is the whole argument of this plugin, applied to
       its own demo.</p>
 
-      <!-- DIE VIER KLANGBEISPIELE SIND NOCH NICHT GESCHNITTEN. Die Dateien
-           media/*-dry.mp3 und *-wet-matched.mp3 gibt es nicht, deshalb steht
-           hier kein Knopf, der auf eine 404 zeigt: data-quelle ist entfernt,
-           das Skript uebergeht die Felder, und die Schalter sagen selbst, dass
-           sie noch nichts haben. Sobald die Dateien liegen, kommt an jedem Feld
-           data-quelle="assets/audio/steinbach-chain/<name>" zurueck und der
-           Knopf verliert disabled — mehr ist nicht zu tun. -->
+      <!-- DREI DER VIER BEISPIELE LIEGEN. Die Dateien stehen unter
+     assets/audio/steinbach-chain/<name>-a.mp3 und -b.mp3, und data-a und
+     data-b tragen die Lautheitskorrektur in Dezibel, die der Abspieler
+     anwendet (gemessen nach EBU R 128, siehe chain-page.js).
+
+     Das vierte Feld, die Gitarre, hat noch keinen Ton: data-quelle fehlt,
+     das Skript uebergeht es, und der Knopf sagt selbst, dass er nichts hat.
+     Sobald die Dateien liegen, kommen data-quelle, data-a und data-b dazu
+     und disabled faellt weg -- mehr ist nicht zu tun. -->
       <div class="grid g2 rise" style="margin-top:48px">
         <div class="cell">
-          <div class="ab">
+          <div class="ab" data-quelle="assets/audio/steinbach-chain/bell" data-a="0" data-b="-1.9">
             <div class="ab-head"><span class="ab-name">One frequency</span>
               <span class="ab-tag">SAT BELL &middot; 2,5 kHz</span></div>
-            <div class="ab-switch" aria-disabled="true"><div class="ab-thumb"></div>
-              <button type="button" aria-pressed="true" disabled>Before</button>
-              <button type="button" aria-pressed="false" disabled>After</button></div>
-            <button type="button" class="ab-play" disabled>Audio in preparation</button>
-            <p class="ab-meta">Matched to the same loudness &middot; <span class="offen">figure pending</span></p>
+            <div class="ab-switch"><div class="ab-thumb"></div>
+              <button type="button" aria-pressed="true">Before</button>
+              <button type="button" aria-pressed="false">After</button></div>
+            <button type="button" class="ab-play">Play</button>
+            <p class="ab-meta">Matched to the same loudness &middot; &minus;1,9 dB on the after</p>
           </div>
           <p class="copy" style="font-size:.92rem;margin-top:18px">A bell saturates one
           frequency and leaves the rest alone. Bite exactly where the mix needs it,
@@ -581,14 +583,14 @@
         </div>
 
         <div class="cell">
-          <div class="ab">
+          <div class="ab" data-quelle="assets/audio/steinbach-chain/mix" data-a="-1.7" data-b="0">
             <div class="ab-head"><span class="ab-name">A whole mix</span>
               <span class="ab-tag">BUS &middot; MIX 3</span></div>
-            <div class="ab-switch" aria-disabled="true"><div class="ab-thumb"></div>
-              <button type="button" aria-pressed="true" disabled>Before</button>
-              <button type="button" aria-pressed="false" disabled>After</button></div>
-            <button type="button" class="ab-play" disabled>Audio in preparation</button>
-            <p class="ab-meta">Matched to the same loudness &middot; <span class="offen">figure pending</span></p>
+            <div class="ab-switch"><div class="ab-thumb"></div>
+              <button type="button" aria-pressed="true">Before</button>
+              <button type="button" aria-pressed="false">After</button></div>
+            <button type="button" class="ab-play">Play</button>
+            <p class="ab-meta">Matched to the same loudness &middot; &minus;1,7 dB on the before</p>
           </div>
           <p class="copy" style="font-size:.92rem;margin-top:18px">The same mix, gently
           driven. Nothing dramatic happens, and that is the point. At equal loudness you
@@ -611,25 +613,20 @@
         </div>
 
         <div class="cell">
-          <div class="ab">
+          <div class="ab" data-quelle="assets/audio/steinbach-chain/transients" data-a="-2.1" data-b="0">
             <div class="ab-head"><span class="ab-name">Transients</span>
               <span class="ab-tag">TR &middot; NO THRESHOLD</span></div>
-            <div class="ab-switch" aria-disabled="true"><div class="ab-thumb"></div>
-              <button type="button" aria-pressed="true" disabled>Before</button>
-              <button type="button" aria-pressed="false" disabled>After</button></div>
-            <button type="button" class="ab-play" disabled>Audio in preparation</button>
-            <p class="ab-meta">Matched to the same loudness &middot; <span class="offen">figure pending</span></p>
+            <div class="ab-switch"><div class="ab-thumb"></div>
+              <button type="button" aria-pressed="true">Before</button>
+              <button type="button" aria-pressed="false">After</button></div>
+            <button type="button" class="ab-play">Play</button>
+            <p class="ab-meta">Matched to the same loudness &middot; &minus;2,1 dB on the before</p>
           </div>
           <p class="copy" style="font-size:.92rem;margin-top:18px">Attack and sustain,
           per band, with nothing to set that decides what counts as a transient. Only
           how much of it you want.</p>
         </div>
       </div>
-
-      <p class="note rise" style="max-width:64ch">Every pair is matched to the same
-      loudness, and the correction applied is printed above it so you can undo it.
-      The raw, unmatched versions sit next to them. The audio itself is still being
-      cut, so the players above are quiet for now.</p>
     </section>
     </div>
 
@@ -869,22 +866,19 @@
 <!-- Zwei Wege, beide kurz: die Datei steht unten auf dieser Seite und
      braucht kein Konto, weil es die Demo ist. Wer seinen Schluessel sucht,
      hat ihn in der Kaufmail und zur Sicherheit auch im Konto. -->
-<p class="note" style="margin-top:18px">The download is at the
-<a href="#demo-download">bottom of this page</a>. Lost your key?
-<a href="account.html">Look it up</a>.</p>
-          <p class="note">No VAT is charged under &sect; 19 UStG. The licence key arrives by
-          email with your invoice and is entered once. It is checked on your machine,
-          so Chain keeps working whether or not this website does.</p>
-          <p class="note">One payment, no subscription, no dongle, and no account to
-          create. The demo has no time limit. The price is the price; there are no
-          discount rounds to wait for.</p>
-          <!-- Stand 08.09.: der Messbericht liegt nicht oeffentlich. Vorher
-               stand hier, er sei es. Ein Versprechen, das man mit einem Klick
-               widerlegen kann, kostet mehr Vertrauen als es einbringt. Das
-               Handbuch gibt es, und die offenen Punkte stehen darin. -->
-          <p class="note" style="color:var(--grey-2)">The manual is public, and the
-          measurements are in it, including what is still open. Read it before you
-          decide. That is what it is for.</p>
+<!-- Gekuerzt am 08.09. Hier standen vier Absaetze, die dasselbe zweimal
+                 sagten: der Schluessel kommt per Mail (steht schon im Abschnitt
+                 darueber), die Demo hat keine Zeitgrenze (steht unten am Download),
+                 der Preis ist der Preis. Wer vor dem Kaufknopf steht, hat sich
+                 entschieden; was hier noch fehlt, sind die drei Tatsachen, die er
+                 vorher nicht wissen konnte. -->
+            <p class="note" style="margin-top:18px">The download is at the
+            <a href="#demo-download">bottom of this page</a>.</p>
+            <p class="note">No VAT is charged under &sect; 19 UStG. One payment, no
+            subscription, no dongle, no account. The key is checked on your machine,
+            so Chain keeps working whether or not this website does.</p>
+            <p class="note" style="color:var(--grey-2)">The manual is public, and the
+            measurements are in it, including what is still open.</p>
         </div>
         <!-- STANDBILD, kein Video. Hier lief bis zum 07.09. dieselbe Schleife
              wie im Kopfbereich, und das war zu viel: die Seite startet sechs
