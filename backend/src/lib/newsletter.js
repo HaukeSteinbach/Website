@@ -193,6 +193,93 @@ export async function unsubscribe(token) {
 }
 
 /* --------------------------------------------------------------------------
+   Übernehmen, was schon da war
+   --------------------------------------------------------------------------
+   Adressen aus einem Verteiler, den es vor dieser Ablage gab: Patreon, ältere
+   Anmeldungen auf der Website, von Hand nachgetragene.
+
+   SIE KOMMEN ALS BESTÄTIGT HEREIN, und das ist eine Entscheidung mit Folgen.
+   Die doppelte Bestätigung dient dem Nachweis der Einwilligung; für diese
+   Adressen liegt der Nachweis woanders, nämlich in der Herkunft und dem Datum,
+   die hier mitgeschrieben werden. Was NICHT vorliegt, ist ein Klick in einer
+   Bestätigungsmail von uns.
+
+   Deshalb trägt jeder übernommene Eintrag `imported: true`. Wer später fragt,
+   woher eine Adresse kommt, sieht sofort, dass sie aus der Zeit vor dem
+   Verfahren stammt und dass der Nachweis Herkunft plus Datum ist.
+
+   Wer schon in der Ablage steht, wird nicht angefasst: eine Abmeldung von
+   heute darf ein Import von gestern nicht rückgängig machen.
+   -------------------------------------------------------------------------- */
+
+export async function importSubscribers(zeilen) {
+  return ändern((index) => {
+    /* Schluessel ohne Umlaut: das hier geht als JSON ueber die Leitung und
+       wird drueben mit dem Namen gelesen. Ein 'ü' darin zwingt jede Seite,
+       die es liest, zu einer Escapesequenz -- und irgendwann schreibt sie
+       jemand falsch. */
+    const bericht = { added: 0, skipped: 0, broken: [] };
+
+    for (const roh of zeilen) {
+      const adresse = tidyEmail(roh.email);
+
+      if (!looksLikeEmail(adresse)) {
+        bericht.broken.push(String(roh.email || '(leer)'));
+        continue;
+      }
+
+      if (index.subscribers.some((e) => e.email === adresse)) {
+        bericht.skipped += 1;
+        continue;
+      }
+
+      /* Ein Datum ohne Uhrzeit wird zu Mitternacht in Berlin gelesen, nicht in
+         UTC: sonst rutscht jeder Eintrag auf den Vortag. */
+      const tag = String(roh.date || '').trim();
+      const zeitpunkt = /^\d{4}-\d{2}-\d{2}$/.test(tag)
+        ? new Date(`${tag}T00:00:00+02:00`).toISOString()
+        : new Date().toISOString();
+
+      index.subscribers.push({
+        id: randomUUID(),
+        email: adresse,
+        status: 'confirmed',
+        token: merkmal(),
+        source: String(roh.source || 'import').slice(0, 60),
+        requestedAt: zeitpunkt,
+        requestedIp: null,
+        confirmedAt: zeitpunkt,
+        unsubscribedAt: null,
+        imported: true
+      });
+
+      bericht.added += 1;
+    }
+
+    return bericht;
+  });
+}
+
+/**
+ * Eingefügten Text in Zeilen zerlegen.
+ *
+ * Erwartet Adresse, Herkunft, Datum, getrennt durch Tabulator oder mehrere
+ * Leerzeichen. Was danach kommt, wird ignoriert -- in einer aus einer Tabelle
+ * kopierten Zeile steht am Ende gern noch der Text eines Knopfes.
+ */
+export function parseImport(text) {
+  return String(text || '')
+    .split(/\r?\n/)
+    .map((z) => z.trim())
+    .filter(Boolean)
+    .map((z) => {
+      const teile = z.split(/\t+|\s{2,}/).map((t) => t.trim()).filter(Boolean);
+      return { email: teile[0], source: teile[1], date: teile[2] };
+    })
+    .filter((z) => z.email);
+}
+
+/* --------------------------------------------------------------------------
    Lesen
    -------------------------------------------------------------------------- */
 

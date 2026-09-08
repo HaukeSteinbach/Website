@@ -86,6 +86,7 @@
             </div>
             <div class="btn-row" id="newsletter-actions" hidden>
                 <button type="button" class="btn fill" id="new-letter">Write an issue</button>
+                <button type="button" class="btn" id="newsletter-import">Paste addresses</button>
                 <button type="button" class="btn" id="newsletter-purge">Clear out unconfirmed</button>
                 <button type="button" class="btn" id="newsletter-refresh">Refresh</button>
             </div>
@@ -389,6 +390,29 @@
                  Gestaltung braucht, um zu wirken, hat nichts zu sagen. Leerzeile
                  trennt Absaetze, mehr Auszeichnung gibt es nicht, und genau das
                  haelt die Mail in jedem Programm lesbar. -->
+            <!-- Adressen aus einem aelteren Verteiler. Sie kommen als bestaetigt
+                 herein: der Nachweis der Einwilligung ist bei ihnen die Herkunft
+                 samt Datum, nicht ein Klick in unserer Bestaetigungsmail. Das
+                 steht auch im Kasten selbst, damit es beim Einfuegen jemand
+                 liest und nicht erst, wenn jemand fragt. -->
+            <section class="handoff-card admin-new" id="import-letters-card" hidden>
+                <h2>Paste addresses</h2>
+                <p class="note">One per line: address, source, date, separated by
+                tabs. Copied straight out of a spreadsheet works. They come in as
+                confirmed, and the source and date are what stands as the record of
+                consent, so put in what is true.</p>
+                <label class="konto-feld">
+                    <span>Addresses</span>
+                    <textarea id="import-letters-text" rows="10"
+                              placeholder="someone@example.com&#9;patreon&#9;2026-09-01"></textarea>
+                </label>
+                <div class="btn-row">
+                    <button type="button" class="btn fill" id="import-letters-go">Add them</button>
+                    <button type="button" class="btn" id="import-letters-close">Close</button>
+                </div>
+                <div class="handoff-status" id="import-letters-status" role="status" aria-live="polite"></div>
+            </section>
+
             <section class="handoff-card admin-new" id="letter-card" hidden>
                 <h2>Write an issue</h2>
                 <label class="konto-feld">

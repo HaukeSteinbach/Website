@@ -310,6 +310,7 @@
     document.getElementById('pdfs-card').hidden = true;
     document.getElementById('new-booking-card').hidden = true;
     document.getElementById('letter-card').hidden = true;
+    document.getElementById('import-letters-card').hidden = true;
     newCard.hidden = true;
 
     if (which === 'orders') return loadOrders();
@@ -1128,6 +1129,7 @@
   document.getElementById('new-letter').addEventListener('click', function () { briefOeffnen(null); });
   document.getElementById('letter-close').addEventListener('click', function () {
     document.getElementById('letter-card').hidden = true;
+    document.getElementById('import-letters-card').hidden = true;
     offenerBrief = null;
   });
   document.getElementById('letter-body').addEventListener('input', zaehlen);
@@ -1172,6 +1174,36 @@
         })
         .catch(function (error) { setStatus(status, error.message, 'error'); });
     });
+  });
+
+  document.getElementById('newsletter-import').addEventListener('click', function () {
+    document.getElementById('import-letters-card').hidden = false;
+    document.getElementById('import-letters-text').focus();
+  });
+  document.getElementById('import-letters-close').addEventListener('click', function () {
+    document.getElementById('import-letters-card').hidden = true;
+  });
+  document.getElementById('import-letters-go').addEventListener('click', function () {
+    var status = document.getElementById('import-letters-status');
+    var text = document.getElementById('import-letters-text').value;
+
+    if (!text.trim()) { setStatus(status, 'Nothing pasted.', 'error'); return; }
+
+    setStatus(status, 'Adding…');
+    api('/newsletter/import', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text })
+    })
+      .then(function (a) {
+        /* Die drei Zahlen einzeln: "26 hinzugefuegt" allein verschweigt, dass
+           vier Zeilen unlesbar waren. */
+        setStatus(status, a.added + ' added, ' + a.skipped + ' already there'
+          + (a.broken.length ? ', ' + a.broken.length + ' unreadable: ' + a.broken.join(', ') : '.'),
+          a.broken.length ? 'error' : '');
+        document.getElementById('import-letters-text').value = '';
+        return loadNewsletter();
+      })
+      .catch(function (error) { setStatus(status, error.message, 'error'); });
   });
 
   document.getElementById('newsletter-refresh').addEventListener('click', loadNewsletter);
@@ -1288,6 +1320,7 @@
   document.getElementById('new-booking-cancel').addEventListener('click', function () {
     document.getElementById('new-booking-card').hidden = true;
     document.getElementById('letter-card').hidden = true;
+    document.getElementById('import-letters-card').hidden = true;
   });
 
   document.getElementById('new-booking-form').addEventListener('submit', function (event) {
@@ -1333,6 +1366,7 @@
           document.getElementById('new-booking-form').reset();
           document.getElementById('new-booking-card').hidden = true;
     document.getElementById('letter-card').hidden = true;
+    document.getElementById('import-letters-card').hidden = true;
           loadBookings();
         });
       })
@@ -1354,6 +1388,7 @@
     document.getElementById('pdfs-card').hidden = true;
     document.getElementById('new-booking-card').hidden = true;
     document.getElementById('letter-card').hidden = true;
+    document.getElementById('import-letters-card').hidden = true;
   });
 
   document.getElementById('pdfs-form').addEventListener('submit', function (event) {
@@ -1415,6 +1450,7 @@
     document.getElementById('pdfs-card').hidden = true;
     document.getElementById('new-booking-card').hidden = true;
     document.getElementById('letter-card').hidden = true;
+    document.getElementById('import-letters-card').hidden = true;
   });
 
   document.getElementById('payments-form').addEventListener('submit', function (event) {

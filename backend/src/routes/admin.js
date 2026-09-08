@@ -37,6 +37,8 @@ import { buildDocumentPdf } from '../lib/document-pdf.js';
 import {
   confirmedSubscribers,
   createLetter,
+  importSubscribers,
+  parseImport,
   deleteLetter,
   getLetter,
   listLetters,
@@ -1679,6 +1681,30 @@ router.get('/newsletter/subscribers', requireAdmin, async (_request, response, n
       stats: zahlen,
       subscribers: liste.map(({ token, ...rest }) => rest)
     });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * Adressen aus einem aelteren Verteiler uebernehmen.
+ *
+ * Eingefuegt wird, was aus einer Tabelle kopiert wurde: Adresse, Herkunft,
+ * Datum. Sie kommen als bestaetigt herein und tragen imported: true -- der
+ * Nachweis der Einwilligung ist bei ihnen die Herkunft samt Datum und nicht
+ * ein Klick in einer Bestaetigungsmail von uns. Siehe lib/newsletter.js.
+ */
+router.post('/newsletter/import', requireAdmin, async (request, response, next) => {
+  try {
+    const zeilen = Array.isArray(request.body?.rows)
+      ? request.body.rows
+      : parseImport(request.body?.text);
+
+    if (zeilen.length === 0) {
+      return fail(response, 400, 'nothing_to_import', 'Da war keine Adresse dabei.');
+    }
+
+    return ok(response, await importSubscribers(zeilen));
   } catch (error) {
     return next(error);
   }
