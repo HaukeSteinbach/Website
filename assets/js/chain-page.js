@@ -57,292 +57,55 @@ document.documentElement.classList.add('rise-an');
 
   /* 2. Der A/B-Umschalter.
 
-     Beide Dateien laufen gleichzeitig und an derselben Stelle; umgeschaltet
-     wird nur, welche zu hoeren ist. Nur so springt der Vergleich nicht in der
-     Zeit, und man vergleicht wirklich denselben Takt.
+     DAS ABSPIELEN MACHT assets/js/audio-comparison.js, dieselbe Datei wie auf
+     der Mixing- und der Mastering-Seite. Hier steht nur noch die Verbindung
+     zwischen den beiden sichtbaren Knoepfen und dem versteckten Umschalter,
+     den jene Datei erwartet.
 
-     Uebergeblendet wird ueber 20 ms statt hart geschaltet — ein harter Wechsel
-     mitten in der Welle knackt, und dieses Knacken hoert man dann als
-     Unterschied zwischen den Fassungen, obwohl es keiner ist.
+     WARUM DER EIGENE ABSPIELER WEG IST. Er baute den Ton ueber
+     createMediaElementSource und tauschte danach die Quelle des Elements gegen
+     eine blob-Adresse. In Chrome lief das; Safari gab dabei Stille aus, und
+     zwar ohne Fehlermeldung. Der gemeinsame Abspieler geht den anderen Weg:
+     er holt beide Dateien, dekodiert sie zu Puffern und startet zwei
+     AudioBufferSourceNode zur selben Zeit. Das ist nicht nur vertraeglicher,
+     es ist auch genauer -- beide Seiten starten auf dasselbe Sample.
 
-     Der Ton startet erst auf Klick. Eine Seite, die von allein Krach macht,
-     wird geschlossen, bevor irgendein Argument gelesen wurde.
+     Eine Sache kann er, die hier vorher fehlte: auf Telefonen faellt er auf
+     zwei gewoehnliche Audio-Elemente zurueck, statt zwei ganze Stuecke in den
+     Speicher zu dekodieren.
 
-     Solange kein data-quelle gesetzt ist, uebergeht die Schleife das Feld: ein
-     Knopf, der eine fehlende Datei anfordert, ist schlimmer als einer, der
-     stillsteht.
-
-     DER LAUTHEITSAUSGLEICH LIEGT HIER, nicht in den Dateien. Gemessen (EBU
-     R 128, integriert) kamen die Paare unterschiedlich laut an: beim Bell war
-     B 1,9 LU lauter, beim Mix A 1,7 LU, bei den Transienten A 2,1 LU. Ohne
-     Ausgleich gewinnt schlicht die lautere Fassung, und genau das ist der
-     Vorwurf, den diese Seite an andere Plugins richtet.
-
-     Ausgeglichen wird ueber die Verstaerkung im Abspieler, nicht durch
-     Umrechnen der Dateien: eine mp3 noch einmal zu kodieren kostet Qualitaet,
-     und ausgerechnet auf einer Seite, auf der es ums Hoeren geht, waere das
-     der falsche Handel. data-a und data-b tragen die Korrektur in Dezibel,
-     angehoben wird nie, nur abgesenkt -- so kann nichts uebersteuern. */
-  document.querySelectorAll('.chain .ab').forEach(function (feld) {
-    var quelle = feld.dataset.quelle;
-    if (!quelle) return;
-
+     Der Lautheitsausgleich wandert mit: er steht als data-gain-primary und
+     data-gain-secondary am Feld und wird dort angewandt. */
+  document.querySelectorAll('.chain .ab[data-comparison-id]').forEach(function (feld) {
     var schalter = feld.querySelector('.ab-switch');
+    var umschalter = feld.querySelector('.toggle-checkbox');
+    if (!schalter || !umschalter) return;
+
     var knoepfe = schalter.querySelectorAll('button');
-    var abspielen = feld.querySelector('.ab-play');
-    var ctx, quellen, verstaerker, laeuft = false;
 
-    /* Dezibel in einen Faktor. Ohne Angabe bleibt es bei 1, also unveraendert. */
-    function faktor(db) {
-      var zahl = parseFloat(db);
-      return isFinite(zahl) ? Math.pow(10, zahl / 20) : 1;
-    }
-
-    var pegel = [faktor(feld.dataset.a), faktor(feld.dataset.b)];
-
-    /* ZWEI ANFORDERUNGEN, DIE SICH ZU WIDERSPRECHEN SCHEINEN.
-
-       1. Es darf nichts klingen, bevor BEIDE Dateien vollstaendig da sind.
-          Sonst stockt eine, die andere laeuft weiter, und ab da vergleicht man
-          zwei verschiedene Stellen desselben Stuecks.
-
-       2. Safari erlaubt Ton nur, wenn play() waehrend der Bedienung gerufen
-          wird. Erst laden und danach starten heisst dort: abgelehnt. Genau das
-          ist am 08.09. passiert, waehrend es in Chrome lief. Ein Browser
-          allein ist keine Pruefung.
-
-       Zwei Versuche sind daran gescheitert, beide lehrreich:
-
-       Erst warten, dann spielen -- scheitert an 2.
-       Stumm spielen und auf buffered warten -- scheitert an der Wirklichkeit:
-       ein Browser puffert nur ein Stueck voraus, nicht die ganze Datei. Bei
-       130 Sekunden Musik blieb die Anzeige bei 60 Prozent stehen, weil er
-       schlicht nicht mehr laden WOLLTE.
-
-       Also beides gleichzeitig:
-
-       In der Bedienung wird sofort und stumm gestartet -- damit ist Safari
-       zufrieden und der AudioContext aufgeweckt. NEBENHER holt fetch beide
-       Dateien wirklich vollstaendig, mit gezaehltem Fortschritt. Sind sie da,
-       bekommen die Elemente die fertigen Bytes als blob-Adresse, springen
-       gemeinsam auf null und werden aufgeblendet. Ab dann kann keine mehr
-       nachladen muessen. */
-    function aufbauen() {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-      quellen = [quelle + '-a.mp3', quelle + '-b.mp3'].map(function (pfad) {
-        var el = new Audio(pfad);
-        el.loop = true;
-        el.preload = 'auto';
-        return el;
-      });
-
-      verstaerker = quellen.map(function (el) {
-        var g = ctx.createGain();
-        /* Beide auf null: es laeuft, aber es klingt noch nicht. */
-        g.gain.value = 0;
-        ctx.createMediaElementSource(el).connect(g).connect(ctx.destination);
-        return g;
-      });
-    }
-
-    /* Eine Datei ganz holen, mit echtem Fortschritt. */
-    function holen(pfad, melden) {
-      return fetch(pfad).then(function (antwort) {
-        if (!antwort.ok) throw new Error('http ' + antwort.status);
-
-        var gesamt = Number(antwort.headers.get('content-length')) || 0;
-        if (!antwort.body || !gesamt) return antwort.blob();
-
-        var leser = antwort.body.getReader();
-        var stuecke = [];
-        var da = 0;
-
-        return (function weiter() {
-          return leser.read().then(function (teil) {
-            if (teil.done) return new Blob(stuecke);
-            stuecke.push(teil.value);
-            da += teil.value.length;
-            melden(da / gesamt);
-            return weiter();
-          });
-        })();
-      });
-    }
-
-    function beideHolen() {
-      var stand = [0, 0];
-
-      return Promise.all([quelle + '-a.mp3', quelle + '-b.mp3'].map(function (pfad, i) {
-        return holen(pfad, function (anteil) {
-          stand[i] = anteil;
-          abspielen.textContent = 'Loading '
-            + Math.round((stand[0] + stand[1]) / 2 * 100) + ' %';
-        });
-      }));
-    }
-
-    /* Umschalten heisst ueberblenden, nicht umstecken: 20 ms Rampe. Ein harter
-       Wechsel mitten in der Welle knackt, und dieses Knacken hoert man dann als
-       Unterschied zwischen den Fassungen, obwohl es keiner ist.
-
-       Die Zielwerte kommen aus pegel[], also aus dem Lautheitsausgleich -- die
-       leisere Seite bleibt auf 1, die lautere wird um ihre gemessene Differenz
-       abgesenkt. */
-    function waehlen(i) {
+    function zeigen(i) {
       knoepfe.forEach(function (k, j) { k.setAttribute('aria-pressed', String(i === j)); });
       schalter.classList.toggle('b', i === 1);
-
-      if (!verstaerker) return;
-      var jetzt = ctx.currentTime;
-      verstaerker.forEach(function (g, j) {
-        g.gain.cancelScheduledValues(jetzt);
-        g.gain.setValueAtTime(g.gain.value, jetzt);
-        g.gain.linearRampToValueAtTime(i === j ? pegel[j] : 0, jetzt + 0.02);
-      });
     }
 
     knoepfe.forEach(function (knopf, i) {
-      knopf.addEventListener('click', function () { waehlen(i); });
+      knopf.addEventListener('click', function () {
+        zeigen(i);
+        /* Der Umschalter ist die Wahrheit, nicht die Knoepfe: audio-comparison
+           liest ihn und hoert auf change. Ohne das ausgeloeste Ereignis
+           bliebe der Ton stehen, waehrend die Knoepfe schon umgesprungen
+           sind. */
+        umschalter.checked = (i === 1);
+        umschalter.dispatchEvent(new Event('change', { bubbles: true }));
+      });
     });
 
-    abspielen.addEventListener('click', function () {
-      if (laeuft) {
-        quellen.forEach(function (el) { el.pause(); });
-        laeuft = false;
-        abspielen.textContent = 'Play';
-        return;
-      }
-
-      /* ALLES TONRELEVANTE SYNCHRON: anlegen, aufwecken, play(). Nur so gilt
-         es Safari noch als Teil der Bedienung. Kein await davor. */
-      var erstesMal = !ctx;
-      if (erstesMal) aufbauen();
-      if (ctx.state === 'suspended') ctx.resume();
-
-      abspielen.disabled = true;
-      abspielen.textContent = erstesMal ? 'Loading 0 %' : 'Starting';
-
-      var anlauf = Promise.all(quellen.map(function (el) { return el.play(); }));
-
-      /* Beim ersten Mal laeuft es stumm, waehrend nebenher geholt wird. */
-      var bereit = erstesMal
-        ? Promise.all([anlauf, beideHolen()]).then(function (beides) {
-            var brocken = beides[1];
-            return Promise.all(quellen.map(function (el, i) {
-              el.src = URL.createObjectURL(brocken[i]);
-              return el.play();
-            }));
-          })
-        : anlauf;
-
-      bereit
-        .then(function () {
-          /* Gemeinsam auf null, damit beide wirklich denselben Takt spielen,
-             dann die gewaehlte Seite aufblenden. */
-          quellen.forEach(function (el) { el.currentTime = 0; });
-          waehlen(schalter.classList.contains('b') ? 1 : 0);
-          laeuft = true;
-          abspielen.textContent = 'Stop';
-        })
-        .catch(function () { abspielen.textContent = 'Audio unavailable'; })
-        .then(function () { abspielen.disabled = false; });
+    /* Springt der Umschalter woanders um -- etwa weil ein Stueck zu Ende ist
+       und zurueckgesetzt wird --, ziehen die Knoepfe nach. */
+    umschalter.addEventListener('change', function () {
+      zeigen(umschalter.checked ? 1 : 0);
     });
   });
-
-  /* 3. Die Kaufleiste. Beobachtet Kopf und Kaufteil, statt mit Scrollhoehen zu
-        rechnen — das ist auf dem Telefon verlaesslicher und in eingebetteten
-        Vorschaufenstern ueberhaupt das Einzige, was funktioniert. */
-  var leiste = document.getElementById('sticky');
-  var kopf = document.querySelector('.chain .hero');
-  var kauf = document.getElementById('buy');
-  var kopfDa = true, kaufDa = false;
-
-  function pruefen() { leiste.classList.toggle('show', !kopfDa && !kaufDa); }
-
-  if ('IntersectionObserver' in window && leiste && kopf && kauf) {
-    new IntersectionObserver(function (e) { kopfDa = e[0].isIntersecting; pruefen(); },
-      { threshold: 0 }).observe(kopf);
-    new IntersectionObserver(function (e) { kaufDa = e[0].isIntersecting; pruefen(); },
-      { threshold: 0.08 }).observe(kauf);
-  }
-
-  /* 3b. Der Kopf-Film laeuft mit halber Geschwindigkeit.
-
-         Ueber playbackRate statt ueber eine langsamere Datei: die Vorlage bleibt
-         unangetastet, es entsteht kein zweiter Render, und der Wert ist eine
-         Zahl statt einer Neukodierung. Preis dafuer: die 24 Bilder je Sekunde
-         werden zu effektiv zwoelf, jedes Bild steht doppelt so lange. Bei einer
-         so langsamen Fahrt faellt das kaum auf; falls doch, rechnen wir eine
-         Fassung mit Zwischenbildern.
-
-         Neu gesetzt wird bei jedem Schleifendurchlauf, weil einige Browser den
-         Wert beim Neustart auf eins zuruecksetzen. */
-  var kopfFilm = document.getElementById('hero-video');
-
-  /* SCHMALE SCHIRME LADEN KEIN VIDEO. Nicht "spielen es nicht ab", sondern
-     laden es nicht: die Quellen stehen als data-src im Markup und werden hier
-     erst gesetzt. Ohne src zeigt das Element sein poster, und das ist auf dem
-     Handy ohnehin fast das ganze Bild, weil die Schrift darueber liegt.
-     Gespart werden damit 1,8 MB auf einer Verbindung, die sie am wenigsten
-     hat. Wer kein JavaScript hat, sieht ebenfalls das Standbild. */
-  var SCHMAL = window.matchMedia('(max-width: 720px)');
-
-  /* Dieselbe Regel fuer die beiden Fahrten im Text. Sie trugen autoplay, und
-     autoplay sticht preload="none": der Browser laedt sie sonst auch dann,
-     wenn niemand sie je sieht. */
-  if (!SCHMAL.matches) {
-    Array.prototype.forEach.call(document.querySelectorAll('.chain video[data-film]'),
-      function (f) {
-        /* Zwei Bauarten: entweder EINE feste Quelle in data-src, oder mehrere
-           source-Zeilen, aus denen der Browser selbst waehlt. Die zweite ist
-           dort noetig, wo dasselbe Video schon im Kopfbereich laeuft: nur so
-           trifft der Browser dieselbe Datei und nimmt sie aus dem
-           Zwischenspeicher, statt fuer dasselbe Bild ein zweites Mal zu laden. */
-        var quellen = f.querySelectorAll('source[data-src]');
-        if (quellen.length) {
-          Array.prototype.forEach.call(quellen,
-            function (q) { q.src = q.getAttribute('data-src'); });
-          f.load();
-        } else {
-          f.src = f.getAttribute('data-src');
-        }
-        var an = function () {
-          var q = f.play(); if (q && q.catch) q.catch(function () {});
-        };
-        an();
-        ['loadeddata', 'canplay'].forEach(function (e) { f.addEventListener(e, an); });
-      });
-  }
-
-  if (kopfFilm && !SCHMAL.matches) {
-    Array.prototype.forEach.call(kopfFilm.querySelectorAll('source[data-src]'),
-      function (q) { q.src = q.getAttribute('data-src'); });
-    kopfFilm.preload = 'auto';
-    kopfFilm.load();
-    /* Ein play() direkt nach load() kommt zu frueh und wird abgewiesen, ohne
-       dass jemand es merkt: das autoplay-Attribut half hier nicht, weil beim
-       Auswerten des Markups noch keine Quelle dranstand. Also nach dem Laden
-       noch einmal anklopfen, und zwar bei beiden Meldungen -- welche zuerst
-       kommt, haengt vom Browser ab. */
-    var anlaufen = function () {
-      var q = kopfFilm.play(); if (q && q.catch) q.catch(function () {});
-    };
-    anlaufen();
-    ['loadeddata', 'canplay'].forEach(function (e) {
-      kopfFilm.addEventListener(e, anlaufen);
-    });
-
-    var TEMPO = 0.5;
-    var langsam = function () { kopfFilm.playbackRate = TEMPO; };
-
-    langsam();
-    ['loadedmetadata', 'play', 'seeked', 'ratechange'].forEach(function (e) {
-      kopfFilm.addEventListener(e, function () {
-        if (kopfFilm.playbackRate !== TEMPO) langsam();
-      });
-    });
-  }
 
   /* Die Abschnittsleiste ist am 08.09. entfallen, und mit ihr der Beobachter,
      der markierte, in welchem Abschnitt man gerade steht. Er lief bei jedem

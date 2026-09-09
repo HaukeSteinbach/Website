@@ -64,6 +64,15 @@ class SimpleAudioComparison {
                 secondaryElement: secondaryAudio,
                 primarySrc: this.getAudioSource(primaryAudio),
                 secondarySrc: this.getAudioSource(secondaryAudio),
+                /* Lautheitsausgleich je Seite, in Dezibel am Kaertchen.
+                   Ohne Angabe bleibt es bei 1, also unveraendert -- die
+                   Mixing- und die Mastering-Seite fuehren keine, und fuer sie
+                   aendert sich dadurch nichts.
+                   Gebraucht wird es auf der Chain-Seite: die beiden Fassungen
+                   kamen dort unterschiedlich laut an, und ohne Ausgleich
+                   gewinnt im Vergleich schlicht die lautere. */
+                primaryLevel: this.levelFromDb(card.dataset.gainPrimary),
+                secondaryLevel: this.levelFromDb(card.dataset.gainSecondary),
                 primaryBuffer: null,
                 secondaryBuffer: null,
                 primarySource: null,
@@ -95,6 +104,11 @@ class SimpleAudioComparison {
                 void this.loadCardAudio(state);
             }
         });
+    }
+
+    levelFromDb(value) {
+        const db = Number.parseFloat(value);
+        return Number.isFinite(db) ? Math.pow(10, db / 20) : 1;
     }
 
     getAudioSource(audioElement) {
@@ -275,8 +289,8 @@ class SimpleAudioComparison {
         const now = this.audioContext.currentTime;
         const fadeDuration = immediate ? 0 : 0.02;
         const activeKey = this.getActiveKey(state);
-        const primaryTarget = activeKey === 'primary' ? 1 : 0;
-        const secondaryTarget = activeKey === 'secondary' ? 1 : 0;
+        const primaryTarget = activeKey === 'primary' ? state.primaryLevel : 0;
+        const secondaryTarget = activeKey === 'secondary' ? state.secondaryLevel : 0;
 
         state.primaryGain.gain.cancelScheduledValues(now);
         state.secondaryGain.gain.cancelScheduledValues(now);
@@ -295,8 +309,8 @@ class SimpleAudioComparison {
         const activeKey = this.getActiveKey(state);
         state.primaryElement.muted = activeKey !== 'primary';
         state.secondaryElement.muted = activeKey !== 'secondary';
-        state.primaryElement.volume = 1;
-        state.secondaryElement.volume = 1;
+        state.primaryElement.volume = state.primaryLevel;
+        state.secondaryElement.volume = state.secondaryLevel;
     }
 
     stopMediaSync(state) {

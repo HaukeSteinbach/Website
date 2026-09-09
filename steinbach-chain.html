@@ -578,13 +578,25 @@
      und disabled faellt weg -- mehr ist nicht zu tun. -->
       <div class="grid g2 rise" style="margin-top:48px">
         <div class="cell">
-          <div class="ab" data-quelle="assets/audio/steinbach-chain/bell" data-a="0" data-b="-1.9">
+          <div class="ab" data-comparison-id="chain-bell"
+               data-gain-primary="0" data-gain-secondary="-1.9">
+            <!-- Die beiden Dateien und der versteckte Umschalter: genau die
+                 Bauform, die assets/js/audio-comparison.js erwartet, dieselbe
+                 wie auf der Mixing- und der Mastering-Seite. Die zwei
+                 sichtbaren Knoepfe bedienen den Umschalter, siehe
+                 chain-page.js. -->
+            <audio class="raw-audio" preload="none">
+              <source src="assets/audio/steinbach-chain/bell-a.mp3" type="audio/mpeg"></audio>
+            <audio class="mixed-audio" preload="none">
+              <source src="assets/audio/steinbach-chain/bell-b.mp3" type="audio/mpeg"></audio>
+            <input type="checkbox" class="toggle-checkbox ab-schalter" hidden
+                   data-card-id="chain-bell">
             <div class="ab-head"><span class="ab-name">One frequency</span>
               <span class="ab-tag">SAT BELL &middot; 2,5 kHz</span></div>
             <div class="ab-switch"><div class="ab-thumb"></div>
               <button type="button" aria-pressed="true">Before</button>
               <button type="button" aria-pressed="false">After</button></div>
-            <button type="button" class="ab-play">Play</button>
+            <button type="button" class="ab-play btn-play-pause" data-card-id="chain-bell">Play</button>
             <p class="ab-meta">Matched to the same loudness &middot; &minus;1,9 dB on the after</p>
           </div>
           <p class="copy" style="font-size:.92rem;margin-top:18px">A bell saturates one
@@ -593,13 +605,25 @@
         </div>
 
         <div class="cell">
-          <div class="ab" data-quelle="assets/audio/steinbach-chain/mix" data-a="-1.7" data-b="0">
+          <div class="ab" data-comparison-id="chain-mix"
+               data-gain-primary="-1.7" data-gain-secondary="0">
+            <!-- Die beiden Dateien und der versteckte Umschalter: genau die
+                 Bauform, die assets/js/audio-comparison.js erwartet, dieselbe
+                 wie auf der Mixing- und der Mastering-Seite. Die zwei
+                 sichtbaren Knoepfe bedienen den Umschalter, siehe
+                 chain-page.js. -->
+            <audio class="raw-audio" preload="none">
+              <source src="assets/audio/steinbach-chain/mix-a.mp3" type="audio/mpeg"></audio>
+            <audio class="mixed-audio" preload="none">
+              <source src="assets/audio/steinbach-chain/mix-b.mp3" type="audio/mpeg"></audio>
+            <input type="checkbox" class="toggle-checkbox ab-schalter" hidden
+                   data-card-id="chain-mix">
             <div class="ab-head"><span class="ab-name">A whole mix</span>
               <span class="ab-tag">BUS &middot; MIX 3</span></div>
             <div class="ab-switch"><div class="ab-thumb"></div>
               <button type="button" aria-pressed="true">Before</button>
               <button type="button" aria-pressed="false">After</button></div>
-            <button type="button" class="ab-play">Play</button>
+            <button type="button" class="ab-play btn-play-pause" data-card-id="chain-mix">Play</button>
             <p class="ab-meta">Matched to the same loudness &middot; &minus;1,7 dB on the before</p>
           </div>
           <p class="copy" style="font-size:.92rem;margin-top:18px">The same mix, gently
@@ -623,13 +647,25 @@
         </div>
 
         <div class="cell">
-          <div class="ab" data-quelle="assets/audio/steinbach-chain/transients" data-a="-2.1" data-b="0">
+          <div class="ab" data-comparison-id="chain-transients"
+               data-gain-primary="-2.1" data-gain-secondary="0">
+            <!-- Die beiden Dateien und der versteckte Umschalter: genau die
+                 Bauform, die assets/js/audio-comparison.js erwartet, dieselbe
+                 wie auf der Mixing- und der Mastering-Seite. Die zwei
+                 sichtbaren Knoepfe bedienen den Umschalter, siehe
+                 chain-page.js. -->
+            <audio class="raw-audio" preload="none">
+              <source src="assets/audio/steinbach-chain/transients-a.mp3" type="audio/mpeg"></audio>
+            <audio class="mixed-audio" preload="none">
+              <source src="assets/audio/steinbach-chain/transients-b.mp3" type="audio/mpeg"></audio>
+            <input type="checkbox" class="toggle-checkbox ab-schalter" hidden
+                   data-card-id="chain-transients">
             <div class="ab-head"><span class="ab-name">Tamed transients</span>
               <span class="ab-tag">TR &middot; NO THRESHOLD</span></div>
             <div class="ab-switch"><div class="ab-thumb"></div>
               <button type="button" aria-pressed="true">Before</button>
               <button type="button" aria-pressed="false">After</button></div>
-            <button type="button" class="ab-play">Play</button>
+            <button type="button" class="ab-play btn-play-pause" data-card-id="chain-transients">Play</button>
             <p class="ab-meta">Matched to the same loudness &middot; &minus;2,1 dB on the before</p>
           </div>
           <p class="copy" style="font-size:.92rem;margin-top:18px">Attack and sustain,
@@ -987,6 +1023,10 @@
 <script src="assets/js/steinbach-ui.js"></script>
 <script src="assets/js/newsletter.js"></script>
 
+<!-- Derselbe A/B-Abspieler wie auf der Mixing- und der Mastering-Seite.
+     Muss VOR chain-page.js stehen: der bindet sich an den versteckten
+     Umschalter, den dieser hier bedient. -->
+<script src="assets/js/audio-comparison.js"></script>
 <script src="assets/js/shop.js"></script>
 <script src="assets/js/chain-page.js"></script>
 
