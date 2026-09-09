@@ -29,6 +29,11 @@ function createMixingCard(item) {
     card.setAttribute('data-raw-src', item.rawAudio || '');
     card.setAttribute('data-mixed-src', item.mixedAudio || '');
 
+    /* Lautheitsausgleich, falls das Paar einen hat. Die Zahl ist in Dezibel
+       und wird beim Abspielen angewendet, die Datei bleibt unberuehrt. */
+    if (item.gainRaw) { card.setAttribute('data-gain-primary', item.gainRaw); }
+    if (item.gainMixed) { card.setAttribute('data-gain-secondary', item.gainMixed); }
+
     card.innerHTML = `
         <div class="card-cover">
             <div class="mix-master-toggle">
@@ -44,11 +49,11 @@ function createMixingCard(item) {
         <div class="card-meta">${item.artist} • ${item.date}</div>
         <p>${item.description}</p>
         <div class="audio-player-simple">
-            <audio class="raw-audio" preload="auto">
+            <audio class="raw-audio" preload="none">
                 <source src="${item.rawAudio || ''}" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
-            <audio class="mixed-audio" preload="auto">
+            <audio class="mixed-audio" preload="none">
                 <source src="${item.mixedAudio || ''}" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
@@ -150,6 +155,19 @@ const portfolioData = {
             tags: ['SingerSongwriter'],
             rawAudio: 'assets/audio/track4-raw.mp3',
             mixedAudio: 'assets/audio/track4-mixed.mp3',
+            /* GEMESSEN, nicht geschaetzt. Ueber die ganze Datei stehen beide
+               Fassungen auf -18,0 LUFS, wie alle sechzehn Dateien hier. Sieht
+               man aber den Verlauf an, in Fenstern von drei Sekunden, liegt
+               die gemischte Fassung durchgehend 2,2 LU ueber der rohen:
+               Median +2,2, Mittelwert +2,3, also ein gleichmaessiger Versatz
+               und keine Eigenart einzelner Stellen. Bei den anderen drei
+               Paaren schwankt es um Null, dort gibt es nichts auszugleichen.
+               2,2 LU hoert man, und im Vergleich gewinnt dann schlicht die
+               lautere Seite. Deshalb kommt die gemischte Fassung beim
+               Abspielen um diesen Betrag herunter. Die Datei bleibt, wie sie
+               ist -- zum Herunterladen und Weitergeben soll sie auf -18
+               stehen wie alle anderen. */
+            gainMixed: '-2.2',
             links: {}
         }
     ],
@@ -324,6 +342,8 @@ function createMasteringCard(item) {
     card.id = `mastering-${item.id}`;
     card.setAttribute('data-comparison-id', item.id);
     card.setAttribute('data-mix-src', item.mixAudio);
+    if (item.gainMix) { card.setAttribute('data-gain-primary', item.gainMix); }
+    if (item.gainMaster) { card.setAttribute('data-gain-secondary', item.gainMaster); }
     card.setAttribute('data-master-src', item.masterAudio);
 
     card.innerHTML = `
@@ -343,11 +363,11 @@ function createMasteringCard(item) {
         <p>${item.description}</p>
         
         <div class="audio-player-simple">
-            <audio class="mix-audio" preload="auto">
+            <audio class="mix-audio" preload="none">
                 <source src="${item.mixAudio}" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
-            <audio class="master-audio" preload="auto">
+            <audio class="master-audio" preload="none">
                 <source src="${item.masterAudio}" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>

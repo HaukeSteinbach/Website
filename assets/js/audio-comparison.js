@@ -1,6 +1,7 @@
 /**
  * Audio comparison based on the Web Audio API.
- * Both tracks are fetched and decoded before playback, then started together.
+ * Both tracks are fetched and decoded on the first click on Play, then
+ * started together. Nothing is loaded before that click.
  */
 
 class SimpleAudioComparison {
@@ -8,7 +9,16 @@ class SimpleAudioComparison {
         this.audioContext = null;
         this.cardStates = new Map();
         this.useMediaElementFallback = this.isResourceConstrainedDevice();
-        this.eagerPreload = !this.useMediaElementFallback;
+        /* NIE VON SELBST LADEN. Frueher stand hier
+           eagerPreload = !useMediaElementFallback, also wurde auf jedem
+           Rechner mit Maus beim Seitenaufruf JEDES Paar geholt und dekodiert.
+           Auf der Mixing-Seite sind das sechs Dateien, bevor jemand auch nur
+           einen Knopf angesehen hat.
+           Geladen wird jetzt ausschliesslich beim Klick auf Play, und
+           abgespielt wird erst, wenn beide Seiten fertig dekodiert sind --
+           sonst haette der Vergleich einen Versatz, und ein Vergleich mit
+           Versatz vergleicht nichts. */
+        this.eagerPreload = false;
     }
 
     isResourceConstrainedDevice() {
